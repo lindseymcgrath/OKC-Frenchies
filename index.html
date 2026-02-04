@@ -3,10 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OKC Frenchies | Genetics & Journal</title>
-  </head>
-  <body>
+    <title>OKC Frenchies | Elite DNA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PapaParse (Global) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+    
+    <!-- Import Map for ESM -->
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?external=react",
+    "react-markdown": "https://esm.sh/react-markdown@9.0.1?bundle",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+
+    <!-- Tailwind Config -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              luxury: {
+                black: '#0a0a0a',
+                slate: '#1e293b',
+                teal: '#2dd4bf',
+                tealDark: '#115e59',
+                gold: '#d4af37',
+              }
+            },
+            fontFamily: {
+              serif: ['Cinzel', 'serif'],
+              sans: ['Manrope', 'sans-serif'],
+              display: ['Playfair Display', 'serif'],
+            },
+            backgroundImage: {
+              'noise': "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')",
+            },
+            animation: {
+              'shine': 'shine 3s linear infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'text-glow': 'textGlow 8s ease-in-out infinite',
+              'button-sweep': 'sweep 6s ease-in-out infinite',
+            },
+            keyframes: {
+              shine: {
+                '0%': { backgroundPosition: '200% center' },
+                '100%': { backgroundPosition: '-200% center' },
+              },
+              textGlow: {
+                 '0%, 100%': { textShadow: '0 0 20px rgba(45,212,191,0.2)' },
+                 '50%': { textShadow: '0 0 40px rgba(255,0,255,0.3)' }
+              },
+              sweep: {
+                '0%': { transform: 'translateX(-150%) skewX(-20deg)' },
+                '20%': { transform: 'translateX(150%) skewX(-20deg)' },
+                '100%': { transform: 'translateX(150%) skewX(-20deg)' }
+              }
+            },
+            typography: (theme) => ({
+              DEFAULT: {
+                css: {
+                  color: theme('colors.slate.300'),
+                  h1: { color: theme('colors.white'), fontFamily: theme('fontFamily.display') },
+                  h2: { color: theme('colors.white'), fontFamily: theme('fontFamily.display') },
+                  h3: { color: theme('colors.white'), fontFamily: theme('fontFamily.display') },
+                  strong: { color: theme('colors.luxury.teal') },
+                  a: { color: theme('colors.luxury.teal') },
+                },
+              },
+            }),
+          }
+        },
+        plugins: [
+          function({ addBase, theme }) {
+            addBase({
+              'h1': { fontSize: theme('fontSize.2xl') },
+              'h2': { fontSize: theme('fontSize.xl') },
+              'h3': { fontSize: theme('fontSize.lg') },
+            })
+          }
+        ]
+      }
+    </script>
+    
+    <style>
+      body {
+        background-color: #020617;
+        color: #e2e8f0;
+        margin: 0;
+        overflow-x: hidden;
+      }
+      .glass-panel {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(45, 212, 191, 0.1);
+      }
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: #020617; }
+      ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #2dd4bf; }
+    </style>
+</head>
+<body>
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+    <!-- CRITICAL: Entry point for Vite/React -->
+    <script type="module" src="./index.tsx"></script>
+</body>
 </html>
