@@ -199,7 +199,7 @@ const Hero: React.FC = () => {
       <div className="relative z-10 max-w-7xl w-full mx-auto px-6 flex flex-col items-center justify-center h-full">
         
         <div className="text-center relative">
-            <span className="inline-block font-sans text-luxury-teal text-[10px] md:text-xs tracking-[0.5em] uppercase mb-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <span className="inline-block font-sans text-luxury-teal text-[10px] md:text-xs tracking-widest md:tracking-[0.5em] uppercase mb-6 px-4 text-center leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 A Private Study in Rare Canine Genetics
             </span>
             
@@ -231,12 +231,12 @@ const Hero: React.FC = () => {
                 </div>
             </h1>
             
-            <div className="flex items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                <div className="h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-luxury-teal/50" />
-                <p className="font-serif text-slate-400 text-sm md:text-lg tracking-widest uppercase whitespace-nowrap">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 w-full px-4">
+                <div className="hidden md:block h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-luxury-teal/50" />
+                <p className="font-serif text-slate-400 text-xs md:text-lg tracking-widest uppercase text-center leading-relaxed">
                     Specializing in Rare Loci and Structural Excellence
                 </p>
-                <div className="h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-luxury-teal/50" />
+                <div className="hidden md:block h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-luxury-teal/50" />
             </div>
 
             <div className="mt-12 flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-500">

@@ -46,7 +46,7 @@ export const PRODUCTS: Product[] = [
     subtitle: 'K9 Super Supplements',
     description: 'Made from premium bovine plasma, naturally rich in bioactive compounds scientifically shown to support healing. Think of it as immune insurance for your dog.',
     image: 'https://rawandpawco.com/cdn/shop/files/raw-and-paw-naturals-bovine-plasma-dog-supplement.png?v=1770078019',
-    price: '$34.99',
+    price: '$49.99',
     link: 'https://rawandpawco.com/products/raw-and-paw-naturals-bovine-plasma-dog-supplement',
     benefits: [
         'Rich in Immunoglobulins (IgG)',
