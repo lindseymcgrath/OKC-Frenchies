@@ -2,26 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { SHOWCASE } from '../constants';
 import { ArrowUpRight, ShieldCheck, Dna, Image as ImageIcon } from 'lucide-react';
 
-// Helper for Google Drive Links - The Thumbnail Trick
+// Helper for Google Drive Links - Uses robust lh3 domain to prevent production 403 errors
 const getDirectDriveLink = (url: string) => {
   if (!url) return '';
   const cleanUrl = url.trim();
-  
-  try {
-      let fileId = '';
-      if (cleanUrl.includes('id=')) {
-          fileId = cleanUrl.split('id=')[1].split('&')[0];
-      } else if (cleanUrl.includes('/d/')) {
-          fileId = cleanUrl.split('/d/')[1].split('/')[0];
-      }
-
-      if (fileId) {
-          return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-      }
-  } catch (e) {
-      console.warn('Error parsing Drive URL', e);
+  const idRegex = /[-\w]{25,}/;
+  const match = cleanUrl.match(idRegex);
+  if (match && match[0]) {
+      // Use lh3.googleusercontent.com for reliable high-res hotlinking
+      return `https://lh3.googleusercontent.com/d/${match[0]}=s1000`; 
   }
-  
   return cleanUrl;
 };
 
