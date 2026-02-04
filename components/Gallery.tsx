@@ -344,7 +344,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         <img 
                             src={dog.image} 
                             alt={dog.altText || dog.name}
-                            className="w-full h-full object-cover opacity-90 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700"
+                            className="w-full h-full object-cover opacity-90 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0"
                             crossOrigin="anonymous"
                             onError={() => handleImageError(dog.id)}
                         />

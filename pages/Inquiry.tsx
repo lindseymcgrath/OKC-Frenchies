@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Send, CheckCircle2, Loader2, ChevronDown } from 'lucide-react';
+import { Send, CheckCircle2, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
 
 interface DogOption {
     name: string;
@@ -11,6 +11,16 @@ const Inquiry: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
+    // ---------------------------------------------------------------------------
+    // CONFIGURATION: EMAIL SERVICE
+    // ---------------------------------------------------------------------------
+    // Since this is a static site (no backend server), we use a service like Formspree.
+    // 1. Go to https://formspree.io/
+    // 2. Create a free form connected to info@okcfrenchies.com
+    // 3. Paste the 'Form Endpoint' URL below (e.g., "https://formspree.io/f/xvgzqlep")
+    const FORM_ENDPOINT = "https://formspree.io/f/mwvneekz"; 
+    // ---------------------------------------------------------------------------
+
     // Form State
     const [formData, setFormData] = useState({
         fullName: '',
@@ -25,6 +35,7 @@ const Inquiry: React.FC = () => {
     const [loadingDogs, setLoadingDogs] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
 
     // Initial Params
     useEffect(() => {
@@ -73,18 +84,40 @@ const Inquiry: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+        setSubmissionError(null); // Clear errors on edit
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
+        setSubmissionError(null);
         
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const response = await fetch(FORM_ENDPOINT, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                setSuccess(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                const data = await response.json();
+                if (data.errors) {
+                     setSubmissionError(data.errors.map((err: any) => err.message).join(", "));
+                } else {
+                     setSubmissionError("The server encountered an error. Please try again later.");
+                }
+            }
+        } catch (error) {
+            setSubmissionError("Network error. Please check your connection and try again.");
+        } finally {
             setSubmitting(false);
-            setSuccess(true);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 1500);
+        }
     };
 
     return (
@@ -127,6 +160,17 @@ const Inquiry: React.FC = () => {
                 ) : (
                     <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-12 rounded-sm shadow-2xl">
                         
+                        {/* Error Message Display */}
+                        {submissionError && (
+                            <div className="mb-8 bg-red-900/20 border border-red-900/50 p-4 flex items-start gap-3 rounded-sm">
+                                <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                                <div>
+                                    <h4 className="text-red-400 text-xs font-bold uppercase tracking-widest mb-1">Submission Error</h4>
+                                    <p className="text-red-300 text-sm">{submissionError}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Section 1: Contact */}
                         <div className="mb-10">
                             <h3 className="font-display text-2xl text-slate-200 mb-6 flex items-center gap-3">
