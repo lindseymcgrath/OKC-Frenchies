@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
-      base: './',
+      // THIS LINE IS THE FIX: it tells the site to find styles in the current folder
+      base: './', 
       server: {
         port: 3000,
         host: '0.0.0.0',
