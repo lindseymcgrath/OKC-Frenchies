@@ -23,7 +23,7 @@ const Protocol: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Header */}
-        <div className="text-center mb-24">
+        <div className="text-center mb-20">
             <div className="flex justify-center mb-6">
                 <div className="w-16 h-16 rounded-full border border-luxury-teal/30 flex items-center justify-center bg-luxury-teal/5">
                     <FlaskConical className="text-luxury-teal" size={24} />
@@ -38,110 +38,129 @@ const Protocol: React.FC = () => {
                <div className="h-px w-12 bg-slate-800" />
             </div>
 
-            <p className="font-serif text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed mb-10">
+            <p className="font-serif text-slate-400 max-w-2xl mx-auto text-lg leading-relaxed">
               We utilize advanced supplement stacks tailored to each dog's needs. From 
               <span className="text-luxury-teal"> gut health</span> to 
               <span className="text-luxury-teal"> coat density</span>, our program is fueled by science.
             </p>
         </div>
 
-        {/* --- SECTION 1: ANATOMY OF THE MEAL (Flat Feeding) --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-32">
-            <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-luxury-teal/20 to-purple-500/20 blur-3xl opacity-30 group-hover:opacity-50 transition-opacity" />
-                <div className="relative bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 md:p-12 rounded-sm overflow-hidden">
-                    <Disc className="text-slate-200 mb-6" size={48} strokeWidth={1} />
-                    <h3 className="font-serif text-4xl text-white mb-4">The Anatomy of the Meal</h3>
-                    <p className="font-sans text-luxury-teal text-xs uppercase tracking-[0.2em] mb-6">Flat Feeding Philosophy</p>
-                    <p className="font-serif text-slate-400 leading-relaxed mb-8">
-                        We have abandoned the bowl. Our program utilizes the <strong>9-inch Stainless Steel Flat Plate</strong>. 
-                        By eliminating deep edges, we prevent chin acne and inhibit bacterial buildup that plagues traditional feeding methods. 
-                        It is cleaner, safer, and aligns with our sanitary standards.
+        {/* --- MAIN LAYOUT GRID --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-24">
+            
+            {/* LEFT COLUMN: THE DAILY RHYTHM (Main Content) */}
+            <div className="lg:col-span-2 space-y-6">
+                 <div className="flex items-end justify-between border-b border-slate-800 pb-4 mb-4">
+                     <h3 className="font-serif text-3xl text-slate-100">The Daily Rhythm</h3>
+                     <span className="font-sans text-luxury-teal text-[10px] tracking-widest uppercase mb-1">24 Hour Cycle</span>
+                 </div>
+
+                 {/* Morning Card */}
+                 <div className="bg-slate-900/30 border border-slate-800 p-8 md:p-10 backdrop-blur-sm hover:border-luxury-teal/30 transition-colors rounded-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                         <Sun size={120} />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-amber-500/10 rounded-full text-amber-400">
+                                <Sun size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-serif text-2xl text-white">Morning</h4>
+                                <span className="text-xs text-slate-500 uppercase tracking-widest">The Standard Stack</span>
+                            </div>
+                        </div>
+                        <p className="font-serif text-slate-400 leading-relaxed mb-8 max-w-xl">
+                            For puppies and nursing dams, the morning focuses on immune support and gut health. This is where we load the essentials to kickstart the metabolism and ensure nutrient absorption throughout the day.
+                        </p>
+                        <div className="bg-black/20 p-6 rounded-sm border border-slate-800/50">
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-sm text-slate-300">
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-luxury-teal flex-shrink-0"/> Goat Brew (Probiotics)</li>
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-luxury-teal flex-shrink-0"/> Plasma (Antibodies)</li>
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-luxury-teal flex-shrink-0"/> Omega Mania (Cognitive/Coat)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Evening Card */}
+                <div className="bg-slate-900/30 border border-slate-800 p-8 md:p-10 backdrop-blur-sm hover:border-purple-500/30 transition-colors rounded-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                         <Moon size={120} />
+                    </div>
+                     <div className="relative z-10">
+                        <div className="flex items-center gap-4 mb-6">
+                            <div className="p-3 bg-purple-500/10 rounded-full text-purple-400">
+                                <Moon size={24} />
+                            </div>
+                            <div>
+                                <h4 className="font-serif text-2xl text-white">Evening</h4>
+                                <span className="text-xs text-slate-500 uppercase tracking-widest">The Support Stack</span>
+                            </div>
+                        </div>
+                        <p className="font-serif text-slate-400 leading-relaxed mb-8 max-w-xl">
+                            This is the "Logic" meal. For adults, this is often the <strong>Single Feeding</strong> (Nature's Intention). We customize the additive based on the dog's current job or developmental stage.
+                        </p>
+                        <div className="bg-black/20 p-6 rounded-sm border border-slate-800/50">
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans text-sm text-slate-300">
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-purple-400 flex-shrink-0"/> Joint Support (Heavy Bone)</li>
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-purple-400 flex-shrink-0"/> Gentleman’s Litter (Studs)</li>
+                                <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-purple-400 flex-shrink-0"/> Let’s Get Littered (Ovulation)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT COLUMN: SIDEBAR (Anatomy + Calculator) */}
+            <div className="lg:col-span-1 flex flex-col gap-6">
+                 {/* Sidebar Header */}
+                 <div className="flex items-end justify-between border-b border-slate-800 pb-4 mb-2 lg:mb-0">
+                     <h3 className="font-serif text-xl text-slate-100">Tools</h3>
+                     <span className="font-sans text-slate-500 text-[10px] tracking-widest uppercase mb-1">Setup</span>
+                 </div>
+
+                 {/* Anatomy of Meal */}
+                 <div className="relative group bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-sm overflow-hidden flex-1 flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-luxury-teal/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <Disc className="text-luxury-teal mb-6" size={40} strokeWidth={1} />
+                    <h3 className="font-serif text-2xl text-white mb-2">The Flat Plate</h3>
+                    <p className="font-sans text-slate-500 text-[10px] uppercase tracking-widest mb-4">Sanitary Feeding</p>
+                    <p className="font-serif text-slate-400 text-sm leading-relaxed mb-6">
+                        We use the <strong>9-inch Stainless Steel Flat Plate</strong>. Eliminating edges prevents chin acne and bacterial buildup, aligning with our sanitary standards.
                     </p>
                     <a 
                         href="https://rawandpawco.com/products/stainless-steel-flat-feeding-plate" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-200 to-amber-500 text-black font-bold uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:shadow-[0_0_40px_rgba(251,191,36,0.6)] transition-all transform hover:-translate-y-1"
+                        className="inline-flex items-center gap-2 text-luxury-teal text-xs font-bold uppercase tracking-widest hover:text-white transition-colors mt-auto"
                     >
-                        <ShoppingBag size={14} /> Shop The Flat Plate
+                        <ShoppingBag size={14} /> Shop Plate
                     </a>
                 </div>
-            </div>
 
-            {/* Precision Management Box */}
-            <div className="flex flex-col gap-6">
-                <div className="bg-gradient-to-br from-[#0f172a] to-[#020617] border border-slate-800 p-10 flex flex-col justify-center items-start h-full relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <Calculator size={120} />
+                {/* Calculator */}
+                <div className="relative group bg-gradient-to-br from-[#0f172a] to-[#020617] border border-slate-800 p-8 rounded-sm overflow-hidden flex-1 flex flex-col justify-center">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+                        <Calculator size={80} />
                     </div>
-                    <h3 className="font-serif text-3xl text-white mb-2">Precision Management</h3>
-                    <p className="font-sans text-slate-500 text-xs uppercase tracking-widest mb-6">Calculate Bio-Appropriate Ratios</p>
-                    <p className="font-serif text-slate-400 mb-8 max-w-md">
-                        Stop guessing. Use the official Raw & Paw calculator to determine the exact caloric and weight requirements for your dog's age and activity level.
+                    <Calculator className="text-amber-400 mb-6" size={40} strokeWidth={1} />
+                    <h3 className="font-serif text-2xl text-white mb-2">Calculator</h3>
+                    <p className="font-sans text-slate-500 text-[10px] uppercase tracking-widest mb-4">Precision Ratios</p>
+                    <p className="font-serif text-slate-400 text-sm leading-relaxed mb-6">
+                        Calculate exact caloric and weight requirements for your dog's age and activity level. Stop guessing.
                     </p>
                     <a 
                         href="https://rawandpawco.com/pages/raw-calculator" 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-6 py-3 border border-amber-500/50 text-amber-400 font-bold uppercase tracking-[0.2em] text-xs hover:bg-amber-500/10 hover:border-amber-400 transition-all"
+                        className="inline-flex items-center gap-2 text-amber-400 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors mt-auto"
                     >
-                        <Calculator size={14} /> Open Raw Calculator
+                        <Calculator size={14} /> Launch
                     </a>
                 </div>
             </div>
-        </div>
 
-        {/* --- SECTION 2: THE DAILY RHYTHM --- */}
-        <div className="mb-32">
-            <div className="text-center mb-16">
-                 <h3 className="font-serif text-4xl text-slate-100 mb-4">The Daily Rhythm</h3>
-                 <div className="h-px w-24 bg-luxury-teal/30 mx-auto" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Morning */}
-                <div className="bg-slate-900/30 border border-slate-800 p-8 backdrop-blur-sm hover:border-luxury-teal/30 transition-colors">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-amber-500/10 rounded-full text-amber-400">
-                            <Sun size={24} />
-                        </div>
-                        <div>
-                            <h4 className="font-serif text-2xl text-white">Morning</h4>
-                            <span className="text-xs text-slate-500 uppercase tracking-widest">The Standard Stack</span>
-                        </div>
-                    </div>
-                    <p className="font-serif text-slate-400 leading-relaxed mb-6">
-                        For puppies and nursing dams, the morning focuses on immune support and gut health. This is where we load the essentials.
-                    </p>
-                    <ul className="space-y-3 font-sans text-sm text-slate-300">
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-luxury-teal"/> Goat Brew (Probiotics)</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-luxury-teal"/> Plasma (Antibodies)</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-luxury-teal"/> Omega Mania (Cognitive/Coat)</li>
-                    </ul>
-                </div>
-
-                {/* Evening */}
-                <div className="bg-slate-900/30 border border-slate-800 p-8 backdrop-blur-sm hover:border-purple-500/30 transition-colors">
-                     <div className="flex items-center gap-4 mb-6">
-                        <div className="p-3 bg-purple-500/10 rounded-full text-purple-400">
-                            <Moon size={24} />
-                        </div>
-                        <div>
-                            <h4 className="font-serif text-2xl text-white">Evening</h4>
-                            <span className="text-xs text-slate-500 uppercase tracking-widest">The Support Stack</span>
-                        </div>
-                    </div>
-                    <p className="font-serif text-slate-400 leading-relaxed mb-6">
-                        This is the "Logic" meal. For adults, this is often the <strong>Single Feeding</strong> (Nature's Intention). We customize the additive based on the dog's current job.
-                    </p>
-                    <ul className="space-y-3 font-sans text-sm text-slate-300">
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-400"/> Joint Support (Seniors/Heavy Bone)</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-400"/> Gentleman’s Litter (Studs)</li>
-                        <li className="flex items-center gap-2"><CheckCircle2 size={14} className="text-purple-400"/> Let’s Get Littered (Ovulation Support)</li>
-                    </ul>
-                </div>
-            </div>
         </div>
 
         {/* --- SECTION 3: THE ESSENTIALS (Product Grid) --- */}
