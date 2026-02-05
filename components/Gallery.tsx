@@ -28,6 +28,20 @@ const getDirectDriveLink = (url: string) => {
   return cleanUrl;
 };
 
+const getVideoEmbedLink = (url: string) => {
+  if (!url) return '';
+  const cleanUrl = getString(url);
+  // Check typical drive patterns
+  if (cleanUrl.includes('drive.google.com') || cleanUrl.includes('docs.google.com')) {
+      const idRegex = /[-\w]{25,}/;
+      const match = cleanUrl.match(idRegex);
+      if (match && match[0]) {
+          return `https://drive.google.com/file/d/${match[0]}/preview`;
+      }
+  }
+  return cleanUrl;
+};
+
 interface MediaItem {
   type: 'image' | 'video';
   url: string;
@@ -228,7 +242,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                       }
 
                       if (videoUrl) {
-                          const vUrl = getDirectDriveLink(videoUrl);
+                          const vUrl = getVideoEmbedLink(videoUrl);
                           media.push({ type: 'video', url: vUrl });
                       }
                       
@@ -415,15 +429,24 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         {selectedDog.media.length > 0 && currentMedia ? (
                             <>
                                 {currentMedia.type === 'video' ? (
-                                    <div className="w-full h-full flex items-center justify-center bg-black">
-                                        <video 
-                                            src={currentMedia.url} 
-                                            controls 
-                                            autoPlay 
-                                            className="max-w-full max-h-full object-contain"
-                                        >
-                                            Your browser does not support the video tag.
-                                        </video>
+                                    <div className="w-full h-full flex items-center justify-center bg-black relative">
+                                        {(currentMedia.url.includes('drive.google.com')) ? (
+                                             <iframe 
+                                                src={currentMedia.url} 
+                                                className="w-full h-full border-0" 
+                                                allow="autoplay; encrypted-media; fullscreen"
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <video 
+                                                src={currentMedia.url} 
+                                                controls 
+                                                autoPlay 
+                                                className="max-w-full max-h-full object-contain"
+                                            >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        )}
                                     </div>
                                 ) : (
                                     <>
@@ -470,7 +493,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         )}
 
                          {selectedDog.badges.length > 0 && (
-                            <div className="absolute top-6 left-6 flex flex-wrap gap-2 max-w-[90%]">
+                            <div className="absolute top-6 left-6 flex flex-wrap gap-2 max-w-[90%] pointer-events-none">
                                {selectedDog.badges.map((badge, idx) => (
                                    <span key={idx} className={`px-4 py-2 text-xs uppercase tracking-widest font-bold backdrop-blur-xl border flex items-center gap-2 ${badge.color}`}>
                                         <Dna size={14} />

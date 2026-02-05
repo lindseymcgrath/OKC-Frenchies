@@ -67,6 +67,13 @@ const Navbar: React.FC = () => {
             activeColorClass="text-luxury-teal" 
             glowColorClass="bg-luxury-teal" 
           />
+          
+          <NavLink 
+            to="/calculator" 
+            label="DNA Matrix" 
+            activeColorClass="text-luxury-magenta" 
+            glowColorClass="bg-luxury-magenta" 
+          />
 
           <NavLink 
             to="/blog" 
@@ -112,6 +119,7 @@ const Navbar: React.FC = () => {
         <div className="absolute top-full left-0 w-full bg-luxury-black/95 backdrop-blur-xl border-b border-luxury-slate p-8 flex flex-col gap-8 md:hidden animate-in fade-in slide-in-from-top-5">
            <Link to="/puppies" className="text-sm tracking-widest uppercase text-fuchsia-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Puppies</Link>
            <Link to="/studs" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Studs</Link>
+           <Link to="/calculator" className="text-sm tracking-widest uppercase text-luxury-magenta hover:text-white" onClick={() => setIsMenuOpen(false)}>DNA Matrix</Link>
            <Link to="/blog" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Journal</Link>
            <Link to="/genetics" className="text-sm tracking-widest uppercase text-fuchsia-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>Genetics</Link>
            <Link to="/protocol" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Protocol</Link>

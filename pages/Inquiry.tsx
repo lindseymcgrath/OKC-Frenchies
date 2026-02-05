@@ -14,16 +14,13 @@ const Inquiry: React.FC = () => {
     // ---------------------------------------------------------------------------
     // CONFIGURATION: EMAIL SERVICE
     // ---------------------------------------------------------------------------
-    // Since this is a static site (no backend server), we use a service like Formspree.
-    // 1. Go to https://formspree.io/
-    // 2. Create a free form connected to info@okcfrenchies.com
-    // 3. Paste the 'Form Endpoint' URL below (e.g., "https://formspree.io/f/xvgzqlep")
     const FORM_ENDPOINT = "https://formspree.io/f/mwvneekz"; 
     // ---------------------------------------------------------------------------
 
     // Form State
     const [formData, setFormData] = useState({
         fullName: '',
+        email: '',
         phone: '',
         interest: '',
         selectedDog: '',
@@ -176,17 +173,31 @@ const Inquiry: React.FC = () => {
                             <h3 className="font-display text-2xl text-slate-200 mb-6 flex items-center gap-3">
                                 <span className="text-luxury-teal text-lg">01.</span> Contact Details
                             </h3>
+                            {/* Full Name */}
+                            <div className="mb-6">
+                                <label className="block text-[10px] uppercase tracking-widest text-slate-500 mb-2">Full Name / Program</label>
+                                <input 
+                                    required
+                                    type="text" 
+                                    name="fullName"
+                                    value={formData.fullName}
+                                    onChange={handleChange}
+                                    className="w-full bg-black/40 border border-slate-700 p-4 text-slate-200 focus:border-luxury-teal focus:outline-none transition-colors font-sans"
+                                    placeholder="John Doe / Elite Bullies"
+                                />
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] uppercase tracking-widest text-slate-500 mb-2">Full Name / Program</label>
+                                    <label className="block text-[10px] uppercase tracking-widest text-slate-500 mb-2">Email Address</label>
                                     <input 
                                         required
-                                        type="text" 
-                                        name="fullName"
-                                        value={formData.fullName}
+                                        type="email" 
+                                        name="email"
+                                        value={formData.email}
                                         onChange={handleChange}
                                         className="w-full bg-black/40 border border-slate-700 p-4 text-slate-200 focus:border-luxury-teal focus:outline-none transition-colors font-sans"
-                                        placeholder="John Doe / Elite Bullies"
+                                        placeholder="john@example.com"
                                     />
                                 </div>
                                 <div>
