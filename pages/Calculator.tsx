@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { X, Dna, AlertTriangle, Calculator as CalcIcon, ChevronRight, Layers, Info } from 'lucide-react';
+import { X, Dna, AlertTriangle, Calculator as CalcIcon, ChevronRight, Layers, ImageOff, HelpCircle } from 'lucide-react';
+
+// --- CONFIGURATION ---
+const ASSET_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
 
 // DNA Options
 const LOCI = {
   Pink: { label: 'Pink (Albinism)', options: ['n/n', 'n/A', 'A/A'] },
   A: { label: 'Agouti', options: ['Ay/Ay', 'Ay/aw', 'Ay/at', 'Ay/a', 'aw/aw', 'aw/at', 'aw/a', 'at/at', 'at/a', 'a/a'] },
+  K: { label: 'K-Locus (Brindle)', options: ['ky/ky', 'Kbr/ky', 'Kbr/Kbr'] },
   B: { label: 'Testable Choc (Rojo)', options: ['N/N', 'N/b', 'b/b'] },
   Co: { label: 'Cocoa', options: ['n/n', 'n/co', 'co/co'] },
   D: { label: 'Blue (Dilute)', options: ['N/N', 'N/d', 'd/d'] },
   E: { label: 'Extension (Mask/Red)', options: ['E/E', 'Em/Em', 'Em/E', 'Em/e', 'Em/eA', 'E/e', 'E/eA', 'e/e', 'eA/eA', 'eA/e'] },
-  S: { label: 'Piebald (Pied)', options: ['n/n', 'n/s', 's/s'] }, // NEW: S-Locus
-  L: { label: 'Hair Length', options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'] },
-  F: { label: 'Furnishings', options: ['n/n', 'n/F', 'F/F'] },
-  C: { label: 'Curly (C1/C2)', options: ['n/n', 'n/C', 'C/C'] },
+  S: { label: 'Piebald (Pied)', options: ['n/n', 'n/S', 'S/S'] }, 
+  L: { label: 'Hair Length (Fluffy)', options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'] },
+  F: { label: 'F-Locus (Furnishings)', options: ['n/n', 'n/F', 'F/F'] },
+  C: { label: 'C-Locus (Curly)', options: ['n/n', 'n/C', 'C/C'] },
   M: { label: 'Merle', options: ['n/n', 'N/M', 'M/M'] }, 
-  Panda: { label: 'Panda Husky', options: ['No', 'Yes'] }
+  Panda: { label: 'Pattern Structure', options: ['No', 'Panda', 'Koi'] }
 };
 
 interface VisualTraits {
-    baseColor: string; // blue, cocoa, lilac, etc.
-    pattern: string; // tan, fawn, solid
+    baseColorName: string;
+    phenotypeName: string;
+    layers: string[]; // Ordered list of images to render bottom-to-top
     hasMerle: boolean;
     hasPied: boolean;
     hasPanda: boolean;
     isFluffy: boolean;
+    isFurnished: boolean;
     isPink: boolean;
     isCream: boolean;
+    isCurly: boolean;
+    isBrindle: boolean;
+    hasPoints: boolean;
+    pattern: string;
 }
 
 interface PhenotypeResult {
     fullName: string;
-    altName?: string; // For "Also called..."
     carries: string;
     isHighRisk: boolean;
     visualTraits: VisualTraits;
@@ -44,89 +53,73 @@ interface ProbabilityResult {
 
 // --- VISUALIZER COMPONENT ---
 const DogVisualizer: React.FC<{ traits: VisualTraits }> = ({ traits }) => {
-    // Placeholder logic for layer paths. 
-    // In a real app, these would be actual transparent PNGs.
-    const baseUrl = "https://rawandpawco.com/visuals";
     
-    // Determine Base Layer
-    let baseLayer = "base_black";
-    if (traits.baseColor === "Blue") baseLayer = "base_blue";
-    if (traits.baseColor === "Chocolate") baseLayer = "base_cocoa";
-    if (traits.baseColor === "Lilac") baseLayer = "base_lilac";
-    if (traits.baseColor === "Rojo") baseLayer = "base_rojo";
-    if (traits.baseColor === "Isabella") baseLayer = "base_isabella";
-    if (traits.baseColor === "New Shade Isabella") baseLayer = "base_new_shade";
-    if (traits.isCream) baseLayer = "base_cream"; // Cream covers base
-    if (traits.isPink) baseLayer = "base_pink"; // Pink covers all
+    const getUrl = (img: string) => `${ASSET_BASE_URL}/${img}`;
+    const [errors, setErrors] = useState<Record<string, boolean>>({});
+
+    const handleImageError = (imgName: string) => {
+        setErrors(prev => ({ ...prev, [imgName]: true }));
+    };
+
+    // Reset errors when phenotype changes
+    useEffect(() => {
+        setErrors({});
+    }, [traits.layers]);
+
+    // Ensure we have a valid base image for the error check
+    const baseImage = traits.layers[0] || 'base-black.png';
 
     return (
-        <div className="relative w-full aspect-square bg-[#050505] rounded-sm overflow-hidden border border-slate-800 group">
-            {/* Background / Environment */}
-            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-black opacity-50" />
-            
-            {/* 1. BASE COLOR LAYER */}
-            <img 
-                src={`${baseUrl}/${baseLayer}.png`} 
-                alt="Base Coat"
-                className="absolute inset-0 w-full h-full object-contain z-10"
-                onError={(e) => (e.currentTarget.style.display = 'none')} 
-            />
+        <div className="flex flex-col items-center w-full">
+            {/* Transparent Container as requested */}
+            <div className="relative w-full aspect-square bg-transparent rounded-sm overflow-hidden group">
+                
+                {/* STACKED LAYERS (Rendered in order 0 -> N) */}
+                {traits.layers.map((layer, index) => (
+                    !errors[layer] && (
+                        <img 
+                            key={`${layer}-${index}`}
+                            src={getUrl(layer)} 
+                            alt={`Layer: ${layer}`} 
+                            className="absolute inset-0 w-full h-full object-contain z-10 mix-blend-normal"
+                            onError={() => handleImageError(layer)}
+                            crossOrigin="anonymous"
+                            style={{ zIndex: 10 + index }}
+                        />
+                    )
+                ))}
 
-            {/* 2. PATTERN LAYER (Tan Points) */}
-            {traits.pattern.includes("Tan") && !traits.isCream && !traits.isPink && (
-                <img 
-                    src={`${baseUrl}/layer_tan_points.png`} 
-                    alt="Tan Points" 
-                    className="absolute inset-0 w-full h-full object-contain z-20 mix-blend-overlay opacity-80"
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-            )}
+                {/* Error State: Only if Base Layer fails */}
+                {errors[baseImage] && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center text-red-500 bg-red-50/90 p-6 text-center rounded-md">
+                        <ImageOff className="mb-4 opacity-50" size={48} />
+                        <h4 className="text-sm font-bold uppercase tracking-widest mb-2">Visual Unavailable</h4>
+                        <p className="text-[10px] font-mono text-slate-400 mb-4 break-all max-w-[200px]">
+                           {baseImage}
+                        </p>
+                        <div className="flex items-start gap-2 text-left bg-white p-3 rounded-sm border border-red-100 shadow-sm">
+                            <HelpCircle size={16} className="text-luxury-teal shrink-0 mt-0.5" />
+                            <p className="text-[9px] text-slate-500 leading-relaxed">
+                                <strong>System:</strong> Unable to load base asset from remote repository.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
-            {/* 3. PIED LAYER (White Masking) */}
-            {traits.hasPied && (
-                <img 
-                    src={`${baseUrl}/layer_pied_white.png`} 
-                    alt="Pied Marking" 
-                    className="absolute inset-0 w-full h-full object-contain z-30"
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-            )}
-
-            {/* 4. MERLE LAYER */}
-            {traits.hasMerle && !traits.isCream && !traits.isPink && (
-                <img 
-                    src={`${baseUrl}/layer_merle_pattern.png`} 
-                    alt="Merle Pattern" 
-                    className="absolute inset-0 w-full h-full object-contain z-40 mix-blend-multiply opacity-60"
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-            )}
-
-            {/* 5. PANDA LAYER */}
-            {traits.hasPanda && (
-                <img 
-                    src={`${baseUrl}/layer_panda_white.png`} 
-                    alt="Panda Markings" 
-                    className="absolute inset-0 w-full h-full object-contain z-50"
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-            )}
-
-             {/* 6. TEXTURE (Fluffy) */}
-             {traits.isFluffy && (
-                <div className="absolute inset-0 z-50 pointer-events-none shadow-[inset_0_0_50px_rgba(255,255,255,0.1)] opacity-50"></div>
-            )}
-
-            {/* Label Overlay */}
-            <div className="absolute bottom-4 left-4 z-50 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-                <span className="text-[10px] text-white uppercase tracking-widest flex items-center gap-2">
-                    <Layers size={10} className="text-luxury-teal" /> Visual Preview
-                </span>
+                {/* Label Overlay */}
+                <div className="absolute bottom-4 left-4 z-[100] bg-black/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                    <span className="text-[10px] text-white uppercase tracking-widest flex items-center gap-2">
+                        <Layers size={10} className="text-luxury-teal" /> 
+                        {traits.isFluffy ? 'Fluffy' : ''} {traits.isFurnished ? 'Furnished' : ''} {traits.baseColorName}
+                    </span>
+                </div>
             </div>
             
-            {/* Fallback Text if images fail (likely in this demo) */}
-            <div className="absolute inset-0 flex items-center justify-center z-0">
-                <Dna className="text-slate-800 opacity-20" size={120} />
+            {/* Debug Info */}
+            <div className="mt-4 text-center opacity-40 hover:opacity-100 transition-opacity">
+                 <p className="text-[10px] text-slate-500 font-mono">
+                    Base: {baseImage}
+                 </p>
             </div>
         </div>
     );
@@ -137,11 +130,8 @@ export default function Calculator() {
   const [showModal, setShowModal] = useState(false);
   const [litterResults, setLitterResults] = useState<ProbabilityResult[]>([]);
   const [modalRisk, setModalRisk] = useState(false);
-  
-  // Merle Warning State
   const [showMerleWarning, setShowMerleWarning] = useState(false);
   
-  // State for Sire and Dam
   const [sire, setSire] = useState(
     Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: LOCI[key as keyof typeof LOCI].options[0] }), {})
   );
@@ -149,7 +139,6 @@ export default function Calculator() {
     Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: LOCI[key as keyof typeof LOCI].options[0] }), {})
   );
 
-  // Check for unsafe pairing immediately
   useEffect(() => {
       if (mode === 'pair') {
           if (sire.M !== 'n/n' && dam.M !== 'n/n') {
@@ -160,158 +149,222 @@ export default function Calculator() {
       }
   }, [sire, dam, mode]);
 
-  // --- CORE GENETIC LOGIC ---
   const getPhenotype = (dna: any): PhenotypeResult => {
-    let visual = "";
-    let technicalVisual = ""; // The color UNDER the wrap
-    let prefix = "";
-    let suffix = "";
+    let phenotypeName = "";
+    let baseColorName = "";
+    let baseColorSlug = ""; 
     let carries: string[] = [];
     let isHighRisk = false;
-    let altName = "";
 
-    // 0. SAFETY CHECK
-    if (dna.M === 'M/M') isHighRisk = true;
-
-    // 1. TEXTURE & LENGTH
-    const lAlleles = dna.L.split('/');
-    const isFullFluffy = lAlleles.every((a: string) => a.startsWith('l'));
-    const isCarryingFluffy = !isFullFluffy && lAlleles.some((a: string) => a.startsWith('l'));
-    const isFurnished = dna.F !== 'n/n';
-    const isCurly = dna.C !== 'n/n';
-
-    // "Puffy" Logic
-    if (isFullFluffy && isCurly) prefix += "Puffy ";
-    else if (isCurly) prefix += "Curly ";
-
-    // Floodle Logic
-    if (isFullFluffy && isFurnished) {
-        suffix += " Floodle/Teddy";
-    } else if (isFullFluffy) {
-        prefix += "Full Fluffy ";
-    }
-
-    if (isCarryingFluffy && isFurnished) suffix += " Floodle/Teddy Producer";
-    else if (isFurnished && !isFullFluffy) suffix += " Wire Hair";
-
-    // 2. BASE COLOR HIERARCHY
+    // --- 1. GENOTYPE PARSING ---
+    // Color
     const d = dna.D === 'd/d';
     const co = dna.Co === 'co/co';
     const b = dna.B === 'b/b';
-    let baseColorName = "Black";
-
-    if (b && co && d) baseColorName = "New Shade Isabella";
-    else if (b && co) baseColorName = "New Shade Rojo";
-    else if (b && d) baseColorName = "Isabella";
-    else if (co && d) baseColorName = "Lilac";
-    else if (b) baseColorName = "Rojo";
-    else if (co) baseColorName = "Chocolate";
-    else if (d) baseColorName = "Blue";
     
-    technicalVisual = baseColorName;
-
-    // 3. AGOUTI PATTERNS
-    const aAlleles = dna.A.split('/');
-    const hasAy = aAlleles.includes('Ay');
-    const hasAw = aAlleles.includes('aw');
-    const hasAt = aAlleles.includes('at');
-    const isSolid = dna.A === 'a/a';
-    
-    let patternName = "";
-    if (hasAy) patternName = " Fawn";
-    else if (hasAw) patternName = " Sable";
-    else if (hasAt) patternName = " and Tan";
-    else if (isSolid) patternName = " Solid";
-
-    technicalVisual += patternName;
-
-    // 4. EXTENSION (Mask, Cream, Ancient Red)
+    // Pattern / Structure
     const eAlleles = dna.E.split('/');
-    const hasEm = eAlleles.includes('Em');
-    const hasEa = eAlleles.includes('eA');
     const isCream = dna.E === 'e/e';
-
-    if (hasEa) {
-        technicalVisual += " eA Husky";
-    } 
-    
-    if (hasEm && !isCream && !hasEa) {
-        technicalVisual += " Masked";
-    }
-
-    // 5. PIED (S-Locus)
-    const isPied = dna.S === 's/s';
-    const carriesPied = dna.S === 'n/s';
-
-    if (isPied) {
-        suffix += " Pied"; // Suffix logic, added to end
-    }
-
-    // 6. SPECIALS (Koi / Panda / Merle)
-    const hasMerle = dna.M !== 'n/n';
-    const hasPanda = dna.Panda === 'Yes';
-
-    if (hasMerle && hasPanda) {
-        technicalVisual = technicalVisual.replace("Black", "").replace("Blue", "").replace("Lilac", "").replace("Rojo", "").replace("Chocolate", "") + " Koi";
-    } else if (hasMerle) {
-        technicalVisual += " Merle";
-    } else if (hasPanda) {
-        technicalVisual += " Panda Husky";
-    }
-
-    // 7. WRAP LOGIC (The Overrides)
     const isPink = dna.Pink === 'A/A';
     
-    if (isPink) {
-        visual = `Full Pink ${baseColorName}`;
-        if (isPied) visual += " Pied";
-        altName = `Genetically ${technicalVisual} wrapped in Pink`;
-    } else if (isCream && !hasEa) { // eA dominates cream visually usually, but simplified here
-        visual = `${baseColorName} Wrapped in Cream`;
-        if (isPied) visual += " Pied";
-        altName = `Genetically ${technicalVisual} wrapped in Cream`;
+    // Intense Black (eA) Logic
+    const hasEA = eAlleles.includes('eA'); // eA/eA, eA/e, e/eA
+    // Note: eA acts as a modifier on the base color name usually, 
+    // but primarily we track it for the phenotype text.
+    
+    // K-Locus (Brindle)
+    const kAlleles = dna.K.split('/');
+    const isBrindle = kAlleles.includes('Kbr'); 
+    
+    // Agouti Logic
+    const aAlleles = dna.A.split('/');
+    const hasAy = aAlleles.includes('Ay');
+    const hasAw = aAlleles.includes('aw') && !hasAy;
+    const hasAt = aAlleles.includes('at') && !hasAy && !hasAw;
+    const isSolidA = dna.A === 'a/a';
+
+    // Texture & Modifiers
+    // Fluffy Logic: Any 2 copies of l1 or l4 = Visual Fluffy
+    const lAlleles = dna.L.split('/');
+    const fluffyCount = lAlleles.filter((a: string) => a === 'l1' || a === 'l4').length;
+    const isFluffy = fluffyCount === 2;
+
+    const isFurnished = dna.F !== 'n/n'; // F/F or n/F
+    const isCurly = dna.C !== 'n/n'; // C/C or n/C
+    const pandaSelection = dna.Panda; // 'No', 'Panda', 'Koi'
+    const isPied = dna.S === 'S/S';
+    const isPiedCarrier = dna.S === 'n/S';
+    const hasMerle = dna.M !== 'n/n';
+
+    // --- 2. BASE COLOR NAME & SLUG ---
+    if (b && co && d) { 
+        baseColorName = "New Shade Isabella"; 
+        baseColorSlug = "new-shade-isabella"; 
+    }
+    else if (b && co) { 
+        baseColorName = "New Shade Rojo"; 
+        // Special request: pull same base-rojo.png for New Shade Rojo
+        baseColorSlug = "rojo"; 
+    }
+    else if (b && d)  { baseColorName = "Isabella"; baseColorSlug = "isabella"; }
+    else if (co && d) { baseColorName = "Lilac"; baseColorSlug = "lilac"; }
+    else if (b)       { baseColorName = "Rojo"; baseColorSlug = "rojo"; }
+    else if (co)      { baseColorName = "Chocolate"; baseColorSlug = "cocoa"; }
+    else if (d)       { baseColorName = "Blue"; baseColorSlug = "blue"; }
+    else              { baseColorName = "Black"; baseColorSlug = "black"; }
+
+    // --- 3. PHENOTYPE NAME CONSTRUCTION ---
+    if (isCream) {
+        phenotypeName = `${baseColorName} Wrapped in Cream`;
     } else {
-        visual = technicalVisual;
+        if (hasAy) phenotypeName = isBrindle ? `${baseColorName} Brindle` : `${baseColorName} Fawn`;
+        else if (hasAw) phenotypeName = isBrindle ? `${baseColorName} Sable Brindle` : `${baseColorName} Sable`;
+        else if (hasAt) phenotypeName = isBrindle ? `${baseColorName} Brindle` : `${baseColorName} and Tan`;
+        else phenotypeName = isBrindle ? `${baseColorName} Brindle` : baseColorName;
     }
 
-    // 8. CARRIES REPORT
+    if (hasEA && !isCream && !isPink) phenotypeName = `Visual eA ${phenotypeName}`;
+    if (isPink) phenotypeName = `Full Pink ${baseColorName}`;
+    if (isPied) phenotypeName += " Pied";
+    if (hasMerle) {
+        phenotypeName += " Merle";
+        if (dna.M === 'M/M') isHighRisk = true;
+    }
+    if (pandaSelection === 'Panda') phenotypeName += " Panda";
+    if (pandaSelection === 'Koi') phenotypeName += " Koi";
+    if (isFluffy) phenotypeName += " Fluffy";
+    if (isCurly) phenotypeName += " Curly";
+    if (isFurnished) phenotypeName += " Floodle";
+
+    // --- 4. ASSET LOGIC ---
+    
+    // A. DETERMINE PIGMENT GROUP (For Overlays)
+    // Groups: 'grey' (Black/Blue/Lilac), 'cocoa' (Cocoa/Isabella/NS-Rojo/NS-Isa), 'tan' (Pink?), 'cream'
+    let pigmentGroup = 'grey'; // Default
+
+    if (isCream) {
+        pigmentGroup = 'cream';
+    } else if (isPink) {
+        pigmentGroup = 'tan'; 
+    } else if (baseColorName.includes("New Shade")) {
+        pigmentGroup = 'cocoa'; 
+    } else if (['cocoa', 'isabella', 'rojo'].includes(baseColorSlug)) {
+        // Rojo grouped with Cocoa/Isabella for overlays typically unless specific
+        pigmentGroup = 'cocoa';
+        // Special exception for Isabella? Usually uses tan points/cocoa points styling.
+    } 
+
+    // B. IMAGE LAYERING (Bottom -> Top)
+    const layers: string[] = [];
+    const suffix = isFluffy ? '-fluffy' : '';
+
+    // 1. BASE LAYER
+    if (isPink) {
+        layers.push(`base-pink${suffix}.png`);
+    } else if (isCream) {
+        layers.push(`base-cream${suffix}.png`);
+    } else if (hasAy && !isBrindle) { // Fawn hides unless brindle covers it? No, Fawn IS the base.
+        layers.push(`base-fawn${suffix}.png`);
+    } else if (hasAw && !isBrindle) {
+        layers.push(`base-sable${suffix}.png`);
+    } else {
+        // Solid Bases (Black, Blue, Rojo, Cocoa, etc)
+        // Note: For New Shade Rojo, we set slug to 'rojo' above, so it pulls 'base-rojo[-fluffy].png'
+        layers.push(`base-${baseColorSlug}${suffix}.png`);
+    }
+
+    // 2. TAN POINTS
+    // Rule: Show if (at/at or at/a) AND (ky/ky - No Brindle)
+    // Exclude if Cream or Pink (Cream masks, Pink is handled by base)
+    // Exclude if Fawn/Sable is dominant (Ay/at or aw/at) -> Base is Fawn/Sable, points hidden or blended.
+    // However, visualizers often show points on solid bases. 
+    // Strict rule: "If Kbr (Brindle) is present, hide the Tan Point overlay."
+    const showTanPoints = hasAt && !isBrindle && !isCream && !isPink;
+    
+    if (showTanPoints) {
+        layers.push(`overlay-tan-points${suffix}.png`);
+    }
+
+    // 3. MERLE OVERLAY
+    if (hasMerle && !isCream) {
+        if (pigmentGroup === 'grey') layers.push('overlay-merle-grey.png');
+        else if (pigmentGroup === 'cocoa') layers.push(baseColorName.includes("New Shade") ? 'overlay-merle-cocoa.png' : 'overlay-merle-tan.png');
+        else if (pigmentGroup === 'tan') layers.push('overlay-merle-tan.png');
+        // Cream hides Merle
+    }
+
+    // 4. CURLY
+    if (isCurly) {
+        layers.push('overlay-curly.png');
+    }
+
+    // 5. PIED
+    if (isPied) {
+        layers.push('overlay-pied.png');
+    } else if (isPiedCarrier) {
+        layers.push('overlay-pied-carrier.png');
+    }
+
+    // 6. BRINDLE
+    if (isBrindle && !isCream && !isPink) {
+        layers.push('overlay-brindle.png');
+    }
+
+    // 7. PANDA / KOI
+    if (pandaSelection === 'Koi') {
+        // Koi = Merle (added above) + Husky + Koi overlay
+        layers.push('overlay-husky.png');
+        layers.push('overlay-koi.png');
+    } else if (pandaSelection === 'Panda') {
+        layers.push('overlay-husky.png');
+    }
+
+    // 8. FURNISHINGS
+    if (isFurnished) {
+        if (pigmentGroup === 'grey') layers.push('overlay-furnishing-gray.png');
+        else if (pigmentGroup === 'cocoa') layers.push('overlay-furnishing-cocoa.png');
+        else if (pigmentGroup === 'tan') layers.push('overlay-furnishing-tan.png');
+        else if (pigmentGroup === 'cream') layers.push('overlay-furnishing-cream.png');
+        else layers.push('overlay-furnishing-gray.png'); // Fallback
+    }
+
+    // 9. OUTLINE
+    layers.push('overlay-outline.png');
+
+
+    // --- 5. CARRIES LIST ---
     if (dna.Pink === 'n/A') carries.push("Pink");
     if (eAlleles.includes('e') && !isCream) carries.push("Cream");
-    if (eAlleles.includes('eA') && !hasEa) carries.push("Ancient Red"); 
-    if ((eAlleles.includes('Em')) && !hasEm) carries.push("Mask"); 
-    if (dna.B === 'N/b') carries.push("Testable (Rojo)");
+    if (hasEA) carries.push("Intense Black (eA)");
+    if (dna.B === 'N/b') carries.push("Rojo");
     if (dna.Co === 'n/co') carries.push("Cocoa");
     if (dna.D === 'N/d') carries.push("Blue");
-    if (carriesPied) carries.push("Pied"); // Add Pied carrier
-    if (isCarryingFluffy) carries.push("Fluffy");
-    if (dna.A.includes('at') && !hasAt) carries.push("Tan Points");
-    if (dna.A.includes('a') && !isSolid) carries.push("Solid");
-
-    // Construct final name
-    const finalName = `${prefix}${visual}${suffix}`.trim();
-
-    // Prepare Visual Traits for Component
-    const visualTraits: VisualTraits = {
-        baseColor: baseColorName,
-        pattern: patternName.trim(),
-        hasMerle,
-        hasPied: isPied,
-        hasPanda,
-        isFluffy: isFullFluffy,
-        isPink,
-        isCream
-    };
+    if (dna.S === 'n/S') carries.push("Pied");
+    if (fluffyCount === 1) carries.push("Fluffy");
 
     return { 
-        fullName: finalName, 
-        altName: altName ? altName : undefined,
+        fullName: phenotypeName, 
         carries: carries.join(", "),
         isHighRisk,
-        visualTraits
+        visualTraits: {
+            baseColorName,
+            phenotypeName,
+            layers: layers,
+            hasMerle,
+            hasPied: isPied,
+            hasPanda: pandaSelection !== 'No',
+            isFluffy,
+            isFurnished,
+            isPink,
+            isCream,
+            isCurly,
+            isBrindle,
+            hasPoints: hasAt,
+            pattern: isSolidA ? 'Solid' : 'Patterned'
+        }
     };
   };
 
-  // --- PUNNETT SQUARE SIMULATION ---
   const calculateLitter = () => {
     const getAlleles = (genotype: string) => genotype.split('/');
     const ITERATIONS = 2000;
@@ -327,6 +380,12 @@ export default function Calculator() {
             const fromDam = damAlleles[Math.floor(Math.random() * damAlleles.length)];
             puppyDNA[key] = [fromSire, fromDam].sort().join('/');
         });
+
+        // Copy non-genetic traits directly for simulation ease (Panda usually complex, keeping simple inheritance or static)
+        // For accurate punnett, we'd need genetic markers for Panda. Assuming simplistic inheritance or random for this tool context?
+        // Actually, Panda/Koi options are dropdowns in UI, likely phenotypic selection. 
+        // We'll skip randomizing Panda for now as it's not a simple locus in this config map.
+        puppyDNA.Panda = 'No'; 
 
         const phenotype = getPhenotype(puppyDNA);
         if (phenotype.isHighRisk) riskDetected = true;
@@ -352,7 +411,7 @@ export default function Calculator() {
         {mode === 'pair' && <Dna size={16} className={`text-${color} opacity-50`} />}
       </div>
       
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
         {Object.keys(LOCI).map(key => (
           <div key={key} className="flex items-center justify-between gap-2 group">
             <label className="text-[10px] text-slate-500 uppercase tracking-tight w-1/3 font-sans group-hover:text-slate-300 transition-colors">
@@ -371,13 +430,13 @@ export default function Calculator() {
     </div>
   );
 
+  const phenotypeResult = getPhenotype(sire);
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pt-32 pb-20 px-4 md:px-6 font-sans relative">
-       {/* Background Ambience */}
        <div className="absolute inset-0 bg-noise opacity-20 mix-blend-overlay pointer-events-none"></div>
        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-luxury-teal/5 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* MERLE SAFETY POPUP (Blocking or High Viz) */}
       {showMerleWarning && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
               <div className="bg-red-950/90 border-2 border-red-500 max-w-lg w-full p-8 rounded-sm shadow-[0_0_50px_rgba(239,68,68,0.5)] text-center relative">
@@ -434,7 +493,6 @@ export default function Calculator() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         
-        {/* SINGLE MODE */}
         {mode === 'single' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-4">
@@ -443,37 +501,22 @@ export default function Calculator() {
                 <div className="lg:col-span-8">
                      <div className="sticky top-32 p-0 bg-gradient-to-br from-slate-900 to-black border border-slate-800 shadow-2xl rounded-sm overflow-hidden flex flex-col md:flex-row">
                         
-                        {/* Visualizer Side */}
-                        <div className="w-full md:w-1/2 p-8 bg-black/40 border-b md:border-b-0 md:border-r border-slate-800 flex items-center justify-center">
-                            <DogVisualizer traits={getPhenotype(sire).visualTraits} />
+                        <div className="w-full md:w-1/2 p-8 bg-[#0a0a0a] border-b md:border-b-0 md:border-r border-slate-800 flex flex-col items-center justify-center">
+                            <DogVisualizer traits={phenotypeResult.visualTraits} />
                         </div>
 
-                        {/* Text Result Side */}
                         <div className="w-full md:w-1/2 p-8 flex flex-col justify-center">
                             <h2 className="font-serif text-2xl text-white mb-6 border-l-4 border-luxury-teal pl-4">Phenotype Result</h2>
                             
                             <span className="text-[10px] text-slate-500 uppercase tracking-widest block mb-2">Primary Identification</span>
                             <p className="text-2xl md:text-3xl font-display font-bold text-white uppercase tracking-tight leading-tight mb-4">
-                                {getPhenotype(sire).fullName}
+                                {phenotypeResult.fullName}
                             </p>
 
-                            {/* Alternative Name / Technical Description */}
-                            {getPhenotype(sire).altName && (
-                                <div className="mb-6 p-3 bg-luxury-teal/5 border border-luxury-teal/10 rounded-sm">
-                                    <div className="flex items-start gap-2">
-                                        <Info size={14} className="text-luxury-teal mt-0.5 shrink-0" />
-                                        <div>
-                                            <span className="text-[9px] text-luxury-teal uppercase tracking-widest font-bold block">Technical Genotype</span>
-                                            <p className="text-sm text-slate-300 italic">"{getPhenotype(sire).altName}"</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {getPhenotype(sire).carries && (
+                            {phenotypeResult.carries && (
                                 <div className="pt-6 border-t border-slate-800">
                                     <span className="text-[10px] text-luxury-magenta uppercase tracking-widest block mb-2 font-bold">DNA Report</span>
-                                    <p className="text-slate-400 text-sm italic font-serif">"Carries {getPhenotype(sire).carries}"</p>
+                                    <p className="text-slate-400 text-sm italic font-serif">"Carries {phenotypeResult.carries}"</p>
                                 </div>
                             )}
                         </div>
@@ -482,36 +525,29 @@ export default function Calculator() {
             </div>
         )}
 
-        {/* PAIRING MODE */}
         {mode === 'pair' && (
             <div className="flex flex-col gap-12">
                 
-                {/* Parents Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Sire Card */}
                     <div className="flex flex-col gap-4">
                         {renderSelector(sire, setSire, "Sire (Male)", "luxury-teal")}
                         <div className="p-4 bg-slate-900/30 border border-luxury-teal/20 rounded-sm">
                             <span className="text-[10px] text-luxury-teal uppercase tracking-widest font-bold block mb-1">Sire Phenotype</span>
                             <p className="text-white font-display text-lg uppercase leading-tight mb-2">{getPhenotype(sire).fullName}</p>
-                            {getPhenotype(sire).altName && <p className="text-xs text-slate-400 italic mb-2">({getPhenotype(sire).altName})</p>}
                             {getPhenotype(sire).carries && <p className="text-xs text-slate-500 italic">Carries: {getPhenotype(sire).carries}</p>}
                         </div>
                     </div>
 
-                    {/* Dam Card */}
                     <div className="flex flex-col gap-4">
                          {renderSelector(dam, setDam, "Dam (Female)", "luxury-magenta")}
                          <div className="p-4 bg-slate-900/30 border border-luxury-magenta/20 rounded-sm">
                             <span className="text-[10px] text-luxury-magenta uppercase tracking-widest font-bold block mb-1">Dam Phenotype</span>
                             <p className="text-white font-display text-lg uppercase leading-tight mb-2">{getPhenotype(dam).fullName}</p>
-                            {getPhenotype(dam).altName && <p className="text-xs text-slate-400 italic mb-2">({getPhenotype(dam).altName})</p>}
                             {getPhenotype(dam).carries && <p className="text-xs text-slate-500 italic">Carries: {getPhenotype(dam).carries}</p>}
                         </div>
                     </div>
                 </div>
 
-                {/* Calculate Action */}
                 <div className="text-center pt-8 border-t border-slate-800">
                     <button 
                         onClick={calculateLitter}
@@ -530,14 +566,12 @@ export default function Calculator() {
         )}
       </div>
 
-      {/* PUNNETT SQUARE MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
              <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setShowModal(false)} />
              
              <div className="relative z-10 w-full max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl flex flex-col max-h-[90vh] rounded-sm animate-in fade-in zoom-in-95 duration-300">
                 
-                {/* Modal Header */}
                 <div className="p-8 border-b border-slate-800 flex justify-between items-start bg-slate-900/50">
                     <div>
                         <h2 className="font-serif text-3xl text-white mb-2">Litter Probability Report</h2>
@@ -552,7 +586,6 @@ export default function Calculator() {
                     </button>
                 </div>
 
-                {/* Warning Banner inside Modal */}
                 {modalRisk && (
                     <div className="bg-red-900/30 border-b border-red-500/50 p-4 text-center">
                         <p className="text-red-400 font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2">
@@ -562,7 +595,6 @@ export default function Calculator() {
                     </div>
                 )}
 
-                {/* Results List */}
                 <div className="overflow-y-auto p-8 bg-[#0f172a] space-y-4">
                     {litterResults.map((result, idx) => (
                         <div key={idx} className="flex items-center justify-between p-4 bg-black/40 border border-slate-800 rounded-sm hover:border-luxury-teal/30 transition-colors">
