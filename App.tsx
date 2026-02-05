@@ -8,6 +8,7 @@ import Blog from './pages/Blog';
 import Inquiry from './pages/Inquiry';
 import Protocol from './pages/Protocol';
 import Genetics from './pages/Genetics';
+import Calculator from './pages/Calculator';
 import Footer from './components/Footer';
 
 const App: React.FC = () => {
@@ -21,6 +22,7 @@ const App: React.FC = () => {
             <Route path="/puppies" element={<Puppies />} />
             <Route path="/studs" element={<Studs />} />
             <Route path="/genetics" element={<Genetics />} />
+            <Route path="/calculator" element={<Calculator />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/journal" element={<Blog />} />
             <Route path="/protocol" element={<Protocol />} />
