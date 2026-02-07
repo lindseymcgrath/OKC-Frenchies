@@ -1,19 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 // --- CONFIGURATION ---
-// This is your GitHub URL for raw assets
 export const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
 
-// ✅ Using Environment Variables for Security
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ STRIPE LINKS: Corrected logic to ensure email passes to Stripe
 export const getStripeLinks = (email: string) => {
     const encodedEmail = encodeURIComponent(email || '');
-    // prefilled_email shows it on the checkout page; client_reference_id tells Supabase who paid
     const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
     
     return {
