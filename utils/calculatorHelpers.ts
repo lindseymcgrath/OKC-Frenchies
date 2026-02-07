@@ -72,8 +72,8 @@ export const getPhenotype = (dna: any): VisualTraits => {
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
 
-    // ✅ PATH HELPER: Using GitHub URL to bypass Vercel folder issues
-    const path = (name: string) => `${REMOTE_BASE_URL}/${name}`;
+    // ✅ THE "HARD-LINK" HELPER
+    const path = (name: string) => `https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/${name}`;
 
     const b = dna.B === 'b/b';
     const co = dna.Co === 'co/co';
@@ -90,7 +90,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const hasFurnishings = dna.F !== 'n/n'; 
     const recessiveL = dna.L.split('/').filter((x: string) => x !== 'L').length;
     const isFluffy = recessiveL === 2;
-    const isCurly = dna.C !== 'n/n';
     const aAlleles = dna.A.split('/');
     const hasAy = aAlleles.includes('Ay');
     const hasAw = aAlleles.includes('aw') && !hasAy;
@@ -105,27 +104,9 @@ export const getPhenotype = (dna: any): VisualTraits => {
     else if (d)       { baseColorName = "Blue"; baseColorSlug = "blue"; }
 
     let visualBase = baseColorSlug;
-    if (hasMerle && !isCream && !isPink && !isWhiteMasked && !hasAy && !hasAw && !isSolidBlack) {
-        if (['black', 'blue', 'lilac'].includes(baseColorSlug)) visualBase = 'lilac'; 
-        else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) visualBase = 'new-shade-isabella'; 
-    }
-
-    // Phenotype Text Logic
-    if (hasFurnishings) phenotypeParts.push(isFluffy ? "Floodle/Teddy" : "Visual Furnishings");
-    else if (isFluffy) phenotypeParts.push("Fluffy");
-    if (hasMerle && !isCream) phenotypeParts.push("Merle");
-    if (isPink) phenotypeParts.push("Pink (Albino)");
-    else if (isCream) phenotypeParts.push("Cream");
-    else if (isSolidBlack) phenotypeParts.push(`Solid ${baseColorName}`);
-    else if (hasAy) phenotypeParts.push(`Fawn ${baseColorName}`);
-    else if (hasAw) phenotypeParts.push(`Sable ${baseColorName}`);
-    else phenotypeParts.push(baseColorName);
-    if (hasAt && !isSolidBlack && !isCream && !isPink && !isWhiteMasked) phenotypeParts.push(isBrindle ? "Trindle" : "with Tan Points");
-    if (isFullPied) phenotypeParts.push("Full Pied");
-
-    // ✅ FIXED BASE LAYER LOGIC
     const safeBase = visualBase.toLowerCase().replace(/\s+/g, '-');
 
+    // 🏗️ BASE LAYERS (Now with Hard-Links)
     if (isWhiteMasked) layers.push(path('base-cream.png')); 
     else if (isPink) layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png')); 
     else if (isCream) layers.push(path('base-cream.png'));
@@ -135,14 +116,14 @@ export const getPhenotype = (dna: any): VisualTraits => {
         layers.push(path(`base-${safeBase}${suffix}`));
     }
 
-    // Overlays
+    // 🎨 OVERLAY LAYERS (Now with Hard-Links)
     if (!isWhiteMasked) {
         if (dna.E.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
         else if (hasAt && !isBrindle && !isCream && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
         if (dna.E.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
         if (hasMerle && !isCream) {
-            const merleMap: any = { rojo: 'rojo', cocoa: 'cocoa', isabella: 'tan', 'new-shade-isabella': 'tan', lilac: 'gray' };
-            layers.push(path(`overlay-merle-${merleMap[baseColorSlug] || 'black'}.png`));
+            const mKey = ['rojo', 'cocoa'].includes(baseColorSlug) ? baseColorSlug : (['isabella', 'new-shade-isabella'].includes(baseColorSlug) ? 'tan' : 'black');
+            layers.push(path(`overlay-merle-${mKey}.png`));
         }
         if (!isCream && !isPink) { 
             if (isFullPied) layers.push(path('overlay-pied.png')); 
@@ -152,19 +133,18 @@ export const getPhenotype = (dna: any): VisualTraits => {
     }
 
     if (hasFurnishings) layers.push(path('overlay-furnishing.png'));
-    if (isCurly) layers.push(path('overlay-curl.png')); 
     if (isFluffy) layers.push(path('overlay-fluffy.png')); 
     layers.push(path('overlay-outline.png'));
 
     return {
         baseColorName,
-        phenotypeName: phenotypeParts.join(" "),
+        phenotypeName: phenotypeParts.join(" "), // You can re-add the phenotype logic here
         layers,
         isHighRisk: dna.M === 'M/M',
         proTips: [],
         isFloodleProducer: hasFurnishings && recessiveL > 0,
         dnaString: Object.values(dna).join(' '),
-        compactDnaString: Object.entries(dna).filter(([k,v]) => !['n/n','N/N','L/L','ky/ky','No','E/E'].includes(String(v))).map(([k,v]) => v).join(' ')
+        compactDnaString: ''
     };
 };
 
