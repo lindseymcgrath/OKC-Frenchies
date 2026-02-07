@@ -150,7 +150,7 @@ export const getPhenotype = (dna: any): VisualTraits => {
     if (isFullPied) phenotypeParts.push("Full Pied"); else if (hasPied) phenotypeParts.push("Visual Pied");
 
     // ✅ IMAGE PATH FIX: Prepend the full visuals folder path
-    const path = (name: string) => `/images/visuals/${name}`;
+    const path = (name: string) => "/images/visuals/" + name;
 
     if (isWhiteMasked) layers.push(path('base-cream.png')); 
     else if (isPink) layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png')); 
