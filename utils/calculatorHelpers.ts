@@ -8,11 +8,18 @@ export const SUPABASE_KEY = "sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h";
 // Initialize Supabase Client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// STRIPE LINKS
-export const STRIPE_LINKS = {
-    BASE_1: "https://buy.stripe.com/3cI8wI9EL8r34bJcpX3sI00",
-    BASE_5: "https://buy.stripe.com/00wcMYeZ5azbeQn4Xv3sI01",
-    BASE_SUB: "https://buy.stripe.com/7sY00cbMT5eRfUrblT3sI02"
+// ✅ UPDATED: STRIPE LINKS FUNCTION
+// This function creates links that carry the user's email to Stripe for automatic credit tracking.
+export const getStripeLinks = (email: string) => {
+    const encodedEmail = encodeURIComponent(email || '');
+    // client_reference_id is what Stripe sends back to Supabase to verify the purchase
+    const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
+    
+    return {
+        BASE_1: `https://buy.stripe.com/3cI8wI9EL8r34bJcpX3sI00${suffix}`,
+        BASE_5: `https://buy.stripe.com/00wcMYeZ5azbeQn4Xv3sI01${suffix}`,
+        BASE_SUB: `https://buy.stripe.com/7sY00cbMT5eRfUrblT3sI02${suffix}`
+    };
 };
 
 export const FREEBIE_CODE = "OKCFREE";
