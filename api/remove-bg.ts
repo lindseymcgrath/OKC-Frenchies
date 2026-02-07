@@ -1,71 +1,42 @@
-
 export const config = {
-  runtime: 'edge',
+  api: {
+    bodyParser: false, // Essential for the Direct Pipe stream
+  },
 };
 
-export default async function handler(req: Request) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Use Environment Variable, fallback to the provided key for preview/testing if env is missing
-  const API_KEY = process.env.PHOTOROOM_API_KEY || "sk_pr_default_26c40acfb6c6c60c9c7dea41f57253103e7dc3eb";
-
-  if (!API_KEY) {
-    return new Response(JSON.stringify({ error: 'Server Configuration Error: Missing API Key' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  const API_KEY = "sk_pr_default_26c40acfb6c6c60c9c7dea41f57253103e7dc3eb";
 
   try {
-    const formData = await req.formData();
-    const image = formData.get('image_file');
-
-    if (!image) {
-      return new Response(JSON.stringify({ error: 'No image file provided' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Construct request to PhotoRoom
-    const photoroomData = new FormData();
-    photoroomData.append('image_file', image);
-    photoroomData.append('format', 'png');
-
+    // This takes the RAW data coming from useStudioLogic 
+    // and sends it straight to PhotoRoom.
     const response = await fetch('https://sdk.photoroom.com/v1/segment', {
       method: 'POST',
-      headers: {
+      headers: { 
         'x-api-key': API_KEY,
+        'Content-Type': 'application/octet-stream' 
       },
-      body: photoroomData,
+      body: req, // THE DIRECT PIPE
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      return new Response(JSON.stringify({ error: `PhotoRoom API Error: ${errorText}` }), {
-        status: response.status,
-        headers: { 'Content-Type': 'application/json' },
-      });
+        const errorText = await response.text();
+        console.error("PhotoRoom API Error:", errorText);
+        return res.status(response.status).json({ error: `PhotoRoom: ${errorText}` });
     }
 
-    // Return the binary image directly
-    return new Response(response.body, {
-      status: 200,
-      headers: {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
+    const buffer = await response.arrayBuffer();
+    
+    // Return the clean image back to the browser
+    res.setHeader('Content-Type', 'image/png');
+    return res.status(200).send(Buffer.from(buffer));
 
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: `Internal Server Error: ${error.message}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error("Vercel API Handler Error:", error);
+    return res.status(500).json({ error: `Server Error: ${error.message}` });
   }
 }
