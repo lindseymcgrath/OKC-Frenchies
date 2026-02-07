@@ -179,14 +179,13 @@ export const useStudioLogic = (
         else if (type === 'damLogo') setDamLogo(originalUrl);
     };
 
-    // ✅ FIXED: Correct Key Reference & Response Logic
+    // ✅ FORCE IMAGE GENERATION (Imagen-3)
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
-        // Verify key exists
         const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
         if (!GEMINI_KEY) {
-            alert("API Key missing! Please check your environment variables.");
+            alert("API Key missing! Ensure VITE_GEMINI_API_KEY is in your .env");
             return;
         }
 
@@ -198,14 +197,16 @@ export const useStudioLogic = (
         setIsGeneratingScene(true);
         try {
             const ai = new GoogleGenAI(GEMINI_KEY);
-            // Using imagen model for actual background generation
-            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); 
+            
+            // 🚨 Use Imagen-3 for dedicated Image Generation
+            const model = ai.getGenerativeModel({ model: "imagen-3" }); 
 
             const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, empty room, no dogs, 4k high definition`);
             const response = await result.response;
             
-            // Check if model returned base64 image data
             const part = response.candidates?.[0]?.content?.parts?.[0];
+            
+            // 🔥 STRICT CHECK: Only accept Image Data
             if (part?.inlineData) {
                 setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
                 
@@ -214,7 +215,7 @@ export const useStudioLogic = (
                     else await deductCredit();
                 }
             } else {
-                throw new Error("Model did not return an image. Ensure you are using a generation-capable model.");
+                throw new Error("Model failed to return an image file. Check Tier 1 permissions.");
             }
         } catch (e: any) {
             console.error("AI Gen Failed:", e);
@@ -246,18 +247,6 @@ export const useStudioLogic = (
             try {
                 const masterCanvas = await (window as any).html2canvas(marketingRef.current, { scale: 3, useCORS: true, allowTaint: true, logging: false });
                 downloadImage(masterCanvas, `OKC_Studio_${aspectRatio.replace(':','-')}.jpg`);
-                if (aspectRatio === '1:1') {
-                    const storyCanvas = document.createElement('canvas');
-                    storyCanvas.width = 1080; storyCanvas.height = 1920;
-                    const sCtx = storyCanvas.getContext('2d');
-                    if (sCtx) {
-                        sCtx.filter = 'blur(40px) brightness(0.7)';
-                        sCtx.drawImage(masterCanvas, -500, 0, 2080, 1920); 
-                        sCtx.filter = 'none';
-                        sCtx.drawImage(masterCanvas, 0, 420, 1080, 1080);
-                        downloadImage(storyCanvas, 'OKC_Studio_Story.jpg');
-                    }
-                }
             } catch (e) { console.error("Export failed", e); }
         }
     };
