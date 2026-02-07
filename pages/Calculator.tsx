@@ -226,7 +226,7 @@ export default function Calculator() {
             setShowLogin={user.setShowLogin}
             userEmail={user.userEmail}
             setUserEmail={user.setUserEmail}
-            handleLoginSubmit={user.handleLoginSubmit}
+            handleLoginSubmit={(email?: string) => user.handleLoginSubmit(email)}
 
             credits={user.credits}
             isSubscribed={user.isSubscribed}
