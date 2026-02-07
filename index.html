@@ -25,6 +25,14 @@
     <meta property="twitter:image" content="https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=1200&h=630">
     
     <script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // This tells Tailwind to ignore looking for an external index.css
+  tailwind.config = {
+    corePlugins: {
+      preflight: true,
+    }
+  }
+</script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
