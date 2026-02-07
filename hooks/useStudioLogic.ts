@@ -21,10 +21,12 @@ export const useStudioLogic = (
     const [isProcessingImage, setIsProcessingImage] = useState(false);
     const [processingType, setProcessingType] = useState<'sire' | 'dam' | 'sireLogo' | 'damLogo' | null>(null);
 
+    // Formats
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1');
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
 
+    // Text Inputs
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
@@ -32,23 +34,27 @@ export const useStudioLogic = (
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
 
+    // Toggles
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
 
+    // Colors
     const [headerColor, setHeaderColor] = useState('#ffffff');
     const [studNameColor, setStudNameColor] = useState('#fbbf24');
     const [damNameColor, setDamNameColor] = useState('#d946ef');
     const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
     const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
 
+    // Backgrounds & AI
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
     const [isGeneratingScene, setIsGeneratingScene] = useState(false);
 
+    // Layer Transforms
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
@@ -65,6 +71,7 @@ export const useStudioLogic = (
         watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
     });
 
+    // --- REFS ---
     const marketingRef = useRef<HTMLDivElement>(null);
     const litterRef = useRef<HTMLDivElement>(null);
     const sireNodeRef = useRef(null);
@@ -76,6 +83,8 @@ export const useStudioLogic = (
     const damNameRef = useRef(null);
     const studPhenoRef = useRef(null);
     const studGenoRef = useRef(null);
+
+    // --- HELPER FUNCTIONS ---
 
     const updateTransform = (key: string, value: number) => {
         if (!selectedLayer) return;
@@ -134,10 +143,18 @@ export const useStudioLogic = (
                     'x-user-email': userEmail 
                 }
             });
-            if (!res.ok) throw new Error("Server Error");
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown API Error' }));
+                throw new Error(errorData.error || `Server Error ${res.status}`);
+            }
+
             const processedBlob = await res.blob();
             return URL.createObjectURL(processedBlob);
-        } catch (e: any) { throw e; }
+        } catch (e: any) {
+            console.error("BG Removal Error:", e.message);
+            throw e; 
+        }
     };
 
     const handleBgRemoval = async (type: 'sire' | 'dam' | 'sireLogo' | 'damLogo') => {
@@ -179,13 +196,12 @@ export const useStudioLogic = (
         else if (type === 'damLogo') setDamLogo(originalUrl);
     };
 
-    // ✅ FORCE IMAGE GENERATION (Imagen-3)
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
         const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
         if (!GEMINI_KEY) {
-            alert("API Key missing! Ensure VITE_GEMINI_API_KEY is in your .env");
+            alert("Error: API Key not found. Please check your Studio settings.");
             return;
         }
 
@@ -197,16 +213,13 @@ export const useStudioLogic = (
         setIsGeneratingScene(true);
         try {
             const ai = new GoogleGenAI(GEMINI_KEY);
-            
-            // 🚨 Use Imagen-3 for dedicated Image Generation
             const model = ai.getGenerativeModel({ model: "imagen-3" }); 
 
-            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, empty room, no dogs, 4k high definition`);
+            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
             const response = await result.response;
             
             const part = response.candidates?.[0]?.content?.parts?.[0];
             
-            // 🔥 STRICT CHECK: Only accept Image Data
             if (part?.inlineData) {
                 setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
                 
@@ -215,7 +228,7 @@ export const useStudioLogic = (
                     else await deductCredit();
                 }
             } else {
-                throw new Error("Model failed to return an image file. Check Tier 1 permissions.");
+                throw new Error("Model failed to return image data. Ensure your key has Imagen access.");
             }
         } catch (e: any) {
             console.error("AI Gen Failed:", e);
