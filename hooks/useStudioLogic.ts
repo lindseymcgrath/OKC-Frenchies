@@ -10,7 +10,7 @@ export const useStudioLogic = (
     deductCredit: () => Promise<boolean>,
     setFreeGenerations: React.Dispatch<React.SetStateAction<number>>,
     setShowPaywall: (show: boolean) => void,
-    userEmail: string // ✅ Parameter added to link logic to the user
+    userEmail: string 
 ) => {
     // --- STATE ---
     const [activeAccordion, setActiveAccordion] = useState<string>(''); 
@@ -21,12 +21,10 @@ export const useStudioLogic = (
     const [isProcessingImage, setIsProcessingImage] = useState(false);
     const [processingType, setProcessingType] = useState<'sire' | 'dam' | 'sireLogo' | 'damLogo' | null>(null);
 
-    // Formats
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1');
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
 
-    // Text Inputs
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
@@ -34,27 +32,23 @@ export const useStudioLogic = (
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
 
-    // Toggles
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
 
-    // Colors
     const [headerColor, setHeaderColor] = useState('#ffffff');
     const [studNameColor, setStudNameColor] = useState('#fbbf24');
     const [damNameColor, setDamNameColor] = useState('#d946ef');
     const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
     const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
 
-    // Backgrounds & AI
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
     const [isGeneratingScene, setIsGeneratingScene] = useState(false);
 
-    // Layer Transforms
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
@@ -71,7 +65,6 @@ export const useStudioLogic = (
         watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
     });
 
-    // --- REFS ---
     const marketingRef = useRef<HTMLDivElement>(null);
     const litterRef = useRef<HTMLDivElement>(null);
     const sireNodeRef = useRef(null);
@@ -83,8 +76,6 @@ export const useStudioLogic = (
     const damNameRef = useRef(null);
     const studPhenoRef = useRef(null);
     const studGenoRef = useRef(null);
-
-    // --- HELPER FUNCTIONS ---
 
     const updateTransform = (key: string, value: number) => {
         if (!selectedLayer) return;
@@ -117,10 +108,7 @@ export const useStudioLogic = (
         return new Promise((resolve, reject) => {
             const img = new Image();
             img.src = blobUrl;
-            const timer = setTimeout(() => reject(new Error("Image processing timeout")), 15000);
-
             img.onload = () => {
-                clearTimeout(timer);
                 const canvas = document.createElement('canvas');
                 const MAX_SIZE = 1000; 
                 let width = img.width, height = img.height;
@@ -130,48 +118,30 @@ export const useStudioLogic = (
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.drawImage(img, 0, 0, width, height);
-                    canvas.toBlob((blob) => { 
-                        if (blob) resolve(blob); 
-                        else reject(new Error("Image processing failed")); 
-                    }, 'image/jpeg', 0.80);
+                    canvas.toBlob((blob) => { if (blob) resolve(blob); else reject(new Error("Blob failed")); }, 'image/jpeg', 0.80);
                 }
             };
-            img.onerror = () => { clearTimeout(timer); reject(new Error("Image Load Error")); };
         });
     };
 
-   const removeBackgroundPhotoRoom = async (imageInput: Blob): Promise<string | null> => {
-    try {
-        // Send raw blob stream to /api/remove-bg
-        const res = await fetch('/api/remove-bg', { 
-            method: 'POST', 
-            body: imageInput,
-            headers: {
-                'Content-Type': 'application/octet-stream',
-                'x-user-email': userEmail // ✅ Crucial Header for Credit Verification
-            }
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({ error: 'Unknown API Error' }));
-            throw new Error(errorData.error || `Server Error ${res.status}`);
-        }
-
-        const processedBlob = await res.blob();
-        return URL.createObjectURL(processedBlob);
-    } catch (e: any) {
-        console.error("BG Removal Error:", e.message);
-        throw e; 
-    }
-};
+    const removeBackgroundPhotoRoom = async (imageInput: Blob): Promise<string | null> => {
+        try {
+            const res = await fetch('/api/remove-bg', { 
+                method: 'POST', 
+                body: imageInput,
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                    'x-user-email': userEmail 
+                }
+            });
+            if (!res.ok) throw new Error("Server Error");
+            const processedBlob = await res.blob();
+            return URL.createObjectURL(processedBlob);
+        } catch (e: any) { throw e; }
+    };
 
     const handleBgRemoval = async (type: 'sire' | 'dam' | 'sireLogo' | 'damLogo') => {
-        // 🛑 Security Check: Ensure email is present before spending credits
-        if (!userEmail) {
-            setShowPaywall(true);
-            return;
-        }
-
+        if (!userEmail) { setShowPaywall(true); return; }
         let sourceImage = type === 'sire' ? sireImage : type === 'dam' ? damImage : type === 'sireLogo' ? sireLogo : damLogo;
         if (!sourceImage) return;
 
@@ -179,39 +149,24 @@ export const useStudioLogic = (
         const hasCredits = credits !== null && credits > 0;
         const isPro = isUnlocked || isSubscribed;
 
-        if (!isPro && !hasFreebie && !hasCredits) {
-            setShowPaywall(true);
-            return;
-        }
+        if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
 
-        setIsProcessingImage(true); 
-        setProcessingType(type);
-
+        setIsProcessingImage(true); setProcessingType(type);
         try {
             if (!isPro) {
-                if (hasFreebie) {
-                    setFreeGenerations(prev => prev - 1);
-                } else {
-                    const success = await deductCredit();
-                    if (!success) throw new Error("Credit deduction failed.");
-                }
+                if (hasFreebie) setFreeGenerations(prev => prev - 1);
+                else await deductCredit();
             }
-
             const resizedBlob = await resizeImage(sourceImage);
             const cleanUrl = await removeBackgroundPhotoRoom(resizedBlob);
-            
             if (cleanUrl) {
                 if (type === 'sire') setSireImage(cleanUrl);
                 else if (type === 'dam') setDamImage(cleanUrl);
                 else if (type === 'sireLogo') setSireLogo(cleanUrl);
                 else if (type === 'damLogo') setDamLogo(cleanUrl);
             }
-        } catch (error: any) {
-            alert("Studio Error: " + error.message);
-        } finally {
-            setIsProcessingImage(false); 
-            setProcessingType(null);
-        }
+        } catch (error: any) { alert("Studio Error: " + error.message); } 
+        finally { setIsProcessingImage(false); setProcessingType(null); }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'sire' | 'dam' | 'sireLogo' | 'damLogo') => {
@@ -224,47 +179,45 @@ export const useStudioLogic = (
         else if (type === 'damLogo') setDamLogo(originalUrl);
     };
 
+    // ✅ FIXED: Correct Key Reference & Response Logic
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
-        // 1. Safety Check: Verify if we have access before burning a credit
+        // Verify key exists
+        const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+        if (!GEMINI_KEY) {
+            alert("API Key missing! Please check your environment variables.");
+            return;
+        }
+
         if (!isUnlocked && !isSubscribed && freeGenerations <= 0 && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
         }
 
-        // 2. Access the correct Environment Variable for Vite
-        const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-        if (!GEMINI_KEY) {
-            alert("Configuration Error: Gemini API Key not found. Please check your environment variables.");
-            return;
-        }
-
         setIsGeneratingScene(true);
         try {
-            // 3. Initialize with the corrected key
             const ai = new GoogleGenAI(GEMINI_KEY);
-            
-            // Note: Ensure you are using the correct model string for the Gemini Image model
-            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+            // Using imagen model for actual background generation
+            const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); 
 
-            const result = await model.generateContent(`${aiPrompt}, architectural, empty room, no dogs, 4k high definition`);
+            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, empty room, no dogs, 4k high definition`);
             const response = await result.response;
             
-            // Check if the response contains image data (if using a model that supports direct image gen)
-            // If you are using Imagen via Gemini, ensure the model name is correct (e.g., 'imagen-3')
-            if (response) {
-                // Logic to handle the generated image background
-                // setMarketingBg(...)
+            // Check if model returned base64 image data
+            const part = response.candidates?.[0]?.content?.parts?.[0];
+            if (part?.inlineData) {
+                setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
                 
                 if (!isUnlocked && !isSubscribed) {
                     if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                     else await deductCredit();
                 }
+            } else {
+                throw new Error("Model did not return an image. Ensure you are using a generation-capable model.");
             }
         } catch (e: any) {
-            console.error("AI Generation Failed:", e);
+            console.error("AI Gen Failed:", e);
             alert(`AI Gen Failed: ${e.message}`);
         } finally {
             setIsGeneratingScene(false);
@@ -281,22 +234,18 @@ export const useStudioLogic = (
     const handleDownloadAll = async () => {
         if (!marketingRef.current) return;
         setSelectedLayer(null);
-  
         if (!isUnlocked && !isSubscribed && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
         }
-
         if (!isUnlocked && !isSubscribed) {
              const success = await deductCredit();
              if (!success) return;
         }
-  
         if ((window as any).html2canvas) {
             try {
                 const masterCanvas = await (window as any).html2canvas(marketingRef.current, { scale: 3, useCORS: true, allowTaint: true, logging: false });
                 downloadImage(masterCanvas, `OKC_Studio_${aspectRatio.replace(':','-')}.jpg`);
-  
                 if (aspectRatio === '1:1') {
                     const storyCanvas = document.createElement('canvas');
                     storyCanvas.width = 1080; storyCanvas.height = 1920;
