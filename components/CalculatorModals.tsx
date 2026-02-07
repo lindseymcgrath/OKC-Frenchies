@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Crown, Infinity, CreditCard, Ticket, Trash2 } from 'lucide-react';
-import { STRIPE_LINKS, PROMPTS, getPhenotype, SavedDog } from '../utils/calculatorHelpers';
+// ✅ Import getStripeLinks instead of STRIPE_LINKS
+import { getStripeLinks, PROMPTS, getPhenotype, SavedDog } from '../utils/calculatorHelpers';
 
 interface CalculatorModalsProps {
     // Studio State
@@ -52,6 +53,10 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
     setUserEmail,
     handleLoginSubmit
 }) => {
+
+    // ✅ Generate the dynamic links using the user's email
+    const stripe = getStripeLinks(userEmail);
+
     return (
         <>
             {/* AI PROMPT EDITOR MODAL */}
@@ -132,7 +137,6 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                                                     </button>
                                                 ) : (
                                                     <>
-                                                        {/* Pair Mode Load Options */}
                                                         <button onClick={() => { loadIntoSire(dog); }} className="px-3 py-1.5 bg-[#1d4ed8]/20 text-[#1d4ed8] text-[10px] uppercase font-bold hover:bg-[#1d4ed8] hover:text-white border border-[#1d4ed8]/30">To Sire</button>
                                                         <button onClick={() => { loadIntoDam(dog); }} className="px-3 py-1.5 bg-[#db2777]/20 text-[#db2777] text-[10px] uppercase font-bold hover:bg-[#db2777] hover:text-white border border-[#db2777]/30">To Dam</button>
                                                     </>
@@ -157,12 +161,18 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                         <p className="text-slate-400 text-xs mb-6">You've reached your free limit. Upgrade to continue.</p>
                         
                         <div className="space-y-3 mb-6">
-                            <a href={`${STRIPE_LINKS.BASE_SUB}?client_reference_id=${userId || ''}`} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2"><Infinity size={14}/> 3 Months Unlimited ($9.99)</a>
-                            <a href={`${STRIPE_LINKS.BASE_5}?client_reference_id=${userId || ''}`} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2"><CreditCard size={14}/> 5 Download Passes ($3.99)</a>
-                            <a href={`${STRIPE_LINKS.BASE_1}?client_reference_id=${userId || ''}`} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2"><Ticket size={14}/> Single Session Pass ($0.99)</a>
+                            {/* ✅ Updated links to use the stripe object we created above */}
+                            <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2">
+                                <Infinity size={14}/> 3 Months Unlimited ($9.99)
+                            </a>
+                            <a href={stripe.BASE_5} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
+                                <CreditCard size={14}/> 5 Download Passes ($3.99)
+                            </a>
+                            <a href={stripe.BASE_1} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
+                                <Ticket size={14}/> Single Session Pass ($0.99)
+                            </a>
                         </div>
                         
-                        {/* Promo Code Logic */}
                         <div className="mb-4">
                             <div className="flex gap-2">
                                 <input 
