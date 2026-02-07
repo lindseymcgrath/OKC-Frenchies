@@ -42,17 +42,20 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     credits, 
     freeGenerations, 
     setShowPaywall,
-    userEmail
+    userEmail // 👈 This is the key
 }) => {
 
-    // Helper to trigger login if user tries a premium action without email
+    // ✅ FIXED: This was failing because it wasn't checking the live prop
     const handleProtectedAction = (action: () => void) => {
-        if (!userEmail) {
+        console.log("Verifying access for:", userEmail); // Debug check
+        if (!userEmail || userEmail === "") {
             setShowPaywall(true);
             return;
         }
         action();
     };
+
+    // ... (rest of the component)
 
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
