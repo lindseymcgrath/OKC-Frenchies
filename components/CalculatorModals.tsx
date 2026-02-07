@@ -44,24 +44,25 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                 {/* 1. EMAIL VERIFICATION */}
                 <div className="mb-6 bg-slate-900/50 p-4 border border-slate-800 rounded-sm">
                     <div className="flex gap-2">
-                        <input 
-                            type="email" 
-                            placeholder="Verify Email" 
-                            value={userEmail} 
-                            onChange={e => setUserEmail(e.target.value)} 
-                            className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white outline-none focus:border-luxury-gold"
-                        />
-                        <button 
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                handleLoginSubmit();
-                            }} 
-                            className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
-                        >
-                            Verify
-                        </button>
-                    </div>
+    <input 
+        type="email" 
+        placeholder="Verify Email" 
+        value={userEmail} 
+        onChange={e => setUserEmail(e.target.value)} 
+        className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white outline-none focus:border-luxury-gold"
+    />
+    <button 
+        type="button"
+        onClick={(e) => {
+            e.preventDefault();
+            // ✅ THE CRITICAL FIX: Pass the local userEmail to the function
+            handleLoginSubmit(userEmail); 
+        }} 
+        className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
+    >
+        Verify
+    </button>
+</div>
                 </div>
 
                 {/* 2. SUCCESS SCREEN OR ALL 3 SHOP OPTIONS */}
