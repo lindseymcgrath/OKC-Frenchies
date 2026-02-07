@@ -136,7 +136,7 @@ export default function Calculator() {
                     <Dna size={14} /> <span className="inline">Pairing</span>
                 </button>
                 <button onClick={() => setMode('marketing')} className={`flex-1 md:flex-none px-2 py-3 rounded-sm text-[9px] md:text-[10px] uppercase font-bold tracking-widest border transition-all flex flex-col md:flex-row items-center justify-center gap-2 ${mode==='marketing' ? 'bg-indigo-500 text-white shadow-lg border-indigo-500' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>
-                    <div className="inline"><span className="hidden sm:inline">Studio</span><span className="sm:hidden">Studio</span></div>
+                    <div className="inline">Studio</div>
                 </button>
             </div>
        </div>
@@ -193,6 +193,9 @@ export default function Calculator() {
                         isMobile={isMobile}
                         isSubscribed={user.isSubscribed}
                         isUnlocked={user.isUnlocked}
+                        credits={user.credits}
+                        userEmail={user.userEmail}
+                        setShowPaywall={setShowPaywall}
                     />
 
                     {/* RIGHT COLUMN: CONTROLS */}
@@ -203,6 +206,7 @@ export default function Calculator() {
                         credits={user.credits}
                         freeGenerations={freeGenerations}
                         setShowPaywall={setShowPaywall}
+                        userEmail={user.userEmail}
                     />
                 </div>
             )}
@@ -232,6 +236,11 @@ export default function Calculator() {
             userEmail={user.userEmail}
             setUserEmail={user.setUserEmail}
             handleLoginSubmit={user.handleLoginSubmit}
+
+            // Sync credits to Modals for the Success Screen
+            credits={user.credits}
+            isSubscribed={user.isSubscribed}
+            isUnlocked={user.isUnlocked}
        />
     </div>
   );
