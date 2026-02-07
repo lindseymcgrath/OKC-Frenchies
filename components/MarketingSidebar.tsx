@@ -14,6 +14,27 @@ interface MarketingSidebarProps {
     setShowPaywall: (show: boolean) => void;
 }
 
+// ✅ FIXED: Accordion moved OUTSIDE to prevent focus loss
+const Accordion = ({ id, title, icon: Icon, children, studio }: any) => (
+    <div className="border border-slate-800 rounded-sm bg-slate-900/40 overflow-hidden mb-2">
+        <button 
+            onClick={() => studio.setActiveAccordion(studio.activeAccordion === id ? '' : id)}
+            className={`w-full flex items-center justify-between p-3 text-left transition-colors ${studio.activeAccordion === id ? 'bg-slate-800/50 text-white' : 'text-slate-400 hover:text-white'}`}
+        >
+            <div className="flex items-center gap-3">
+                <Icon size={14} className={studio.activeAccordion === id ? 'text-luxury-teal' : 'text-slate-500'} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">{title}</span>
+            </div>
+            {studio.activeAccordion === id ? <ChevronDown size={14} className="rotate-180 transition-transform"/> : <ChevronDown size={14} className="transition-transform"/>}
+        </button>
+        {studio.activeAccordion === id && (
+            <div className="p-3 border-t border-slate-800/50 animate-in fade-in slide-in-from-top-1 bg-black/20">
+                {children}
+            </div>
+        )}
+    </div>
+);
+
 export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ 
     studio, 
     isSubscribed, 
@@ -23,32 +44,12 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     setShowPaywall 
 }) => {
 
-    const Accordion = ({ id, title, icon: Icon, children }: any) => (
-        <div className="border border-slate-800 rounded-sm bg-slate-900/40 overflow-hidden mb-2">
-            <button 
-                onClick={() => studio.setActiveAccordion(studio.activeAccordion === id ? '' : id)}
-                className={`w-full flex items-center justify-between p-3 text-left transition-colors ${studio.activeAccordion === id ? 'bg-slate-800/50 text-white' : 'text-slate-400 hover:text-white'}`}
-            >
-                <div className="flex items-center gap-3">
-                    <Icon size={14} className={studio.activeAccordion === id ? 'text-luxury-teal' : 'text-slate-500'} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">{title}</span>
-                </div>
-                {studio.activeAccordion === id ? <ChevronDown size={14} className="rotate-180 transition-transform"/> : <ChevronDown size={14} className="transition-transform"/>}
-            </button>
-            {studio.activeAccordion === id && (
-                <div className="p-3 border-t border-slate-800/50 animate-in fade-in slide-in-from-top-1 bg-black/20">
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
             
             {/* 1. ASSETS ACCORDION */}
             <div className="order-1">
-                <Accordion id="assets" title="Project Assets" icon={Briefcase}>
+                <Accordion id="assets" title="Project Assets" icon={Briefcase} studio={studio}>
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="flex flex-col gap-1">
                             <label className={`h-16 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer ${studio.sireImage ? 'border-indigo-500 bg-indigo-900/20' : 'border-slate-700 hover:border-white'}`}>
@@ -117,11 +118,10 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </Accordion>
             </div>
 
-            {/* 2. AI GENERATOR (Accordion - Moved "Formats" here) */}
+            {/* 2. AI GENERATOR */}
             <div className="order-2">
-                <Accordion id="scene" title="AI Scene Designer" icon={Wand2}>
+                <Accordion id="scene" title="AI Scene Designer" icon={Wand2} studio={studio}>
                     <div className="space-y-4">
-                        {/* Aspect Ratio Selector */}
                         <div className="flex gap-2 justify-center pb-2 border-b border-slate-800">
                             <button onClick={() => studio.changeAspectRatio('1:1')} className={`p-2 rounded border transition-all ${studio.aspectRatio==='1:1' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-black text-slate-500 border-slate-700'}`} title="Square Post">
                                 <Grid3X3 size={16}/>
@@ -134,7 +134,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             </button>
                         </div>
 
-                        {/* Prompt Selection - Improved UI */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[9px] uppercase text-slate-500 font-bold">Select Atmosphere</span>
@@ -176,7 +175,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
 
             {/* 3. TEXT OVERLAYS ACCORDION */}
             <div className="order-3">
-                <Accordion id="text" title="Text Overlays & Colors" icon={Type}>
+                <Accordion id="text" title="Text Overlays & Colors" icon={Type} studio={studio}>
                     <div className="space-y-2">
                         {/* Header */}
                         <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded border border-slate-800">
@@ -214,7 +213,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
 
             {/* 4. EXPORT ACCORDION */}
             <div className="order-4">
-                <Accordion id="export" title="Export Studio" icon={Download}>
+                <Accordion id="export" title="Export Studio" icon={Download} studio={studio}>
                     <div className="bg-slate-900/50 p-4 border border-slate-800 rounded-sm">
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-[10px] uppercase text-slate-400 font-bold">
@@ -234,7 +233,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </Accordion>
             </div>
 
-            {/* SELECTED LAYER EDITOR (Floating if layer selected) */}
+            {/* SELECTED LAYER EDITOR */}
             {studio.selectedLayer && (
                 <div className="order-5 mb-2 bg-indigo-900/20 border border-indigo-500/50 p-3 rounded-sm animate-in zoom-in-95">
                     <div className="flex justify-between items-center mb-2">
