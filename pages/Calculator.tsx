@@ -42,6 +42,7 @@ export default function Calculator() {
 
   const currentDna = singleGender === 'Male' ? sire : dam;
 
+// --- USE STUDIO HOOK ---
   const studio = useStudioLogic(
       user.isSubscribed, 
       user.isUnlocked, 
@@ -49,7 +50,8 @@ export default function Calculator() {
       freeGenerations, 
       user.deductCredit, 
       setFreeGenerations, 
-      setShowPaywall
+      setShowPaywall,
+      user.userEmail // 👈 ADD THIS LINE AT THE VERY END
   );
 
   const handleSingleModeChange = (key: string, value: string) => {
