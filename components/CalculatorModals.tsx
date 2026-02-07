@@ -29,6 +29,9 @@ interface CalculatorModalsProps {
     userEmail: string;
     setUserEmail: (val: string) => void;
     handleLoginSubmit: () => void;
+    credits: number | null; // Added
+    isSubscribed: boolean; // Added
+    isUnlocked: boolean; // Added
 }
 
 export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
@@ -51,7 +54,10 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
     setShowLogin,
     userEmail,
     setUserEmail,
-    handleLoginSubmit
+    handleLoginSubmit,
+    credits,
+    isSubscribed,
+    isUnlocked
 }) => {
 
     // ✅ Generate the dynamic links using the user's email
@@ -159,7 +165,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                         <Crown size={40} className="text-luxury-gold mx-auto mb-4" />
                         <h2 className="font-serif text-2xl text-white mb-2">Pro Studio Access</h2>
                         
-                        {/* 1️⃣ LOGIN SECTION - NOW FIRST */}
+                        {/* 1️⃣ LOGIN SECTION */}
                         <div className="mb-6 bg-slate-900/50 p-4 border border-slate-800 rounded-sm">
                             <p className="text-[10px] text-slate-400 uppercase font-bold mb-3 tracking-widest">Step 1: Identify Your Account</p>
                             <div className="flex gap-2">
@@ -173,30 +179,46 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                                 <button onClick={handleLoginSubmit} className="bg-slate-700 px-4 text-[10px] text-white uppercase hover:bg-luxury-teal font-bold transition-colors">Verify</button>
                             </div>
                             {userEmail && (
-                                <p className="text-[9px] text-emerald-400 mt-2 font-bold uppercase flex items-center justify-center gap-1 animate-in fade-in">
-                                    <CheckCircle size={10}/> Email attached to purchase
+                                <p className="text-[9px] text-emerald-400 mt-2 font-bold uppercase flex items-center justify-center gap-1 animate-in fade-in tracking-tighter">
+                                    <CheckCircle size={10}/> Email attached to session
                                 </p>
                             )}
                         </div>
 
-                        {/* 2️⃣ PURCHASE BUTTONS - ONLY ENABLED IF EMAIL EXISTS */}
+                        {/* 2️⃣ DYNAMIC CONTENT - SHOW SUCCESS IF CREDITS > 0, ELSE SHOW BUTTONS */}
                         {userEmail ? (
-                            <div className="space-y-3 mb-6 animate-in slide-in-from-bottom-2">
-                                <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2 hover:brightness-110">
-                                    <Infinity size={14}/> 3 Months Unlimited ($9.99)
-                                </a>
-                                <a href={stripe.BASE_5} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
-                                    <CreditCard size={14}/> 5 Download Passes ($3.99)
-                                </a>
-                                <a href={stripe.BASE_1} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
-                                    <Ticket size={14}/> Single Session Pass ($0.99)
-                                </a>
-                            </div>
+                            ((credits || 0) > 0 || isSubscribed || isUnlocked) ? (
+                                <div className="py-8 bg-emerald-900/10 border border-emerald-500/30 rounded-sm mb-6 animate-in zoom-in-95">
+                                    <CheckCircle size={32} className="text-emerald-500 mx-auto mb-2"/>
+                                    <p className="text-white font-serif text-lg tracking-wide">Access Unlocked</p>
+                                    <p className="text-[10px] text-emerald-400 uppercase font-bold tracking-widest mt-1">
+                                        You have {isSubscribed || isUnlocked ? "Unlimited" : credits} {credits === 1 ? 'pass' : 'passes'} available
+                                    </p>
+                                    <button 
+                                        onClick={() => setShowPaywall(false)} 
+                                        className="mt-6 px-8 py-2 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-emerald-500 transition-all"
+                                    >
+                                        Start Creating
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 mb-6 animate-in slide-in-from-bottom-2">
+                                    <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2 hover:brightness-110">
+                                        <Infinity size={14}/> 3 Months Unlimited ($9.99)
+                                    </a>
+                                    <a href={stripe.BASE_5} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
+                                        <CreditCard size={14}/> 5 Download Passes ($3.99)
+                                    </a>
+                                    <a href={stripe.BASE_1} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
+                                        <Ticket size={14}/> Single Session Pass ($0.99)
+                                    </a>
+                                </div>
+                            )
                         ) : (
                             <div className="py-8 border-2 border-dashed border-slate-800 mb-6 rounded-sm opacity-50 flex flex-col items-center bg-black/40">
                                 <Mail size={24} className="text-slate-600 mb-2"/>
-                                <p className="text-[10px] text-slate-500 uppercase font-bold">Purchase Links Disabled</p>
-                                <p className="text-[8px] text-slate-600 mt-1">Please enter your email above to continue</p>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Purchase Links Disabled</p>
+                                <p className="text-[8px] text-slate-600 mt-1 italic">Please enter your email above to continue</p>
                             </div>
                         )}
                         
@@ -208,9 +230,9 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                                         placeholder="PROMO CODE" 
                                         value={promoCodeInput} 
                                         onChange={e => setPromoCodeInput(e.target.value)} 
-                                        className="flex-1 bg-black border border-slate-700 p-2 text-[10px] text-white uppercase"
+                                        className="flex-1 bg-black border border-slate-700 p-2 text-[10px] text-white uppercase tracking-widest outline-none focus:border-luxury-gold"
                                 />
-                                <button onClick={handlePromoSubmit} className="bg-slate-700 px-3 text-[10px] text-white uppercase hover:bg-luxury-gold hover:text-black font-bold">Apply</button>
+                                <button onClick={handlePromoSubmit} className="bg-slate-700 px-3 text-[10px] text-white uppercase hover:bg-luxury-gold hover:text-black font-bold transition-all">Apply</button>
                             </div>
                         </div>
 
