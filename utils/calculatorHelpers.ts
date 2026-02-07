@@ -2,8 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 
 // --- CONFIGURATION ---
 export const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
-export const SUPABASE_URL = "https://phesicyzrddvediskbop.supabase.co";
-export const SUPABASE_KEY = "sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h";
+
+// ✅ FIXED: Using Environment Variables to connect to your specific database
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Initialize Supabase Client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -134,7 +136,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
         else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) visualBase = 'new-shade-isabella'; 
     }
 
-    // --- Terminology Logic Update ---
     if (hasFurnishings) {
         if (isFluffy) {
             phenotypeParts.push("Floodle/Teddy");
@@ -179,7 +180,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
         else if (hasAt && !isBrindle && !isCream && !isPink && !isSolidBlack) layers.push('overlay-tan-points.png');
         if (hasEm && !isCream && !isPink && !isVisualEA && !isSolidBlack) layers.push('overlay-mask.png');
         
-        // MERLE LOGIC (Correctly handles Koi forcing Merle)
         if (hasMerle && !isCream) {
             if (isPink) layers.push('overlay-merle-pink.png'); 
             else {
@@ -196,9 +196,7 @@ export const getPhenotype = (dna: any): VisualTraits => {
         if (!isCream && !isPink) { if (isFullPied) layers.push('overlay-pied.png'); else if (hasPied) layers.push('overlay-pied-carrier.png'); }
         if (isBrindle) layers.push('overlay-brindle.png');
         
-        // KOI / PANDA (After Merle)
         if (dna.Panda === 'Koi') {
-            // This ensures Koi pattern stacks specifically
             layers.push('overlay-koi.png'); 
         } else if (dna.Panda === 'Panda') {
             layers.push('overlay-husky.png');
@@ -217,7 +215,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
     layers.push('overlay-outline.png');
 
     const dnaString = Object.entries(dna).map(([k,v]) => v).join(' ');
-    // Filter out common negative/wildtype markers
     const compactDnaString = Object.entries(dna)
         .filter(([key, val]) => {
             const v = String(val);
@@ -267,7 +264,6 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
     };
     generateBranches(0, baseDNA, 1.0);
     
-    // Calculate Phenotypes and aggregate probabilities
     const phenotypes: Record<string, { dna: any, prob: number }> = {};
     results.forEach(res => {
         const traits = getPhenotype(res.dna);
@@ -276,7 +272,6 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
         phenotypes[name].prob += res.prob;
     });
 
-    // Sort by probability and return unique outcomes
     return Object.values(phenotypes)
         .sort((a, b) => b.prob - a.prob)
         .map(item => ({ 
