@@ -51,11 +51,13 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                             className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white outline-none focus:border-luxury-gold"
                         />
                         <button 
-                            onClick={handleLoginSubmit} 
-                            className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
-                        >
-                            Verify
-                        </button>
+    onClick={() => handleLoginSubmit(userEmail)} 
+    className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
+>
+    Verify
+</button>
+         
+                
                     </div>
                 </div>
 
