@@ -101,19 +101,17 @@ export const useUserCredits = () => {
         return false;
     };
 
-  const handleLoginSubmit = (emailInput?: string) => {
-    // We check either the passed email or the state email
-    const emailToVerify = emailInput || userEmail;
+const handleLoginSubmit = async (emailInput?: string) => {
+    // We prioritize the email passed directly from the button
+    const emailToVerify = (emailInput || userEmail || '').trim().toLowerCase();
 
-    if (emailToVerify && emailToVerify.includes('@')) { 
-        const formattedEmail = emailToVerify.toLowerCase().trim();
+    if (emailToVerify.includes('@')) { 
+        console.log("🚀 Handshake initiated for:", emailToVerify);
+        localStorage.setItem('okc_user_email', emailToVerify); 
+        currentEmailRef.current = emailToVerify;
+        setUserEmail(emailToVerify); // Sync the state back
         
-        // Update everything to the "Correct" email
-        localStorage.setItem('okc_user_email', formattedEmail); 
-        currentEmailRef.current = formattedEmail;
-        setUserEmail(formattedEmail); 
-        
-        fetchCredits(formattedEmail); 
+        await fetchCredits(emailToVerify); 
         setShowLogin(false);
     } else {
         alert("Please enter a valid email.");
