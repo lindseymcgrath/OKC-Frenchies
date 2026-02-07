@@ -11,7 +11,6 @@ export const useUserCredits = () => {
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [promoCodeInput, setPromoCodeInput] = useState('');
 
-    // Use a ref to prevent stale closures in the subscription
     const currentEmailRef = useRef('');
 
     const fetchCredits = async (email: string) => {
@@ -38,12 +37,10 @@ export const useUserCredits = () => {
                 }
             }
         } else if (error) {
-            // If user doesn't exist yet, we treat them as 0 credits
             setCredits(0);
         }
     };
 
-    // 1. INITIAL LOAD & REALTIME SUBSCRIPTION
     useEffect(() => {
         const storedEmail = localStorage.getItem('okc_user_email');
         if (storedEmail) { 
@@ -53,17 +50,15 @@ export const useUserCredits = () => {
             fetchCredits(formattedEmail); 
         }
 
-        // 🚀 REALTIME LISTENER: Watch for Stripe updates automatically
         const channel = supabase
             .channel('credit_updates')
             .on(
                 'postgres_changes', 
                 { event: 'UPDATE', schema: 'public', table: 'user_credits' },
                 (payload) => {
-                    // Only update if the change belongs to the currently logged-in user
+                    // This ref check is what allows the UI to update instantly after Stripe
                     if (payload.new.email === currentEmailRef.current) {
                         setCredits(payload.new.credits_remaining);
-                        // Update subscription status if it changed
                         if (payload.new.subscription_end) {
                             const active = new Date(payload.new.subscription_end) > new Date();
                             setIsSubscribed(active);
@@ -83,16 +78,13 @@ export const useUserCredits = () => {
         if (isSubscribed || isUnlocked) return true;
         if (credits && credits > 0) {
             const newCount = credits - 1;
-            // Optimistic Update (Update UI immediately)
             setCredits(newCount);
-            
             const { error } = await supabase
                 .from('user_credits')
                 .update({ credits_remaining: newCount })
                 .eq('email', userEmail);
             
             if (error) {
-                // Rollback if DB failed
                 setCredits(credits);
                 return false;
             }
@@ -105,6 +97,7 @@ export const useUserCredits = () => {
         if (userEmail.includes('@')) { 
             const formattedEmail = userEmail.toLowerCase().trim();
             localStorage.setItem('okc_user_email', formattedEmail); 
+            // ✅ THIS WAS THE MISSING LINK: Update the ref so the listener watches the NEW email
             currentEmailRef.current = formattedEmail;
             fetchCredits(formattedEmail); 
             setShowLogin(false);
