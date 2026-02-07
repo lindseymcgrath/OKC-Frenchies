@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Crown, Infinity, CreditCard, Ticket, Trash2 } from 'lucide-react';
+import { X, Crown, Infinity, CreditCard, Ticket, Trash2, Mail, CheckCircle } from 'lucide-react';
 // ✅ Import getStripeLinks instead of STRIPE_LINKS
 import { getStripeLinks, PROMPTS, getPhenotype, SavedDog } from '../utils/calculatorHelpers';
 
@@ -154,26 +154,54 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
             {/* PAYWALL MODAL */}
             {showPaywall && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
-                    <div className="bg-[#0a0a0a] border border-luxury-gold/30 w-full max-w-md p-8 rounded-sm text-center relative animate-in fade-in zoom-in-95">
+                    <div className="bg-[#0a0a0a] border border-luxury-gold/30 w-full max-w-md p-8 rounded-sm text-center relative animate-in fade-in zoom-in-95 shadow-2xl">
                         <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
                         <Crown size={40} className="text-luxury-gold mx-auto mb-4" />
                         <h2 className="font-serif text-2xl text-white mb-2">Pro Studio Access</h2>
-                        <p className="text-slate-400 text-xs mb-6">You've reached your free limit. Upgrade to continue.</p>
                         
-                        <div className="space-y-3 mb-6">
-                            {/* ✅ Updated links to use the stripe object we created above */}
-                            <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2">
-                                <Infinity size={14}/> 3 Months Unlimited ($9.99)
-                            </a>
-                            <a href={stripe.BASE_5} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
-                                <CreditCard size={14}/> 5 Download Passes ($3.99)
-                            </a>
-                            <a href={stripe.BASE_1} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
-                                <Ticket size={14}/> Single Session Pass ($0.99)
-                            </a>
+                        {/* 1️⃣ LOGIN SECTION - NOW FIRST */}
+                        <div className="mb-6 bg-slate-900/50 p-4 border border-slate-800 rounded-sm">
+                            <p className="text-[10px] text-slate-400 uppercase font-bold mb-3 tracking-widest">Step 1: Identify Your Account</p>
+                            <div className="flex gap-2">
+                                <input 
+                                    type="email" 
+                                    placeholder="Enter Email Address" 
+                                    value={userEmail} 
+                                    onChange={e => setUserEmail(e.target.value)} 
+                                    className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white focus:border-luxury-gold outline-none"
+                                />
+                                <button onClick={handleLoginSubmit} className="bg-slate-700 px-4 text-[10px] text-white uppercase hover:bg-luxury-teal font-bold transition-colors">Verify</button>
+                            </div>
+                            {userEmail && (
+                                <p className="text-[9px] text-emerald-400 mt-2 font-bold uppercase flex items-center justify-center gap-1 animate-in fade-in">
+                                    <CheckCircle size={10}/> Email attached to purchase
+                                </p>
+                            )}
                         </div>
+
+                        {/* 2️⃣ PURCHASE BUTTONS - ONLY ENABLED IF EMAIL EXISTS */}
+                        {userEmail ? (
+                            <div className="space-y-3 mb-6 animate-in slide-in-from-bottom-2">
+                                <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2 hover:brightness-110">
+                                    <Infinity size={14}/> 3 Months Unlimited ($9.99)
+                                </a>
+                                <a href={stripe.BASE_5} target="_blank" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
+                                    <CreditCard size={14}/> 5 Download Passes ($3.99)
+                                </a>
+                                <a href={stripe.BASE_1} target="_blank" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
+                                    <Ticket size={14}/> Single Session Pass ($0.99)
+                                </a>
+                            </div>
+                        ) : (
+                            <div className="py-8 border-2 border-dashed border-slate-800 mb-6 rounded-sm opacity-50 flex flex-col items-center bg-black/40">
+                                <Mail size={24} className="text-slate-600 mb-2"/>
+                                <p className="text-[10px] text-slate-500 uppercase font-bold">Purchase Links Disabled</p>
+                                <p className="text-[8px] text-slate-600 mt-1">Please enter your email above to continue</p>
+                            </div>
+                        )}
                         
-                        <div className="mb-4">
+                        {/* 3️⃣ PROMO SECTION */}
+                        <div className="mb-4 pt-4 border-t border-slate-900">
                             <div className="flex gap-2">
                                 <input 
                                         type="text" 
@@ -186,14 +214,6 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = ({
                             </div>
                         </div>
 
-                        {!showLogin ? (
-                            <button onClick={() => setShowLogin(true)} className="text-[10px] text-luxury-teal underline">Already purchased? Check Credits</button>
-                        ) : (
-                            <div className="flex gap-2 animate-in fade-in">
-                                <input type="email" placeholder="Email" value={userEmail} onChange={e => setUserEmail(e.target.value)} className="flex-1 bg-black border border-slate-700 p-2 text-[10px] text-white"/>
-                                <button onClick={handleLoginSubmit} className="bg-slate-700 px-3 text-[10px] text-white uppercase">Check</button>
-                            </div>
-                        )}
                     </div>
                 </div>
             )}
