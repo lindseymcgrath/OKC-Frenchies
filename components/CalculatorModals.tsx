@@ -1,30 +1,20 @@
-import React from 'react';
-import { X, Crown, Infinity, CreditCard, Ticket, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Crown, Infinity, CreditCard, Ticket, CheckCircle, Loader2 } from 'lucide-react';
 import { getStripeLinks } from '../utils/calculatorHelpers';
 
-interface CalculatorModalsProps {
-    studio: any;
-    showPaywall: boolean;
-    setShowPaywall: (show: boolean) => void;
-    userEmail: string;
-    setUserEmail: (val: string) => void;
-    handleLoginSubmit: (email?: string) => void;
-    credits: number | null;
-    isSubscribed: boolean;
-    isUnlocked: boolean;
-    promoCodeInput: string;
-    setPromoCodeInput: (val: string) => void;
-    handlePromoSubmit: (onSuccess: () => void) => void;
-}
-
-export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
+export const CalculatorModals: React.FC<any> = (props) => {
     const { 
         showPaywall, setShowPaywall, userEmail, setUserEmail, 
         handleLoginSubmit, credits, isSubscribed, isUnlocked,
         promoCodeInput, setPromoCodeInput, handlePromoSubmit
     } = props;
 
+    // Added local loading state to force a UI refresh
+    const [isVerifying, setIsVerifying] = useState(false);
+
     const stripe = getStripeLinks(userEmail);
+    
+    // ✅ IMPROVED ACCESS CHECK
     const hasAccess = (credits !== null && Number(credits) > 0) || isSubscribed || isUnlocked;
 
     if (!showPaywall) return null;
@@ -33,18 +23,13 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
             <div className="bg-[#0a0a0a] border border-luxury-gold/30 w-full max-w-md p-8 rounded-sm text-center relative shadow-2xl animate-in fade-in zoom-in-95">
                 
-                {/* CLOSE BUTTON */}
-                <button 
-                    onClick={() => setShowPaywall(false)} 
-                    className="absolute top-4 right-4 text-slate-500 hover:text-white"
-                >
+                <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                     <X size={20}/>
                 </button>
                 
                 <Crown size={40} className="text-luxury-gold mx-auto mb-4" />
                 <h2 className="font-serif text-2xl text-white mb-6 uppercase tracking-widest">Pro Studio Access</h2>
                 
-                {/* 1. EMAIL VERIFICATION SECTION */}
                 <div className="mb-6 bg-slate-900/50 p-4 border border-slate-800 rounded-sm">
                     <div className="flex gap-2">
                         <input 
@@ -56,22 +41,25 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                         />
                         <button 
                             type="button"
+                            disabled={isVerifying}
                             onClick={async (e) => {
                                 e.preventDefault();
-                                // We use 'async' to make sure the app waits for the database
+                                setIsVerifying(true);
                                 console.log("Verifying email:", userEmail);
                                 await handleLoginSubmit(userEmail); 
+                                // Small delay to ensure state propagates
+                                setTimeout(() => setIsVerifying(false), 500);
                             }} 
-                            className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all active:scale-95"
+                            className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all active:scale-95 disabled:opacity-50 min-w-[80px]"
                         >
-                            Verify
+                            {isVerifying ? <Loader2 size={14} className="animate-spin mx-auto"/> : "Verify"}
                         </button>
                     </div>
                 </div>
 
-                {/* 2. ACCESS GRANTED OR SHOP OPTIONS */}
+                {/* ✅ THIS SECTION IS NOW DYNAMIC */}
                 {hasAccess ? (
-                    <div className="py-8 bg-emerald-900/10 border border-emerald-500/30 rounded-sm mb-6 animate-in zoom-in-95">
+                    <div className="py-8 bg-emerald-900/10 border border-emerald-500/30 rounded-sm mb-6 animate-in zoom-in-95 ring-1 ring-emerald-500/50">
                         <CheckCircle size={32} className="text-emerald-500 mx-auto mb-2"/>
                         <p className="text-white font-serif text-lg italic text-emerald-400">Access Granted</p>
                         <p className="text-[10px] text-white uppercase font-bold tracking-widest mt-1">
@@ -86,21 +74,19 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                     </div>
                 ) : (
                     <div className="space-y-3 mb-6">
+                         <div className="text-[9px] text-slate-500 uppercase font-bold mb-2">No Credits Found? Purchase Below</div>
                         <a href={stripe.BASE_SUB} target="_blank" rel="noreferrer" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2">
                             <Infinity size={14}/> 3 Months Unlimited ($9.99)
                         </a>
-                        <a href={stripe.BASE_5} target="_blank" rel="noreferrer" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold transition-all flex items-center justify-center gap-2">
+                        <a href={stripe.BASE_5} target="_blank" rel="noreferrer" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2">
                             <CreditCard size={14}/> 5 Download Passes ($3.99)
                         </a>
-                        
-                        {/* THE 0.99 OPTION IS HERE */}
                         <a href={stripe.BASE_1} target="_blank" rel="noreferrer" className="block w-full py-3 border border-slate-700 text-slate-300 font-bold uppercase text-[10px] tracking-widest rounded-sm hover:text-white flex items-center justify-center gap-2">
                             <Ticket size={14}/> Single Session Pass ($0.99)
                         </a>
                     </div>
                 )}
 
-                {/* 3. PROMO CODE SECTION */}
                 <div className="pt-4 border-t border-slate-900">
                      <div className="flex gap-2">
                         <input 
@@ -110,13 +96,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                             onChange={e => setPromoCodeInput(e.target.value)} 
                             className="flex-1 bg-black border border-slate-700 p-2 text-[10px] text-white uppercase"
                         />
-                        <button 
-                            type="button"
-                            onClick={() => handlePromoSubmit(() => setShowPaywall(false))} 
-                            className="bg-slate-700 px-3 text-[10px] text-white uppercase hover:bg-luxury-gold hover:text-black font-bold"
-                        >
-                            Apply
-                        </button>
+                        <button type="button" onClick={() => handlePromoSubmit(() => setShowPaywall(false))} className="bg-slate-700 px-3 text-[10px] text-white uppercase hover:bg-luxury-gold hover:text-black font-bold">Apply</button>
                     </div>
                 </div>
             </div>
