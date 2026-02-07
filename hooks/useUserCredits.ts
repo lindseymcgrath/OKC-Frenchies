@@ -102,16 +102,24 @@ export const useUserCredits = () => {
     };
 
 const handleLoginSubmit = async (emailInput?: string) => {
-    // We prioritize the email passed directly from the button
     const emailToVerify = (emailInput || userEmail || '').trim().toLowerCase();
 
     if (emailToVerify.includes('@')) { 
         console.log("🚀 Handshake initiated for:", emailToVerify);
+        
+        // 1. Update local storage and state
         localStorage.setItem('okc_user_email', emailToVerify); 
         currentEmailRef.current = emailToVerify;
-        setUserEmail(emailToVerify); // Sync the state back
+        setUserEmail(emailToVerify); 
         
-        await fetchCredits(emailToVerify); 
+        // 2. FETCH AND WAIT (Crucial for the screen to swap)
+        try {
+            await fetchCredits(emailToVerify); 
+            console.log("✅ Credits fetched successfully");
+        } catch (err) {
+            console.error("❌ Database fetch failed:", err);
+        }
+        
         setShowLogin(false);
     } else {
         alert("Please enter a valid email.");
