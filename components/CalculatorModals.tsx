@@ -24,12 +24,13 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
         promoCodeInput, setPromoCodeInput, handlePromoSubmit
     } = props;
 
-    console.log("Paywall State Check:", { userEmail, credits, isUnlocked, hasAccess });
-    
+    // 🕵️ DIAGNOSTIC LOG: This will show in your F12 Console
+    console.log("Paywall State Check:", { userEmail, credits, isUnlocked, isSubscribed });
+
     const stripe = getStripeLinks(userEmail);
     
-    // ✅ RESTORED LOGIC: If you have a credit, you see the green button. Period.
-    const hasAccess = (credits !== null && credits > 0) || isSubscribed || isUnlocked;
+    // Logic: If credits are found (even if they come from Supabase as a string), or user is pro.
+    const hasAccess = (credits !== null && Number(credits) > 0) || isSubscribed || isUnlocked;
 
     if (!showPaywall) return null;
 
@@ -53,7 +54,15 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                             onChange={e => setUserEmail(e.target.value)} 
                             className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white outline-none focus:border-luxury-gold"
                         />
-                        <button onClick={handleLoginSubmit} className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all">
+                        <button 
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                console.log("Manual Click: Triggering handleLoginSubmit for", userEmail);
+                                handleLoginSubmit();
+                            }} 
+                            className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
+                        >
                             Verify
                         </button>
                     </div>
@@ -68,7 +77,10 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                             {isSubscribed || isUnlocked ? "Unlimited Session" : `${credits} Credit(s) Available`}
                         </p>
                         <button 
-                            onClick={() => setShowPaywall(false)} 
+                            onClick={() => {
+                                console.log("Closing Paywall - Proceeding to Studio");
+                                setShowPaywall(false);
+                            }} 
                             className="mt-6 px-12 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-sm hover:bg-emerald-500 transition-all"
                         >
                             Start Designing
@@ -76,10 +88,10 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                     </div>
                 ) : (
                     <div className="space-y-3 mb-6">
-                        <a href={stripe.BASE_SUB} target="_blank" className="block w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm">
+                        <a href={stripe.BASE_SUB} target="_blank" rel="noreferrer" className="block w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm">
                             Unlimited Access ($9.99)
                         </a>
-                        <a href={stripe.BASE_5} target="_blank" className="block w-full py-4 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold transition-all">
+                        <a href={stripe.BASE_5} target="_blank" rel="noreferrer" className="block w-full py-4 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold transition-all">
                             5 Session Passes ($3.99)
                         </a>
                     </div>
