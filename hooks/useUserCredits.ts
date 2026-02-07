@@ -17,33 +17,47 @@ export const useUserCredits = () => {
 
     // --- LOGIC ---
     const fetchCredits = async (email: string) => {
-        if (!email) return;
-        setIsUnlocking(true); 
-        
-        const { data, error } = await supabase
-            .from('user_credits')
-            .select('*')
-            .eq('email', email.toLowerCase().trim())
-            .single();
-        
-        setIsUnlocking(false);
-        
-        if (data) {
-            setCredits(data.credits_remaining);
-            setUserId(data.id); 
-            if (data.subscription_end) {
-                const endDate = new Date(data.subscription_end);
-                if (endDate > new Date()) {
-                    setIsSubscribed(true);
-                    setIsUnlocked(true); 
-                } else {
-                    setIsSubscribed(false);
-                }
+    if (!email) return;
+    setIsUnlocking(true); 
+    
+    const { data, error } = await supabase
+        .from('user_credits')
+        .select('*')
+        .eq('email', email.toLowerCase().trim())
+        .single();
+    
+    setIsUnlocking(false);
+    
+    if (data) {
+        // ✅ Match confirmed: using credits_remaining
+        const count = data.credits_remaining;
+        setCredits(count);
+        setUserId(data.id); 
+
+        if (data.subscription_end) {
+            const endDate = new Date(data.subscription_end);
+            if (endDate > new Date()) {
+                setIsSubscribed(true);
+                setIsUnlocked(true); 
+            } else {
+                setIsSubscribed(false);
             }
-        } else if (error) {
-            setCredits(0);
         }
-    };
+
+        // 📢 NOTIFICATION: Tell us what was found
+        if (count > 0) {
+            console.log("💎 Success! Found credits:", count);
+            // The Modal should flip automatically now
+        } else {
+            alert("Verification successful, but your balance is 0. Please purchase a pass below.");
+        }
+
+    } else if (error) {
+        console.error("Supabase Error:", error.message);
+        setCredits(0);
+        alert("We couldn't find an account for " + email + ". Please check your spelling or purchase a session pass.");
+    }
+};
 
     // 1. INITIAL LOAD & REALTIME SUBSCRIPTION
     useEffect(() => {
