@@ -141,16 +141,18 @@ export const useStudioLogic = (
 
    const removeBackgroundPhotoRoom = async (imageInput: Blob): Promise<string | null> => {
     try {
-        // We ALWAYS hit our internal Vercel API for production
-        // This keeps the API Key hidden and avoids CORS/301 errors
+        // Send raw blob stream to /api/remove-bg
+        // The API handler is configured with bodyParser: false to pipe this stream
         const res = await fetch('/api/remove-bg', { 
             method: 'POST', 
-            body: imageInput, 
-            headers: { 'Content-Type': 'application/octet-stream' }
+            body: imageInput,
+            headers: {
+                // Explicitly set content type so the server (and PhotoRoom) knows what it is
+                'Content-Type': 'application/octet-stream'
+            }
         });
 
         if (!res.ok) {
-            // Try to get JSON error, fallback to text
             const errorData = await res.json().catch(() => ({ error: 'Unknown API Error' }));
             throw new Error(errorData.error || `Server Error ${res.status}`);
         }
@@ -159,8 +161,7 @@ export const useStudioLogic = (
         return URL.createObjectURL(processedBlob);
     } catch (e: any) {
         console.error("BG Removal Error:", e.message);
-        alert(`Background Removal Failed: ${e.message}`);
-        return null;
+        throw e; // Rethrow to handle in the main handler
     }
 };
 
