@@ -57,7 +57,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
             
-            {/* 🏆 MASTER STATUS BAR (Moved out of accordion) */}
+            {/* 🏆 MASTER STATUS BAR */}
             <div className="mb-2 p-4 bg-gradient-to-br from-[#1a1a1a] to-black border border-luxury-gold/40 rounded-sm shadow-2xl">
                 <div className="flex justify-between items-center mb-3">
                     <div className="flex flex-col">
@@ -66,12 +66,16 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             {isSubscribed || isUnlocked ? "Unlimited Pro" : `${credits ?? 0} Credits`}
                         </span>
                     </div>
-                    <button 
-                        onClick={() => setShowPaywall(true)}
-                        className="px-4 py-2 bg-luxury-gold hover:bg-yellow-400 text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
-                    >
-                        {userEmail ? 'Refill' : 'Unlock'}
-                    </button>
+                    
+                    {/* ✅ HIDE button if user has credits or unlimited access */}
+                    {(!isSubscribed && !isUnlocked && (credits || 0) <= 0) && (
+                        <button 
+                            onClick={() => setShowPaywall(true)}
+                            className="px-4 py-2 bg-luxury-gold hover:bg-yellow-400 text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+                        >
+                            {userEmail ? 'Unlock' : 'Sign In'}
+                        </button>
+                    )}
                 </div>
                 
                 <div className="space-y-1 border-t border-slate-800 pt-2">
