@@ -7,9 +7,9 @@ interface StudioCanvasProps {
     isMobile: boolean;
     isSubscribed: boolean;
     isUnlocked: boolean;
-    credits: number | null;     // Added
-    userEmail: string;          // Added
-    setShowPaywall: (show: boolean) => void; // Added
+    credits: number | null;
+    userEmail: string;
+    setShowPaywall: (show: boolean) => void;
 }
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({ 
@@ -55,7 +55,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </div>
                             )}
 
-                            {/* ... (Your existing Draggable Layers) ... */}
+                            {/* Draggable Layers */}
                             {studio.sireImage && <Draggable nodeRef={studio.sireNodeRef} bounds="parent" grid={[10, 10]}><div ref={studio.sireNodeRef} className="absolute z-20 w-1/2 h-1/2 cursor-move" onClick={() => studio.setSelectedLayer('sire')}><img src={studio.sireImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.sire.rotate}deg) scale(${studio.layerTransforms.sire.scale})`}}/></div></Draggable>}
                             {studio.damImage && <Draggable nodeRef={studio.damNodeRef} bounds="parent" grid={[10, 10]}><div ref={studio.damNodeRef} className="absolute z-20 w-1/2 h-1/2 left-1/2 cursor-move" onClick={() => studio.setSelectedLayer('dam')}><img src={studio.damImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.dam.rotate}deg) scale(${studio.layerTransforms.dam.scale})`}}/></div></Draggable>}
                             {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" grid={[10, 10]}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 top-[10%] left-[5%] cursor-move" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
@@ -69,7 +69,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                     </div>
                 </div>
 
-                {/* 🏆 NEW UI SECTION UNDER IMAGE */}
+                {/* 🏆 UI SECTION UNDER IMAGE */}
                 <div className="w-full max-w-[600px] mt-4 px-4 lg:px-0 space-y-3">
                     
                     {/* MASTER UNLOCK BOX */}
@@ -89,12 +89,16 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     <span className="flex items-center gap-1"><CheckCircle2 size={10} className="text-luxury-teal"/> HD Ad Export</span>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setShowPaywall(true)}
-                                className="w-full sm:w-auto px-8 py-3 bg-luxury-gold hover:bg-yellow-400 text-black font-black uppercase tracking-widest text-[10px] rounded-sm transition-all"
-                            >
-                                {userEmail ? 'Refill Credits' : 'Unlock Everything'}
-                            </button>
+                            
+                            {/* ✅ ONLY show button if user has 0 credits and no unlimited access */}
+                            {(!isSubscribed && !isUnlocked && (credits || 0) <= 0) && (
+                                <button 
+                                    onClick={() => setShowPaywall(true)}
+                                    className="w-full sm:w-auto px-8 py-3 bg-luxury-gold hover:bg-yellow-400 text-black font-black uppercase tracking-widest text-[10px] rounded-sm transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
+                                >
+                                    {userEmail ? 'Unlock Everything' : 'Sign In'}
+                                </button>
+                            )}
                         </div>
                     </div>
 
