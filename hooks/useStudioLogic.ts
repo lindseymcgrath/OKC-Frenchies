@@ -9,7 +9,8 @@ export const useStudioLogic = (
     freeGenerations: number,
     deductCredit: () => Promise<boolean>,
     setFreeGenerations: React.Dispatch<React.SetStateAction<number>>,
-    setShowPaywall: (show: boolean) => void
+    setShowPaywall: (show: boolean) => void,
+    userEmail: string // ✅ Parameter added to link logic to the user
 ) => {
     // --- STATE ---
     const [activeAccordion, setActiveAccordion] = useState<string>(''); 
@@ -142,13 +143,12 @@ export const useStudioLogic = (
    const removeBackgroundPhotoRoom = async (imageInput: Blob): Promise<string | null> => {
     try {
         // Send raw blob stream to /api/remove-bg
-        // The API handler is configured with bodyParser: false to pipe this stream
         const res = await fetch('/api/remove-bg', { 
             method: 'POST', 
             body: imageInput,
             headers: {
-                // Explicitly set content type so the server (and PhotoRoom) knows what it is
-                'Content-Type': 'application/octet-stream'
+                'Content-Type': 'application/octet-stream',
+                'x-user-email': userEmail // ✅ Crucial Header for Credit Verification
             }
         });
 
@@ -161,11 +161,17 @@ export const useStudioLogic = (
         return URL.createObjectURL(processedBlob);
     } catch (e: any) {
         console.error("BG Removal Error:", e.message);
-        throw e; // Rethrow to handle in the main handler
+        throw e; 
     }
 };
 
     const handleBgRemoval = async (type: 'sire' | 'dam' | 'sireLogo' | 'damLogo') => {
+        // 🛑 Security Check: Ensure email is present before spending credits
+        if (!userEmail) {
+            setShowPaywall(true);
+            return;
+        }
+
         let sourceImage = type === 'sire' ? sireImage : type === 'dam' ? damImage : type === 'sireLogo' ? sireLogo : damLogo;
         if (!sourceImage) return;
 
