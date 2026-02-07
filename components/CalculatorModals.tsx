@@ -24,6 +24,8 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
         promoCodeInput, setPromoCodeInput, handlePromoSubmit
     } = props;
 
+    console.log("Paywall State Check:", { userEmail, credits, isUnlocked, hasAccess });
+    
     const stripe = getStripeLinks(userEmail);
     
     // ✅ RESTORED LOGIC: If you have a credit, you see the green button. Period.
