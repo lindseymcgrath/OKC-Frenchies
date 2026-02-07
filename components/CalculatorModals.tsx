@@ -34,9 +34,9 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
     return (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
             <div className="bg-[#0a0a0a] border border-luxury-gold/30 w-full max-w-md p-8 rounded-sm text-center relative shadow-2xl animate-in fade-in zoom-in-95">
-                <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
+                < onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white">
                     <X size={20}/>
-                </button>
+                </>
                 
                 <Crown size={40} className="text-luxury-gold mx-auto mb-4" />
                 <h2 className="font-serif text-2xl text-white mb-6">Pro Studio Access</h2>
@@ -52,16 +52,16 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
         className="flex-1 bg-black border border-slate-700 p-2 text-xs text-white outline-none focus:border-luxury-gold"
     />
     <button 
-        type="button"
-        onClick={(e) => {
-            e.preventDefault();
-            // ✅ THE CRITICAL FIX: Pass the local userEmail to the function
-            handleLoginSubmit(userEmail); 
-        }} 
-        className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal transition-all"
-    >
-        Verify
-    </button>
+    type="button"
+    onClick={(e) => {
+        e.preventDefault();
+        // Passing userEmail here is the ONLY way to guarantee the hook sees it
+        handleLoginSubmit(userEmail); 
+    }} 
+    className="bg-slate-700 px-4 text-[10px] text-white font-bold uppercase hover:bg-luxury-teal active:scale-95"
+>
+    Verify
+</button>
 </div>
                 </div>
 
