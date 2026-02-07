@@ -73,8 +73,11 @@ export const getPhenotype = (dna: any): VisualTraits => {
     let layers: string[] = []; 
 
     // ✅ THE "HARD-LINK" HELPER
-    const path = (name: string) => `https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/${name}`;
-
+const path = (name: string) => {
+    const baseUrl = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
+    // We trim the name just in case there's a sneaky space
+    return `${baseUrl}/${name.trim()}`;
+};
     const b = dna.B === 'b/b';
     const co = dna.Co === 'co/co';
     const d = dna.D === 'd/d';
