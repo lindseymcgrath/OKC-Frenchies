@@ -101,17 +101,24 @@ export const useUserCredits = () => {
         return false;
     };
 
-    const handleLoginSubmit = () => {
-        if (userEmail && userEmail.includes('@')) { 
-            const formattedEmail = userEmail.toLowerCase().trim();
-            localStorage.setItem('okc_user_email', formattedEmail); 
-            currentEmailRef.current = formattedEmail;
-            fetchCredits(formattedEmail); 
-            setShowLogin(false);
-        } else {
-            alert("Please enter a valid email.");
-        }
-    };
+  const handleLoginSubmit = (emailInput?: string) => {
+    // We check either the passed email or the state email
+    const emailToVerify = emailInput || userEmail;
+
+    if (emailToVerify && emailToVerify.includes('@')) { 
+        const formattedEmail = emailToVerify.toLowerCase().trim();
+        
+        // Update everything to the "Correct" email
+        localStorage.setItem('okc_user_email', formattedEmail); 
+        currentEmailRef.current = formattedEmail;
+        setUserEmail(formattedEmail); 
+        
+        fetchCredits(formattedEmail); 
+        setShowLogin(false);
+    } else {
+        alert("Please enter a valid email.");
+    }
+};
 
     const handlePromoSubmit = (onSuccess: () => void) => {
         if (promoCodeInput.toUpperCase() === FREEBIE_CODE) {
