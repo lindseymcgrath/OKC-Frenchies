@@ -1,20 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
 // --- CONFIGURATION ---
+// This is your GitHub URL for raw assets
 export const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
 
-// ✅ FIXED: Using Environment Variables to connect to your specific database
+// ✅ Using Environment Variables for Security
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Initialize Supabase Client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ UPDATED: STRIPE LINKS FUNCTION
-// This function creates links that carry the user's email to Stripe for automatic credit tracking.
+// ✅ STRIPE LINKS: Corrected logic to ensure email passes to Stripe
 export const getStripeLinks = (email: string) => {
     const encodedEmail = encodeURIComponent(email || '');
-    // client_reference_id is what Stripe sends back to Supabase to verify the purchase
+    // prefilled_email shows it on the checkout page; client_reference_id tells Supabase who paid
     const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
     
     return {
@@ -82,7 +81,6 @@ export interface SavedDog {
 // --- LOGIC FUNCTIONS ---
 export const getPhenotype = (dna: any): VisualTraits => {
     let phenotypeParts = [];
-    let proTips = [];
     let baseColorName = "Black";
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
@@ -103,18 +101,9 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const hasPied = dna.S !== 'n/n'; 
     const isFullPied = dna.S === 'S/S';
     const hasFurnishings = dna.F !== 'n/n'; 
-    const isPinkCarrier = dna.Pink === 'n/A';
-    const isBlueCarrier = dna.D.includes('N/d') || dna.D.includes('n/d');
-    const isCocoaCarrier = dna.Co.includes('N/co') || dna.Co.includes('n/co');
-    const isRojoCarrier = dna.B.includes('N/b');
-    const hasEA = dna.E.includes('eA');
-    const isVisualEA = (dna.E === 'eA/e' || dna.E === 'eA/eA' || dna.E === 'e/eA');
-    const hasEm = dna.E.includes('Em');
-    const hasIntensityMod = dna.Int !== 'n/n';
-    const lAlleles = dna.L.split('/');
-    const recessiveL = lAlleles.filter((x: string) => x !== 'L').length;
-    const isFluffy = recessiveL === 2; // Visual Fluffy
-    const isFluffyCarrier = recessiveL === 1; // 1 copy of Fluffy
+    const recessiveL = dna.L.split('/').filter((x: string) => x !== 'L').length;
+    const isFluffy = recessiveL === 2;
+    const isFluffyCarrier = recessiveL === 1;
     const isFloodleProducer = hasFurnishings && (recessiveL > 0);
     const isCurly = dna.C !== 'n/n';
     const aAlleles = dna.A.split('/');
@@ -137,100 +126,90 @@ export const getPhenotype = (dna: any): VisualTraits => {
     }
 
     if (hasFurnishings) {
-        if (isFluffy) {
-            phenotypeParts.push("Floodle/Teddy");
-        } else if (isFluffyCarrier) {
-            phenotypeParts.push("Floodle/Teddy Producer");
-        } else {
-            phenotypeParts.push("Visual Furnishings");
-        }
+        phenotypeParts.push(isFluffy ? "Floodle/Teddy" : isFluffyCarrier ? "Floodle/Teddy Producer" : "Visual Furnishings");
     } else if (isFluffy) {
         phenotypeParts.push("Fluffy");
     }
 
     if (hasMerle && !isCream && !isWhiteMasked) phenotypeParts.push("Merle"); 
-    if (isVisualEA) phenotypeParts.push("Visual eA");
+    if (dna.E.includes('eA') && !isCream) phenotypeParts.push("Visual eA");
     
-    if (isPink) { phenotypeParts.push("Pink (Albino)"); }
-    else if (isCream) { phenotypeParts.push("Cream"); }
-    else if (isSolidBlack) { phenotypeParts.push(`Solid ${baseColorName}`); }
+    if (isPink) phenotypeParts.push("Pink (Albino)");
+    else if (isCream) phenotypeParts.push("Cream");
+    else if (isSolidBlack) phenotypeParts.push(`Solid ${baseColorName}`);
     else if (hasAy) phenotypeParts.push(`Fawn ${baseColorName}`);
     else if (hasAw) phenotypeParts.push(`Sable ${baseColorName}`);
     else phenotypeParts.push(baseColorName);
 
     if (hasAt && !isSolidBlack && !isCream && !isPink && !isWhiteMasked) {
-        if (isBrindle) phenotypeParts.push("Trindle"); else phenotypeParts.push("with Tan Points");
-    } else if (isBrindle && !isSolidBlack && !isCream && !isPink && !isWhiteMasked) { phenotypeParts.push("Brindle"); }
+        phenotypeParts.push(isBrindle ? "Trindle" : "with Tan Points");
+    } else if (isBrindle && !isSolidBlack && !isCream && !isPink && !isWhiteMasked) {
+        phenotypeParts.push("Brindle");
+    }
     
     if (isFullPied) phenotypeParts.push("Full Pied"); else if (hasPied) phenotypeParts.push("Visual Pied");
-    if (isWhiteMasked) { phenotypeParts.push("(Likely Covered in Cream)"); }
 
-    if (isWhiteMasked) layers.push('base-cream.png'); 
-    else if (isPink) layers.push(isFluffy ? 'base-pink-fluffy.png' : 'base-pink.png'); 
-    else if (isCream) layers.push('base-cream.png');
-    else if (hasAy && !isBrindle && !isSolidBlack) layers.push(isFluffy ? 'base-fawn-fluffy.png' : 'base-fawn.png');
-    else if (hasAw && !isBrindle && !isSolidBlack) layers.push(isFluffy ? 'base-fawn-fluffy.png' : 'base-sable.png'); 
+    // ✅ IMAGE PATH FIX: Prepend the full visuals folder path
+    const path = (name: string) => `/images/visuals/${name}`;
+
+    if (isWhiteMasked) layers.push(path('base-cream.png')); 
+    else if (isPink) layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png')); 
+    else if (isCream) layers.push(path('base-cream.png'));
+    else if (hasAy && !isBrindle && !isSolidBlack) layers.push(isFluffy ? path('base-fawn-fluffy.png') : path('base-fawn.png'));
+    else if (hasAw && !isBrindle && !isSolidBlack) layers.push(isFluffy ? path('base-fawn-fluffy.png') : path('base-sable.png')); 
     else {
-        if (isFluffy) layers.push(`base-${visualBase}-fluffy.png`); 
-        else layers.push(`base-${visualBase}.png`);
+        layers.push(isFluffy ? path(`base-${visualBase}-fluffy.png`) : path(`base-${visualBase}.png`));
     }
 
     if (!isWhiteMasked) {
-        if (isVisualEA && !isCream && !isPink) layers.push('overlay-ea.png');
-        else if (hasAt && !isBrindle && !isCream && !isPink && !isSolidBlack) layers.push('overlay-tan-points.png');
-        if (hasEm && !isCream && !isPink && !isVisualEA && !isSolidBlack) layers.push('overlay-mask.png');
+        if (dna.E.includes('eA') && !isCream && !isPink) layers.push(path('overlay-ea.png'));
+        else if (hasAt && !isBrindle && !isCream && !isPink && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
+        if (dna.E.includes('Em') && !isCream && !isPink && !isSolidBlack) layers.push(path('overlay-mask.png'));
         
         if (hasMerle && !isCream) {
-            if (isPink) layers.push('overlay-merle-pink.png'); 
+            if (isPink) layers.push(path('overlay-merle-pink.png')); 
             else {
-                if (baseColorSlug === 'rojo' || baseColorSlug === 'new-shade-rojo') layers.push('overlay-merle-rojo.png');
-                else if (baseColorSlug === 'cocoa') layers.push('overlay-merle-cocoa.png');
-                else if (baseColorSlug === 'new-shade-isabella' || baseColorSlug === 'isabella') layers.push('overlay-merle-tan.png');
-                else if (baseColorSlug === 'lilac') layers.push('overlay-merle-gray.png');
-                else if (baseColorSlug === 'blue') layers.push('overlay-merle-black.png');
-                else if (hasAy || hasAw) layers.push('overlay-merle-fawn.png');
-                else layers.push('overlay-merle-black.png');
+                if (['rojo', 'new-shade-rojo'].includes(baseColorSlug)) layers.push(path('overlay-merle-rojo.png'));
+                else if (baseColorSlug === 'cocoa') layers.push(path('overlay-merle-cocoa.png'));
+                else if (['new-shade-isabella', 'isabella'].includes(baseColorSlug)) layers.push(path('overlay-merle-tan.png'));
+                else if (baseColorSlug === 'lilac') layers.push(path('overlay-merle-gray.png'));
+                else if (hasAy || hasAw) layers.push(path('overlay-merle-fawn.png'));
+                else layers.push(path('overlay-merle-black.png'));
             }
         }
 
-        if (!isCream && !isPink) { if (isFullPied) layers.push('overlay-pied.png'); else if (hasPied) layers.push('overlay-pied-carrier.png'); }
-        if (isBrindle) layers.push('overlay-brindle.png');
-        
-        if (dna.Panda === 'Koi') {
-            layers.push('overlay-koi.png'); 
-        } else if (dna.Panda === 'Panda') {
-            layers.push('overlay-husky.png');
+        if (!isCream && !isPink) { 
+            if (isFullPied) layers.push(path('overlay-pied.png')); 
+            else if (hasPied) layers.push(path('overlay-pied-carrier.png')); 
         }
+        if (isBrindle) layers.push(path('overlay-brindle.png'));
+        if (dna.Panda === 'Koi') layers.push(path('overlay-koi.png')); 
+        else if (dna.Panda === 'Panda') layers.push(path('overlay-husky.png'));
     }
 
     if (hasFurnishings) {
-        if (isCream || isPink || isWhiteMasked) layers.push('overlay-cream-furnishing.png');
-        else if (['blue', 'lilac'].includes(baseColorSlug)) layers.push('overlay-gray-furnishing.png');
-        else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) layers.push('overlay-cocoa-furnishing.png');
-        else layers.push('overlay-furnishing.png');
+        if (isCream || isPink || isWhiteMasked) layers.push(path('overlay-cream-furnishing.png'));
+        else if (['blue', 'lilac'].includes(baseColorSlug)) layers.push(path('overlay-gray-furnishing.png'));
+        else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) layers.push(path('overlay-cocoa-furnishing.png'));
+        else layers.push(path('overlay-furnishing.png'));
     }
     
-    if (isCurly) layers.push('overlay-curl.png'); 
-    if (isFluffy) layers.push('overlay-fluffy.png'); 
-    layers.push('overlay-outline.png');
+    if (isCurly) layers.push(path('overlay-curl.png')); 
+    if (isFluffy) layers.push(path('overlay-fluffy.png')); 
+    layers.push(path('overlay-outline.png'));
 
-    const dnaString = Object.entries(dna).map(([k,v]) => v).join(' ');
     const compactDnaString = Object.entries(dna)
-        .filter(([key, val]) => {
-            const v = String(val);
-            return !['n/n', 'N/N', 'L/L', 'ky/ky', 'No', 'E/E'].includes(v);
-        })
-        .map(([key, val]) => val)
-        .join(' ');
+        .filter(([key, val]) => !['n/n', 'N/N', 'L/L', 'ky/ky', 'No', 'E/E'].includes(String(val)))
+        .map(([key, val]) => val).join(' ');
 
     return {
         baseColorName,
         phenotypeName: phenotypeParts.join(" "),
         layers,
         isHighRisk: dna.M === 'M/M',
-        proTips,
+        proTips: [],
         isFloodleProducer,
-        dnaString,
+        dnaString: Object.values(dna).join(' '),
         compactDnaString
     };
 };
@@ -238,45 +217,37 @@ export const getPhenotype = (dna: any): VisualTraits => {
 export const calculateLitterPrediction = (sire: any, dam: any) => {
     const results: { dna: any, prob: number }[] = [];
     const getAlleles = (s: string) => s.split('/');
-    const varyingLoci = Object.keys(LOCI).filter(key => {
-        const s = (sire as any)[key];
-        const d = (dam as any)[key];
-        if (s === d && !s.includes('/') && !d.includes('/')) return false; 
-        if (s === d && getAlleles(s)[0] === getAlleles(s)[1]) return false;
-        return true;
-    });
+    const varyingLoci = Object.keys(LOCI).filter(key => sire[key] !== dam[key] || getAlleles(sire[key])[0] !== getAlleles(sire[key])[1]);
+    
     const baseDNA: any = {};
     Object.keys(LOCI).forEach(key => {
-        if (!varyingLoci.includes(key)) {
-            const sA = getAlleles((sire as any)[key]);
-            const dA = getAlleles((dam as any)[key]);
-            baseDNA[key] = [sA[0], dA[0]].sort().join('/');
-        }
+        if (!varyingLoci.includes(key)) baseDNA[key] = [getAlleles(sire[key])[0], getAlleles(dam[key])[0]].sort().join('/');
     });
+
     const generateBranches = (index: number, currentDNA: any, currentProb: number) => {
         if (index >= varyingLoci.length) { results.push({ dna: currentDNA, prob: currentProb }); return; }
         const key = varyingLoci[index];
-        const sA = getAlleles((sire as any)[key]);
-        const dA = getAlleles((dam as any)[key]);
+        const sA = getAlleles(sire[key]);
+        const dA = getAlleles(dam[key]);
         const outcomes: Record<string, number> = {};
-        [sA[0], sA[1]].forEach(s => { [dA[0], dA[1]].forEach(d => { const geno = [s, d].sort().join('/'); outcomes[geno] = (outcomes[geno] || 0) + 0.25; }); });
-        Object.entries(outcomes).forEach(([geno, prob]) => { generateBranches(index + 1, { ...currentDNA, [key]: geno }, currentProb * prob); });
+        [sA[0], sA[1]].forEach(s => { [dA[0], dA[1]].forEach(d => { 
+            const geno = [s, d].sort().join('/'); 
+            outcomes[geno] = (outcomes[geno] || 0) + 0.25; 
+        }); });
+        Object.entries(outcomes).forEach(([geno, prob]) => generateBranches(index + 1, { ...currentDNA, [key]: geno }, currentProb * prob));
     };
     generateBranches(0, baseDNA, 1.0);
     
     const phenotypes: Record<string, { dna: any, prob: number }> = {};
     results.forEach(res => {
         const traits = getPhenotype(res.dna);
-        const name = traits.phenotypeName; 
-        if (!phenotypes[name]) { phenotypes[name] = { dna: res.dna, prob: 0 }; }
-        phenotypes[name].prob += res.prob;
+        if (!phenotypes[traits.phenotypeName]) phenotypes[traits.phenotypeName] = { dna: res.dna, prob: 0 };
+        phenotypes[traits.phenotypeName].prob += res.prob;
     });
 
-    return Object.values(phenotypes)
-        .sort((a, b) => b.prob - a.prob)
-        .map(item => ({ 
-            dna: item.dna, 
-            probability: (item.prob * 100).toFixed(1) + '%',
-            dnaString: getPhenotype(item.dna).compactDnaString
-        }));
+    return Object.values(phenotypes).sort((a, b) => b.prob - a.prob).map(item => ({ 
+        dna: item.dna, 
+        probability: (item.prob * 100).toFixed(1) + '%',
+        dnaString: getPhenotype(item.dna).compactDnaString
+    }));
 };
