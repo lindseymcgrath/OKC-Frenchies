@@ -260,30 +260,44 @@ export const useStudioLogic = (
   
     const handleDownloadAll = async () => {
         if (!marketingRef.current) return;
+        
+        // Close the editor controls before snapping the photo
         setSelectedLayer(null);
-        if (!isUnlocked && !isSubscribed && (!credits || credits <= 0)) {
+
+        // ✅ LOGIC: Download is FREE if they are Pro OR have free turns OR have credits
+        const hasFreebie = !isUnlocked && !isSubscribed && freeGenerations > 0;
+        const hasCredits = credits !== null && credits > 0;
+        const isPro = isUnlocked || isSubscribed;
+
+        if (!isPro && !hasFreebie && !hasCredits) {
             setShowPaywall(true);
             return;
         }
-        if (!isUnlocked && !isSubscribed) {
-             const success = await deductCredit();
-             if (!success) return;
+
+        // Only deduct if they aren't Pro
+        if (!isPro) {
+             // If they have free generations, we don't even call deductCredit()
+             if (hasFreebie) {
+                 setFreeGenerations(prev => prev - 1);
+             } else {
+                 const success = await deductCredit();
+                 if (!success) return;
+             }
         }
+
+        // Trigger the actual image creation
         if ((window as any).html2canvas) {
             try {
-                const masterCanvas = await (window as any).html2canvas(marketingRef.current, { scale: 3, useCORS: true, allowTaint: true, logging: false });
+                const masterCanvas = await (window as any).html2canvas(marketingRef.current, { 
+                    scale: 3, 
+                    useCORS: true, 
+                    allowTaint: true, 
+                    logging: false 
+                });
                 downloadImage(masterCanvas, `OKC_Studio_${aspectRatio.replace(':','-')}.jpg`);
-            } catch (e) { console.error("Export failed", e); }
-        }
-    };
-  
-    const handleExportLitter = async () => {
-        if (!litterRef.current) return;
-        if ((window as any).html2canvas) {
-            try {
-                const canvas = await (window as any).html2canvas(litterRef.current, { scale: 2, backgroundColor: '#020617' });
-                setGeneratedLitterImage(canvas.toDataURL('image/jpeg', 0.9));
-            } catch (e) { console.error("Litter export failed", e); }
+            } catch (e) { 
+                console.error("Export failed", e); 
+            }
         }
     };
 
