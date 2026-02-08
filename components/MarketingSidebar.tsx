@@ -2,7 +2,7 @@ import React from 'react';
 import { 
     Briefcase, Loader2, Scissors, Wand2, Grid3X3, RectangleVertical, Smartphone, 
     Edit3, Sparkles, Type, ToggleRight, ToggleLeft, AlignCenter, X, 
-    RotateCw, Scaling, ChevronDown, CheckCircle2, Layers, Sticker as StickerIcon, Crown, Flame, Dna, PawPrint
+    RotateCw, Scaling, ChevronDown, CheckCircle2, Layers, Sticker as StickerIcon, Crown, Flame, Dna, PawPrint, Trash2
 } from 'lucide-react';
 import { PROMPTS } from '../utils/calculatorHelpers';
 
@@ -77,6 +77,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
         { type: 'fire', icon: Flame, label: 'Lit' },
         { type: 'dna', icon: Dna, label: 'DNA' },
         { type: 'paw', icon: PawPrint, label: 'Paw' },
+        { type: 'cross', icon: X, label: 'X (Mix)' },
     ];
 
     return (
@@ -235,7 +236,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
 
                                     {/* Outline */}
                                     <div className="flex items-center justify-between">
-                                        <span className="text-[9px] uppercase text-slate-400">Outline</span>
+                                        <span className="text-[9px] uppercase text-slate-400">Outer Stroke</span>
                                         <div className="flex items-center gap-2">
                                             {currentStyle.outline && <input type="color" value={currentStyle.outlineColor} onChange={(e) => studio.updateSelectedStyle('outlineColor', e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>}
                                             <button onClick={() => studio.updateSelectedStyle('outline', !currentStyle.outline)}>
@@ -341,6 +342,16 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* RESET CANVAS */}
+            <div className="order-6 mt-4">
+                <button 
+                    onClick={studio.resetCanvas}
+                    className="w-full py-2 bg-red-900/20 text-red-400 hover:bg-red-900/40 hover:text-white border border-red-900/30 text-[9px] uppercase font-bold tracking-widest flex items-center justify-center gap-2 transition-all rounded-sm"
+                >
+                    <Trash2 size={12} /> Reset Canvas
+                </button>
+            </div>
 
             {/* ✅ ATMOSPHERE BROWSE MODAL */}
             {studio.showPromptModal && (
