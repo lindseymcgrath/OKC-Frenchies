@@ -2,7 +2,7 @@ import React from 'react';
 import { 
     Briefcase, Loader2, Scissors, Wand2, Grid3X3, RectangleVertical, Smartphone, 
     Edit3, Sparkles, Type, ToggleRight, ToggleLeft, AlignCenter, X, 
-    RotateCw, Scaling, ChevronDown, CheckCircle2 
+    RotateCw, Scaling, ChevronDown, CheckCircle2, PaintBucket, Layers 
 } from 'lucide-react';
 import { PROMPTS } from '../utils/calculatorHelpers';
 
@@ -258,8 +258,86 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
             {/* 3. TEXT OVERLAYS ACCORDION */}
             <div className="order-3">
                 <Accordion id="text" title="Text Overlays & Colors" icon={Type} studio={studio}>
-                    <div className="space-y-3">
-                        {/* Header Control */}
+                    <div className="space-y-4">
+                        
+                        {/* --- TYPOGRAPHY & EFFECTS SECTION --- */}
+                        <div className="bg-indigo-900/10 border border-indigo-500/30 p-2 rounded-sm space-y-3">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Layers size={12} className="text-indigo-400"/>
+                                <span className="text-[9px] font-bold uppercase text-indigo-300">Typography & Effects</span>
+                            </div>
+                            
+                            {/* Font Selection */}
+                            <div className="grid grid-cols-3 gap-1">
+                                {['Cinzel', 'Manrope', 'Playfair Display'].map(font => (
+                                    <button
+                                        key={font}
+                                        onClick={() => studio.setActiveFont(font)}
+                                        className={`py-1 text-[8px] rounded-sm border ${studio.activeFont === font ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-black/40 text-slate-500 border-slate-800'}`}
+                                        style={{ fontFamily: font }}
+                                    >
+                                        {font.split(' ')[0]}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Effects Toggles */}
+                            <div className="grid grid-cols-1 gap-2">
+                                {/* Shadow Toggle */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => studio.setShowTextShadow(!studio.showTextShadow)}>
+                                            {studio.showTextShadow ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}
+                                        </button>
+                                        <span className="text-[9px] uppercase text-slate-400">Lifted Shadow</span>
+                                    </div>
+                                </div>
+
+                                {/* Outline Toggle & Color */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => studio.setShowTextOutline(!studio.showTextOutline)}>
+                                            {studio.showTextOutline ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}
+                                        </button>
+                                        <span className="text-[9px] uppercase text-slate-400">Outline</span>
+                                    </div>
+                                    {studio.showTextOutline && (
+                                        <div className="flex items-center gap-2">
+                                            <input type="color" value={studio.textOutlineColor} onChange={(e) => studio.setTextOutlineColor(e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Background Toggle, Color & Opacity */}
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => studio.setShowTextBg(!studio.showTextBg)}>
+                                                {studio.showTextBg ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}
+                                            </button>
+                                            <span className="text-[9px] uppercase text-slate-400">Highlight Bg</span>
+                                        </div>
+                                        {studio.showTextBg && (
+                                            <input type="color" value={studio.textBgColor} onChange={(e) => studio.setTextBgColor(e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>
+                                        )}
+                                    </div>
+                                    {studio.showTextBg && (
+                                        <div className="flex items-center gap-2 pl-6">
+                                            <span className="text-[8px] text-slate-500">Opacity</span>
+                                            <input 
+                                                type="range" 
+                                                min="0" max="100" 
+                                                value={studio.textBgOpacity} 
+                                                onChange={(e) => studio.setTextBgOpacity(parseInt(e.target.value))} 
+                                                className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Standard Inputs */}
                         <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
                             <button onClick={() => studio.setShowHeader(!studio.showHeader)} className="hover:scale-110 transition-transform">
                                 {studio.showHeader ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
@@ -275,7 +353,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             </div>
                         </div>
 
-                        {/* Stud Name Control */}
                         <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
                             <button onClick={() => studio.setShowStudName(!studio.showStudName)} className="hover:scale-110 transition-transform">
                                 {studio.showStudName ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
@@ -291,7 +368,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             </div>
                         </div>
 
-                        {/* Dam Name Control */}
                         <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
                             <button onClick={() => studio.setShowDamName(!studio.showDamName)} className="hover:scale-110 transition-transform">
                                 {studio.showDamName ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
