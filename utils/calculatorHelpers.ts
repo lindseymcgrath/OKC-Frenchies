@@ -17,7 +17,6 @@ export const getStripeLinks = (email: string) => {
 
 export const FREEBIE_CODE = "OKCFREE";
 
-// ... (PROMPTS and LOCI remain the same)
 export const PROMPTS = [
     { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground...", suggestion: "Puppies / Litter" },
     { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery...", suggestion: "Puppies / Soft" },
@@ -69,8 +68,8 @@ export const getPhenotype = (dna: any): VisualTraits => {
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
 
-   // ✅ THE VITE-CORRECT PATH
-const path = (name: string) => "/images/visuals/" + name.trim();
+    // ✅ THE VITE-CORRECT PATH
+    const path = (name: string) => "/images/visuals/" + name.trim();
     
     const b = dna.B === 'b/b';
     const co = dna.Co === 'co/co';
@@ -103,7 +102,7 @@ const path = (name: string) => "/images/visuals/" + name.trim();
     let visualBase = baseColorSlug;
     const safeBase = visualBase.toLowerCase().replace(/\s+/g, '-');
 
-    // 🏗️ BASE LAYERS (Now with Hard-Links)
+    // 🏗️ BASE LAYERS
     if (isWhiteMasked) layers.push(path('base-cream.png')); 
     else if (isPink) layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png')); 
     else if (isCream) layers.push(path('base-cream.png'));
@@ -113,7 +112,7 @@ const path = (name: string) => "/images/visuals/" + name.trim();
         layers.push(path(`base-${safeBase}${suffix}`));
     }
 
-    // 🎨 OVERLAY LAYERS (Now with Hard-Links)
+    // 🎨 OVERLAY LAYERS
     if (!isWhiteMasked) {
         if (dna.E.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
         else if (hasAt && !isBrindle && !isCream && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
@@ -152,6 +151,7 @@ const path = (name: string) => "/images/visuals/" + name.trim();
         dnaString: Object.values(dna).join(' '),
         compactDnaString: ''
     };
+}; // This was the missing brace
 
 export const calculateLitterPrediction = (sire: any, dam: any) => {
     // ... (Keep your existing litter prediction logic here)
