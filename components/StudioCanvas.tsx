@@ -1,6 +1,7 @@
 import React from 'react';
 import Draggable from 'react-draggable';
-import { Move, Download, Sparkles, Scissors, CheckCircle2, Crown, Lock } from 'lucide-react';
+import { Move, Download, Crown, CheckCircle2, Flame, Dna, PawPrint, Lock } from 'lucide-react';
+import { Sticker as StickerType } from '../hooks/useStudioLogic';
 
 interface StudioCanvasProps {
     studio: any;
@@ -16,13 +17,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
     studio, isMobile, isSubscribed, isUnlocked, credits, userEmail, setShowPaywall 
 }) => {
 
-    // ✅ Intercepts download if not logged in/no tokens
     const handleDownloadClick = () => {
-        // Check "Can I download?"
-        // 1. Pro User (Subscribed/Unlocked)
-        // 2. Session Active (One-time unlock)
-        // 3. Has Credits (Paid)
-        // 4. Has Free Generations (Free Trial)
         const isPro = isSubscribed || isUnlocked;
         const canDownload = isPro || studio.isSessionActive || (credits && credits > 0) || studio.freeGenerations > 0;
 
@@ -33,25 +28,37 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         studio.handleDownloadAll();
     };
 
-    // Helper for Hex to RGBA conversion for background opacity
     const hexToRgba = (hex: string, opacity: number) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity / 100})` : 'transparent';
     };
 
-    // Dynamic Style Generator for Text Elements
-    const getTextStyle = (specificColor: string) => {
+    // Style Generator for Text Elements - NOW PER LAYER
+    const getTextStyle = (layerKey: string) => {
+        const style = studio.textStyles[layerKey];
+        if (!style) return {};
+
         return {
-            color: specificColor,
-            fontFamily: studio.activeFont,
-            // Add subtle default shadow if toggle is off for visibility, or strong one if on
-            textShadow: studio.showTextShadow ? '0px 4px 8px rgba(0,0,0,0.8)' : '0px 1px 2px rgba(0,0,0,0.5)', 
-            WebkitTextStroke: studio.showTextOutline ? `1px ${studio.textOutlineColor}` : '0',
-            backgroundColor: studio.showTextBg ? hexToRgba(studio.textBgColor, studio.textBgOpacity) : 'transparent',
-            padding: studio.showTextBg ? '0.2em 0.5em' : '0',
+            color: style.color,
+            fontFamily: style.font,
+            textShadow: style.shadow ? '0px 4px 8px rgba(0,0,0,0.8)' : 'none', 
+            WebkitTextStroke: style.outline ? `1px ${style.outlineColor}` : '0',
+            backgroundColor: style.bg ? hexToRgba(style.bgColor, style.bgOpacity) : 'transparent',
+            padding: style.bg ? '0.2em 0.5em' : '0',
             borderRadius: '0.1em',
-            // transform is handled by the specific element's draggable state
+            // Note: Transform is handled by the parent draggable div
         };
+    };
+
+    const getStickerIcon = (type: string) => {
+        switch(type) {
+            case 'crown': return <Crown size="100%" className="text-yellow-400 drop-shadow-lg" fill="currentColor" />;
+            case 'verified': return <CheckCircle2 size="100%" className="text-blue-400 drop-shadow-lg" fill="currentColor" />;
+            case 'fire': return <Flame size="100%" className="text-orange-500 drop-shadow-lg" fill="currentColor" />;
+            case 'dna': return <Dna size="100%" className="text-purple-400 drop-shadow-lg" />;
+            case 'paw': return <PawPrint size="100%" className="text-slate-200 drop-shadow-lg" fill="currentColor" />;
+            default: return null;
+        }
     };
 
     return (
@@ -74,9 +81,9 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                     >
                         {studio.marketingBg.startsWith('data:') && <img src={studio.marketingBg} className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" />}
                         
-                        <div className="absolute inset-0 z-10 w-full h-full overflow-hidden">
+                        <div className="absolute inset-0 z-10 w-full h-full overflow-hidden flex items-center justify-center">
                             
-                            {/* Draggable Watermark: Only shows if NOT Pro and Session NOT Active */}
+                            {/* Watermark - Centered by default now */}
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <Draggable 
                                     nodeRef={studio.watermarkRef} 
@@ -84,7 +91,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     position={{x: studio.layerTransforms.watermark.x, y: studio.layerTransforms.watermark.y}} 
                                     onStop={(e, data) => studio.updatePosition('watermark', data.x, data.y)}
                                 >
-                                    <div ref={studio.watermarkRef} className="absolute z-50 top-[5%] left-[5%] cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('watermark')}>
+                                    <div ref={studio.watermarkRef} className="absolute z-50 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('watermark')}>
                                         <div className="bg-black/60 px-3 py-1 rounded backdrop-blur-sm border border-white/10 whitespace-nowrap group">
                                             <span className="font-serif font-bold text-white text-[8px] tracking-[0.2em] uppercase group-hover:text-luxury-teal transition-colors">Designed by OKC FRENCHIES</span>
                                         </div>
@@ -92,20 +99,23 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* Draggable Layers */}
-                            {studio.sireImage && <Draggable nodeRef={studio.sireNodeRef} bounds="parent" grid={[10, 10]}><div ref={studio.sireNodeRef} className="absolute z-20 w-1/2 h-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sire')}><img src={studio.sireImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.sire.rotate}deg) scale(${studio.layerTransforms.sire.scale})`}}/></div></Draggable>}
-                            {studio.damImage && <Draggable nodeRef={studio.damNodeRef} bounds="parent" grid={[10, 10]}><div ref={studio.damNodeRef} className="absolute z-20 w-1/2 h-1/2 left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('dam')}><img src={studio.damImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.dam.rotate}deg) scale(${studio.layerTransforms.dam.scale})`}}/></div></Draggable>}
-                            {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" grid={[10, 10]}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 top-[10%] left-[5%] cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
-                            {studio.damLogo && <Draggable nodeRef={studio.damLogoRef} bounds="parent" grid={[10, 10]}><div ref={studio.damLogoRef} className="absolute z-30 w-1/4 h-1/4 top-[10%] right-[5%] cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damLogo')}><img src={studio.damLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.damLogo.rotate}deg) scale(${studio.layerTransforms.damLogo.scale})`}}/></div></Draggable>}
+                            {/* Standard Images */}
+                            {studio.sireImage && <Draggable nodeRef={studio.sireNodeRef} bounds="parent" position={{x: studio.layerTransforms.sire.x, y: studio.layerTransforms.sire.y}} onStop={(e, data) => studio.updatePosition('sire', data.x, data.y)}><div ref={studio.sireNodeRef} className="absolute z-20 w-1/2 h-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sire')}><img src={studio.sireImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.sire.rotate}deg) scale(${studio.layerTransforms.sire.scale})`}}/></div></Draggable>}
+                            {studio.damImage && <Draggable nodeRef={studio.damNodeRef} bounds="parent" position={{x: studio.layerTransforms.dam.x, y: studio.layerTransforms.dam.y}} onStop={(e, data) => studio.updatePosition('dam', data.x, data.y)}><div ref={studio.damNodeRef} className="absolute z-20 w-1/2 h-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('dam')}><img src={studio.damImage} className="w-full h-full object-contain pointer-events-none drop-shadow-lg" style={{transform: `rotate(${studio.layerTransforms.dam.rotate}deg) scale(${studio.layerTransforms.dam.scale})`}}/></div></Draggable>}
                             
-                            {/* Text Layers - Now using Dynamic Styles */}
+                            {/* Logos */}
+                            {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" position={{x: studio.layerTransforms.sireLogo.x, y: studio.layerTransforms.sireLogo.y}} onStop={(e, data) => studio.updatePosition('sireLogo', data.x, data.y)}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
+                            {studio.damLogo && <Draggable nodeRef={studio.damLogoRef} bounds="parent" position={{x: studio.layerTransforms.damLogo.x, y: studio.layerTransforms.damLogo.y}} onStop={(e, data) => studio.updatePosition('damLogo', data.x, data.y)}><div ref={studio.damLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damLogo')}><img src={studio.damLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.damLogo.rotate}deg) scale(${studio.layerTransforms.damLogo.scale})`}}/></div></Draggable>}
+                            
+                            {/* TEXT LAYERS - Now using position directly from state for smart resizing */}
+                            
                             {studio.showHeader && (
-                                <Draggable nodeRef={studio.headerRef} position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)} grid={[10, 10]}>
-                                    <div ref={studio.headerRef} className="absolute z-30 top-[10%] left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('header')}>
-                                        <div className="-translate-x-1/2 whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.headerRef} position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)}>
+                                    <div ref={studio.headerRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('header')}>
+                                        <div className="whitespace-nowrap text-center">
                                             <h1 
-                                                className="text-3xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block" 
-                                                style={{...getTextStyle(studio.headerColor), transform: `rotate(${studio.layerTransforms.header.rotate}deg) scale(${studio.layerTransforms.header.scale})`}}
+                                                className="text-3xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                style={{...getTextStyle('header'), transform: `rotate(${studio.layerTransforms.header.rotate}deg) scale(${studio.layerTransforms.header.scale})`}}
                                             >
                                                 {studio.headerText}
                                             </h1>
@@ -115,12 +125,12 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                             )}
                             
                             {studio.showStudName && (
-                                <Draggable nodeRef={studio.studNameRef} position={{x: studio.layerTransforms.studName.x, y: studio.layerTransforms.studName.y}} onStop={(e, data) => studio.updatePosition('studName', data.x, data.y)} grid={[10, 10]}>
-                                    <div ref={studio.studNameRef} className="absolute z-30 top-[20%] left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studName')}>
-                                        <div className="-translate-x-1/2 whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.studNameRef} position={{x: studio.layerTransforms.studName.x, y: studio.layerTransforms.studName.y}} onStop={(e, data) => studio.updatePosition('studName', data.x, data.y)}>
+                                    <div ref={studio.studNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studName')}>
+                                        <div className="whitespace-nowrap text-center">
                                             <h2 
-                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block" 
-                                                style={{...getTextStyle(studio.studNameColor), transform: `rotate(${studio.layerTransforms.studName.rotate}deg) scale(${studio.layerTransforms.studName.scale})`}}
+                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                style={{...getTextStyle('studName'), transform: `rotate(${studio.layerTransforms.studName.rotate}deg) scale(${studio.layerTransforms.studName.scale})`}}
                                             >
                                                 {studio.studName}
                                             </h2>
@@ -130,12 +140,12 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                             )}
 
                             {studio.showDamName && (
-                                <Draggable nodeRef={studio.damNameRef} position={{x: studio.layerTransforms.damName.x, y: studio.layerTransforms.damName.y}} onStop={(e, data) => studio.updatePosition('damName', data.x, data.y)} grid={[10, 10]}>
-                                    <div ref={studio.damNameRef} className="absolute z-30 top-[28%] left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damName')}>
-                                        <div className="-translate-x-1/2 whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.damNameRef} position={{x: studio.layerTransforms.damName.x, y: studio.layerTransforms.damName.y}} onStop={(e, data) => studio.updatePosition('damName', data.x, data.y)}>
+                                    <div ref={studio.damNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damName')}>
+                                        <div className="whitespace-nowrap text-center">
                                             <h2 
-                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block" 
-                                                style={{...getTextStyle(studio.damNameColor), transform: `rotate(${studio.layerTransforms.damName.rotate}deg) scale(${studio.layerTransforms.damName.scale})`}}
+                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                style={{...getTextStyle('damName'), transform: `rotate(${studio.layerTransforms.damName.rotate}deg) scale(${studio.layerTransforms.damName.scale})`}}
                                             >
                                                 {studio.damName}
                                             </h2>
@@ -144,8 +154,54 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {studio.showPhenotype && <Draggable nodeRef={studio.studPhenoRef} position={{x: studio.layerTransforms.studPheno.x, y: studio.layerTransforms.studPheno.y}} onStop={(e, data) => studio.updatePosition('studPheno', data.x, data.y)} grid={[10, 10]}><div ref={studio.studPhenoRef} className="absolute z-30 bottom-[15%] left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studPheno')}><div className="-translate-x-1/2 whitespace-nowrap text-center"><span className="font-sans text-[10px] uppercase tracking-[0.3em] drop-shadow-md bg-black/40 backdrop-blur-sm px-3 py-1 rounded-sm pointer-events-none inline-block" style={{color: studio.studPhenoColor, transform: `rotate(${studio.layerTransforms.studPheno.rotate}deg) scale(${studio.layerTransforms.studPheno.scale})`}}>{studio.studPhenotype}</span></div></div></Draggable>}
-                            {studio.showGenotype && <Draggable nodeRef={studio.studGenoRef} position={{x: studio.layerTransforms.studGeno.x, y: studio.layerTransforms.studGeno.y}} onStop={(e, data) => studio.updatePosition('studGeno', data.x, data.y)} grid={[10, 10]}><div ref={studio.studGenoRef} className="absolute z-30 bottom-[8%] left-1/2 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studGeno')}><div className="-translate-x-1/2 whitespace-nowrap text-center"><div className="bg-black/60 backdrop-blur-md border border-white/20 py-2 px-4 rounded-sm shadow-xl pointer-events-none inline-block" style={{transform: `rotate(${studio.layerTransforms.studGeno.rotate}deg) scale(${studio.layerTransforms.studGeno.scale})`}}><p className="font-mono text-xs font-bold tracking-wider" style={{color: studio.studDnaColor}}>{studio.studDna}</p></div></div></div></Draggable>}
+                            {studio.showPhenotype && (
+                                <Draggable nodeRef={studio.studPhenoRef} position={{x: studio.layerTransforms.studPheno.x, y: studio.layerTransforms.studPheno.y}} onStop={(e, data) => studio.updatePosition('studPheno', data.x, data.y)}>
+                                    <div ref={studio.studPhenoRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studPheno')}>
+                                        <div className="whitespace-nowrap text-center">
+                                            <span 
+                                                className="font-sans text-[10px] uppercase tracking-[0.3em] drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                style={{...getTextStyle('studPheno'), transform: `rotate(${studio.layerTransforms.studPheno.rotate}deg) scale(${studio.layerTransforms.studPheno.scale})`}}
+                                            >
+                                                {studio.studPhenotype}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Draggable>
+                            )}
+
+                            {studio.showGenotype && (
+                                <Draggable nodeRef={studio.studGenoRef} position={{x: studio.layerTransforms.studGeno.x, y: studio.layerTransforms.studGeno.y}} onStop={(e, data) => studio.updatePosition('studGeno', data.x, data.y)}>
+                                    <div ref={studio.studGenoRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studGeno')}>
+                                        <div className="whitespace-nowrap text-center">
+                                            <div 
+                                                className="backdrop-blur-md pointer-events-none inline-block transition-all" 
+                                                style={{...getTextStyle('studGeno'), transform: `rotate(${studio.layerTransforms.studGeno.rotate}deg) scale(${studio.layerTransforms.studGeno.scale})`}}
+                                            >
+                                                <p className="font-mono text-xs font-bold tracking-wider">{studio.studDna}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Draggable>
+                            )}
+
+                            {/* STICKERS RENDER */}
+                            {studio.stickers.map((sticker: StickerType) => (
+                                <Draggable 
+                                    key={sticker.id}
+                                    position={{x: sticker.x, y: sticker.y}}
+                                    onStop={(e, data) => studio.updatePosition(sticker.id, data.x, data.y)}
+                                >
+                                    <div className="absolute z-40 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer(sticker.id)}>
+                                        <div 
+                                            className={`w-12 h-12 transition-all ${studio.selectedLayer === sticker.id ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
+                                            style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
+                                        >
+                                            {getStickerIcon(sticker.type)}
+                                        </div>
+                                    </div>
+                                </Draggable>
+                            ))}
+
                         </div>
                     </div>
                 </div>
