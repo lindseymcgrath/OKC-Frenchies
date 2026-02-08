@@ -2,6 +2,28 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { PROMPTS, DEFAULT_SCENE_PROMPT } from '../utils/calculatorHelpers';
 
+// Define the shape of a text layer's style
+export interface TextStyle {
+    font: string;
+    color: string;
+    outline: boolean;
+    outlineColor: string;
+    shadow: boolean;
+    bg: boolean;
+    bgColor: string;
+    bgOpacity: number;
+    size: number; // Scale factor relative to base size
+}
+
+export interface Sticker {
+    id: string;
+    type: 'crown' | 'verified' | 'fire' | 'dna' | 'paw';
+    x: number;
+    y: number;
+    scale: number;
+    rotate: number;
+}
+
 export const useStudioLogic = (
     isSubscribed: boolean,
     isUnlocked: boolean,
@@ -24,7 +46,7 @@ export const useStudioLogic = (
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
     
-    // TEXT CONTENT STATE
+    // CONTENT STATE
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
@@ -32,28 +54,36 @@ export const useStudioLogic = (
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
     
-    // TEXT VISIBILITY STATE
+    // VISIBILITY STATE
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
-    
-    // TEXT COLOR STATE
-    const [headerColor, setHeaderColor] = useState('#ffffff');
-    const [studNameColor, setStudNameColor] = useState('#fbbf24');
-    const [damNameColor, setDamNameColor] = useState('#d946ef');
-    const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
-    const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
-    
-    // NEW: TEXT STYLING STATE
-    const [activeFont, setActiveFont] = useState('Cinzel');
-    const [showTextShadow, setShowTextShadow] = useState(true);
-    const [showTextOutline, setShowTextOutline] = useState(false);
-    const [textOutlineColor, setTextOutlineColor] = useState('#000000');
-    const [showTextBg, setShowTextBg] = useState(false);
-    const [textBgColor, setTextBgColor] = useState('#000000');
-    const [textBgOpacity, setTextBgOpacity] = useState(40); // 0-100
+
+    // --- NEW: PER-LAYER STYLING STATE ---
+    const defaultStyle: TextStyle = {
+        font: 'Cinzel',
+        color: '#ffffff',
+        outline: false,
+        outlineColor: '#000000',
+        shadow: true,
+        bg: false,
+        bgColor: '#000000',
+        bgOpacity: 40,
+        size: 1
+    };
+
+    const [textStyles, setTextStyles] = useState<Record<string, TextStyle>>({
+        header: { ...defaultStyle, size: 1.5 },
+        studName: { ...defaultStyle, color: '#fbbf24', font: 'Cinzel' },
+        damName: { ...defaultStyle, color: '#d946ef', font: 'Cinzel' },
+        studPheno: { ...defaultStyle, font: 'Manrope', bg: true, size: 0.8 },
+        studGeno: { ...defaultStyle, font: 'Manrope', color: '#2dd4bf', bg: true, size: 0.8 },
+    });
+
+    // STICKERS STATE
+    const [stickers, setStickers] = useState<Sticker[]>([]);
 
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
@@ -92,7 +122,9 @@ export const useStudioLogic = (
     };
 
     // --- LAYER MANAGEMENT ---
-    type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
+    // Expanded LayerId to include stickers
+    type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark' | string;
+    
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
     const [layerTransforms, setLayerTransforms] = useState<Record<string, { rotate: number, scale: number, x: number, y: number }>>({
@@ -100,12 +132,12 @@ export const useStudioLogic = (
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
         sireLogo: { rotate: 0, scale: 1, x: 0, y: 0 },
         damLogo: { rotate: 0, scale: 1, x: 0, y: 0 },
-        header: { rotate: 0, scale: 1, x: 0, y: 0 },
-        studName: { rotate: 0, scale: 1, x: 0, y: 0 },
+        header: { rotate: 0, scale: 1, x: 0, y: -150 }, // Initial offset for top
+        studName: { rotate: 0, scale: 1, x: 0, y: -50 },
         damName: { rotate: 0, scale: 1, x: 0, y: 0 },
-        studPheno: { rotate: 0, scale: 1, x: 0, y: 0 },
-        studGeno: { rotate: 0, scale: 1, x: 0, y: 0 },
-        watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
+        studPheno: { rotate: 0, scale: 1, x: 0, y: 150 },
+        studGeno: { rotate: 0, scale: 1, x: 0, y: 200 },
+        watermark: { rotate: 0, scale: 1, x: 0, y: 0 }, // Center
     });
 
     const marketingRef = useRef<HTMLDivElement>(null);
@@ -121,13 +153,54 @@ export const useStudioLogic = (
     const studGenoRef = useRef(null);
     const watermarkRef = useRef(null);
 
+    // --- HELPER: Update Text Style for Selected Layer ---
+    const updateSelectedStyle = (key: keyof TextStyle, value: any) => {
+        if (!selectedLayer || !textStyles[selectedLayer]) return;
+        setTextStyles(prev => ({
+            ...prev,
+            [selectedLayer!]: { ...prev[selectedLayer!], [key]: value }
+        }));
+    };
+
+    // --- HELPER: Stickers ---
+    const addSticker = (type: Sticker['type']) => {
+        const id = `sticker-${Date.now()}`;
+        setStickers(prev => [...prev, { id, type, x: 0, y: 0, scale: 1, rotate: 0 }]);
+        setSelectedLayer(id);
+    };
+
+    const removeSticker = (id: string) => {
+        setStickers(prev => prev.filter(s => s.id !== id));
+        if (selectedLayer === id) setSelectedLayer(null);
+    };
+
+    const updateSticker = (id: string, key: keyof Sticker, value: number) => {
+        setStickers(prev => prev.map(s => s.id === id ? { ...s, [key]: value } : s));
+    };
+
+    // --- TRANSFORM LOGIC ---
     const updateTransform = (key: string, value: number) => {
         if (!selectedLayer) return;
+        
+        // Handle Sticker Transforms separately
+        if (selectedLayer.startsWith('sticker-')) {
+            updateSticker(selectedLayer, key as keyof Sticker, value);
+            return;
+        }
+
         setLayerTransforms(prev => ({ ...prev, [selectedLayer]: { ...prev[selectedLayer], [key]: value } }));
     };
+
     const updatePosition = (layer: string, x: number, y: number) => {
+        // Handle Stickers
+        if (layer.startsWith('sticker-')) {
+            updateSticker(layer, 'x', x);
+            updateSticker(layer, 'y', y);
+            return;
+        }
         setLayerTransforms(prev => ({ ...prev, [layer]: { ...prev[layer], x, y } }));
     };
+
     const snapToCenter = () => {
         if (!selectedLayer) return;
         updatePosition(selectedLayer, 0, 0);
@@ -137,12 +210,38 @@ export const useStudioLogic = (
         setAiPrompt(`${aspectRatio === '1:1' ? 'Square' : aspectRatio}. ${text}`); 
         setShowPromptModal(false);
     };
+
+    // --- SMART LAYOUT RECALCULATION ---
     const changeAspectRatio = (ratio: '1:1' | '4:5' | '9:16') => {
         setAspectRatio(ratio);
+        
+        // Prompt Update
         setAiPrompt(prev => {
             const base = prev.replace(/^(1:1 Square|1:1|4:5|9:16)\. /, '');
             return `${ratio}. ${base}`;
         });
+
+        // Reposition Logic: Reset elements to "safe zones" based on new height
+        // 1:1 Height ~600px. 9:16 Height ~1000px.
+        const isTall = ratio === '9:16';
+        
+        setLayerTransforms(prev => ({
+            ...prev,
+            // Header goes higher on tall ratios
+            header: { ...prev.header, y: isTall ? -350 : -200, x: 0 },
+            // Names stay upper middle
+            studName: { ...prev.studName, y: isTall ? -250 : -50, x: 0 },
+            damName: { ...prev.damName, y: isTall ? -200 : 0, x: 0 },
+            // Dogs center
+            sire: { ...prev.sire, y: 0, x: 0 },
+            dam: { ...prev.dam, y: 0, x: 0 },
+            // Info goes lower on tall ratios
+            studPheno: { ...prev.studPheno, y: isTall ? 300 : 200, x: 0 },
+            studGeno: { ...prev.studGeno, y: isTall ? 350 : 250, x: 0 },
+            // Logos to corners (approximate)
+            sireLogo: { ...prev.sireLogo, x: 0, y: isTall ? -400 : -250 },
+            damLogo: { ...prev.damLogo, x: 0, y: isTall ? -400 : -250 },
+        }));
     };
 
     // --- UNLOCK SESSION ---
@@ -333,26 +432,18 @@ export const useStudioLogic = (
     };
 
     return {
-        freeGenerations, // ✅ EXPOSED TO FIX DOWNLOAD BUG
+        freeGenerations, 
         activeAccordion, setActiveAccordion,
         sireImage, setSireImage, damImage, setDamImage, sireLogo, setSireLogo, damLogo, setDamLogo,
         isProcessingImage, processingType, aspectRatio, showPromptModal, setShowPromptModal, showEditorModal, setShowEditorModal,
         headerText, setHeaderText, studName, setStudName, damName, setDamName, studDna, setStudDna, studPhenotype, setStudPhenotype,
         generatedLitterImage, setGeneratedLitterImage, selectedLayer, setSelectedLayer, layerTransforms,
         showHeader, setShowHeader, showStudName, setShowStudName, showDamName, setShowDamName, showPhenotype, setShowPhenotype, showGenotype, setShowGenotype,
-        headerColor, setHeaderColor, studNameColor, setStudNameColor, damNameColor, setDamNameColor, studDnaColor, setStudDnaColor, studPhenoColor, setStudPhenoColor,
+        textStyles, updateSelectedStyle, // Expose new style logic
+        stickers, addSticker, removeSticker, // Expose sticker logic
         bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene, marketingRef, litterRef, 
         sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef, watermarkRef,
         updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll,
-        dailyProCount, DAILY_LIMIT, isSessionActive, activateSession, sessionAiGens,
-        
-        // New Text Styling Exports
-        activeFont, setActiveFont,
-        showTextShadow, setShowTextShadow,
-        showTextOutline, setShowTextOutline,
-        textOutlineColor, setTextOutlineColor,
-        showTextBg, setShowTextBg,
-        textBgColor, setTextBgColor,
-        textBgOpacity, setTextBgOpacity
+        dailyProCount, DAILY_LIMIT, isSessionActive, activateSession, sessionAiGens
     };
 };
