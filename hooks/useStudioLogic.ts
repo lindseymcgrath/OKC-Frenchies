@@ -97,7 +97,6 @@ export const useStudioLogic = (
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
-        const KEY = import.meta.env.VITE_GEMINI_API_KEY;
         const isPro = isSubscribed || isUnlocked;
         
         // Explicitly check for free generations first
@@ -106,19 +105,37 @@ export const useStudioLogic = (
             return;
         }
 
-        if (!KEY) { alert("API Key Missing."); return; }
-
         setIsGeneratingScene(true);
         try {
-            const ai = new GoogleGenAI(KEY);
-            const model = ai.getGenerativeModel({ model: "gemini-3-pro-image" }); 
-
-            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, no dogs, 4k`);
-            const response = await result.response;
-            const part = response.candidates?.[0]?.content?.parts?.[0];
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
-            if (part?.inlineData) {
-                setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
+            // Map aspect ratio. Gemini supports "1:1", "3:4", "4:3", "9:16", "16:9".
+            let targetAspectRatio = '1:1';
+            if (aspectRatio === '9:16') targetAspectRatio = '9:16';
+            
+            const response = await ai.models.generateContent({
+                model: "gemini-3-pro-image-preview",
+                contents: `${aiPrompt}, architectural high-end photography, cinematic lighting, no dogs, 4k`,
+                config: {
+                    imageConfig: {
+                        aspectRatio: targetAspectRatio
+                    }
+                }
+            });
+
+            // Extract image from response
+            let imageUrl = null;
+            if (response.candidates?.[0]?.content?.parts) {
+                for (const part of response.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+                        break;
+                    }
+                }
+            }
+            
+            if (imageUrl) {
+                setMarketingBg(imageUrl);
                 if (!isPro) {
                     if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                     else await deductCredit();
@@ -141,11 +158,16 @@ export const useStudioLogic = (
         setIsProcessingImage(true);
         setProcessingType(type);
         try {
+            const emailHeader = (userEmail && userEmail.trim() !== '') ? userEmail : 'guest';
+            
             const res = await fetch('/api/remove-bg', { 
                 method: 'POST', 
                 body: await (await fetch(sourceImage)).blob(),
-                headers: { 'x-user-email': userEmail }
+                headers: { 'x-user-email': emailHeader }
             });
+            
+            if (!res.ok) throw new Error("BG Removal API Error");
+
             const processedBlob = await res.blob();
             const url = URL.createObjectURL(processedBlob);
             if (type === 'sire') setSireImage(url);
@@ -157,7 +179,10 @@ export const useStudioLogic = (
                 if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                 else await deductCredit();
             }
-        } catch (e) { alert("BG Removal Failed"); }
+        } catch (e) { 
+            console.error(e);
+            alert("BG Removal Failed. Please try again."); 
+        }
         finally { setIsProcessingImage(false); setProcessingType(null); }
     };
 
