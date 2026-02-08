@@ -18,15 +18,51 @@ export const getStripeLinks = (email: string) => {
 export const FREEBIE_CODE = "OKCFREE";
 
 export const PROMPTS = [
-    { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground...", suggestion: "Puppies / Litter" },
-    { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery...", suggestion: "Puppies / Soft" },
-    { name: "Velvet Luxury", text: "Deep royal blue velvet tufted background...", suggestion: "Puppies / Royal" },
-    { name: "Grey Wool Knit", text: "Empty scene, giant chunky-knit grey wool surface...", suggestion: "Puppies / Cozy" },
-    { name: "Marble Sunbeam", text: "Minimalist room, reflective white marble floor...", suggestion: "Dams" },
-    { name: "Luxury Vault", text: "Professional luxury vault interior...", suggestion: "Dams" },
-    { name: "OKC Midnight Tactical", text: "Aggressive urban cyberpunk setting...", suggestion: "Studs" },
-    { name: "Urban Cyberpunk", text: "Hyper-realistic cinematic urban alleyway at midnight...", suggestion: "Studs" },
-    { name: "Private Hangar", text: "Interior of a private luxury aircraft hangar...", suggestion: "Couples" },
+    { 
+        name: "Cream Shag Nursery", 
+        text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", 
+        suggestion: "Puppies / Litter" 
+    },
+    { 
+        name: "Cloud Nursery", 
+        text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", 
+        suggestion: "Puppies / Soft" 
+    },
+    { 
+        name: "Velvet Luxury", 
+        text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", 
+        suggestion: "Puppies / Royal" 
+    },
+    { 
+        name: "Grey Wool Knit", 
+        text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", 
+        suggestion: "Puppies / Cozy" 
+    },
+    { 
+        name: "Marble Sunbeam", 
+        text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", 
+        suggestion: "Dams" 
+    },
+    { 
+        name: "Luxury Vault", 
+        text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", 
+        suggestion: "Dams" 
+    },
+    { 
+        name: "OKC Midnight Tactical", 
+        text: "Aggressive urban cyberpunk setting, wet pavement, neon blue and orange reflections, tactical gear aesthetic, gritty midnight atmosphere.", 
+        suggestion: "Studs" 
+    },
+    { 
+        name: "Urban Cyberpunk", 
+        text: "Hyper-realistic cinematic urban alleyway at midnight, neon signs, rainy atmosphere, industrial textures, steam rising from vents.", 
+        suggestion: "Studs" 
+    },
+    { 
+        name: "Private Hangar", 
+        text: "Interior of a private luxury aircraft hangar, polished concrete floor, soft overhead industrial lighting, spacious and exclusive atmosphere.", 
+        suggestion: "Couples" 
+    },
 ];
 
 export const DEFAULT_SCENE_PROMPT = PROMPTS[0].text;
