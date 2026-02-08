@@ -25,38 +25,42 @@ export default async function handler(req, res) {
   }
 
   // Double check that we have a valid Supabase connection before proceeding
-  if (!process.env.VITE_SUPABASE_URL) {
+  // Only if NOT guest
+  if (userEmail !== 'guest' && !process.env.VITE_SUPABASE_URL) {
      console.error("Missing VITE_SUPABASE_URL environment variable");
      return res.status(500).json({ error: 'Server configuration error' });
   }
 
   try {
     // 3. CREDIT CHECK: Ask Supabase if this user has credits
-    const { data: profile, error: fetchError } = await supabase
-      .from('user_credits')
-      .select('credits_remaining, subscription_end')
-      .eq('email', userEmail)
-      .single();
+    // SKIP IF GUEST
+    if (userEmail !== 'guest') {
+        const { data: profile, error: fetchError } = await supabase
+          .from('user_credits')
+          .select('credits_remaining, subscription_end')
+          .eq('email', userEmail)
+          .single();
 
-    if (fetchError || !profile) {
-      // Handle case where user might not exist yet - optional: auto-create? 
-      // For now, return error
-      return res.status(404).json({ error: 'User profile not found.' });
-    }
+        if (fetchError || !profile) {
+          // Handle case where user might not exist yet - optional: auto-create? 
+          // For now, return error
+          return res.status(404).json({ error: 'User profile not found.' });
+        }
 
-    const isSubscribed = profile.subscription_end && new Date(profile.subscription_end) > new Date();
-    
-    // If no credits and not subscribed, block the request
-    if (profile.credits_remaining <= 0 && !isSubscribed) {
-      return res.status(402).json({ error: 'Insufficient credits. Please refill.' });
-    }
+        const isSubscribed = profile.subscription_end && new Date(profile.subscription_end) > new Date();
+        
+        // If no credits and not subscribed, block the request
+        if (profile.credits_remaining <= 0 && !isSubscribed) {
+          return res.status(402).json({ error: 'Insufficient credits. Please refill.' });
+        }
 
-    // 4. DEDUCT CREDIT: If not a subscriber, take 1 credit away now
-    if (!isSubscribed) {
-      await supabase
-        .from('user_credits')
-        .update({ credits_remaining: profile.credits_remaining - 1 })
-        .eq('email', userEmail);
+        // 4. DEDUCT CREDIT: If not a subscriber, take 1 credit away now
+        if (!isSubscribed) {
+          await supabase
+            .from('user_credits')
+            .update({ credits_remaining: profile.credits_remaining - 1 })
+            .eq('email', userEmail);
+        }
     }
 
     // 5. PROCEED TO PHOTOROOM (Your existing logic)
