@@ -44,7 +44,13 @@ export const useStudioLogic = (
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
     const [isGeneratingScene, setIsGeneratingScene] = useState(false);
     
-    // --- DAILY LIMIT STATE ---
+    // --- SESSION / COST LOGIC ---
+    // isSessionActive: True if user spent 1 credit to unlock this specific session
+    const [isSessionActive, setIsSessionActive] = useState(false);
+    // sessionAiGens: The 5 free gens included in the 1 credit session
+    const [sessionAiGens, setSessionAiGens] = useState(0); 
+
+    // --- DAILY LIMIT STATE (For Subs) ---
     const [dailyProCount, setDailyProCount] = useState(0);
     const DAILY_LIMIT = 8;
 
@@ -56,12 +62,10 @@ export const useStudioLogic = (
         const lastDate = localStorage.getItem(dateKey);
 
         if (lastDate !== today) {
-            // New day, reset count
             localStorage.setItem(dateKey, today);
             localStorage.setItem(countKey, '0');
             setDailyProCount(0);
         } else {
-            // Same day, load count
             const count = parseInt(localStorage.getItem(countKey) || '0', 10);
             setDailyProCount(isNaN(count) ? 0 : count);
         }
@@ -74,8 +78,11 @@ export const useStudioLogic = (
         localStorage.setItem(countKey, newCount.toString());
     };
 
+    // --- LAYER MANAGEMENT ---
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
+    
+    // Added watermark to transforms
     const [layerTransforms, setLayerTransforms] = useState<Record<string, { rotate: number, scale: number, x: number, y: number }>>({
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
@@ -86,11 +93,12 @@ export const useStudioLogic = (
         damName: { rotate: 0, scale: 1, x: 0, y: 0 },
         studPheno: { rotate: 0, scale: 1, x: 0, y: 0 },
         studGeno: { rotate: 0, scale: 1, x: 0, y: 0 },
-        watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
+        watermark: { rotate: 0, scale: 1, x: 0, y: 0 }, // Init Watermark position
     });
 
     const marketingRef = useRef<HTMLDivElement>(null);
     const litterRef = useRef<HTMLDivElement>(null);
+    // Node Refs for Draggable to avoid findDOMNode warnings
     const sireNodeRef = useRef(null);
     const damNodeRef = useRef(null);
     const sireLogoRef = useRef(null);
@@ -100,6 +108,7 @@ export const useStudioLogic = (
     const damNameRef = useRef(null);
     const studPhenoRef = useRef(null);
     const studGenoRef = useRef(null);
+    const watermarkRef = useRef(null);
 
     const updateTransform = (key: string, value: number) => {
         if (!selectedLayer) return;
@@ -112,6 +121,7 @@ export const useStudioLogic = (
         if (!selectedLayer) return;
         updatePosition(selectedLayer, 0, 0);
     };
+
     const handlePresetSelect = (text: string) => { 
         setAiPrompt(`${aspectRatio === '1:1' ? 'Square' : aspectRatio}. ${text}`); 
         setShowPromptModal(false);
@@ -124,21 +134,48 @@ export const useStudioLogic = (
         });
     };
 
+    // --- UNLOCK SESSION ---
+    const activateSession = async () => {
+        if (isSubscribed || isUnlocked || isSessionActive) return;
+
+        if (credits && credits > 0) {
+            const success = await deductCredit();
+            if (success) {
+                setIsSessionActive(true);
+                setSessionAiGens(5); // Grant 5 included gens
+                alert("Project Unlocked! \n- Watermark Removed\n- 5 AI Generations Included\n- Unlimited BG Removal for this session\n- All Download Formats Unlocked");
+            }
+        } else {
+            setShowPaywall(true);
+        }
+    }
+
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
         const isPro = isSubscribed || isUnlocked;
         
-        // Explicitly check for free generations first
-        if (!isPro && freeGenerations <= 0 && (!credits || credits <= 0)) {
-            setShowPaywall(true);
-            return;
-        }
-
-        // Check Daily Limit for Pro Users
-        if (isPro && dailyProCount >= DAILY_LIMIT) {
-            alert(`Daily limit of ${DAILY_LIMIT} generations reached. Please check back tomorrow.`);
-            return;
+        // 1. Check Eligibility & Cost
+        if (isPro) {
+            if (dailyProCount >= DAILY_LIMIT) {
+                alert(`Daily limit of ${DAILY_LIMIT} generations reached. Please check back tomorrow.`);
+                return;
+            }
+        } else if (isSessionActive) {
+            if (sessionAiGens <= 0) {
+                // If they used up their 5 included, does it cost a token? 
+                // Let's say yes, it reverts to token usage or credit usage.
+                if (freeGenerations <= 0 && (!credits || credits <= 0)) {
+                    setShowPaywall(true);
+                    return;
+                }
+            }
+        } else {
+            // Free User / No Session
+            if (freeGenerations <= 0 && (!credits || credits <= 0)) {
+                setShowPaywall(true);
+                return;
+            }
         }
 
         const apiKey = process.env.API_KEY;
@@ -151,8 +188,6 @@ export const useStudioLogic = (
         try {
             console.log("Initializing Gemini...");
             const ai = new GoogleGenAI({ apiKey: apiKey });
-            
-            // Map aspect ratio. Gemini supports "1:1", "3:4", "4:3", "9:16", "16:9".
             let targetAspectRatio = '1:1';
             if (aspectRatio === '9:16') targetAspectRatio = '9:16';
             
@@ -171,8 +206,6 @@ export const useStudioLogic = (
                 }
             });
 
-            console.log("Response received.");
-
             // Extract image from response
             let imageUrl = null;
             if (response.candidates?.[0]?.content?.parts) {
@@ -186,13 +219,18 @@ export const useStudioLogic = (
             
             if (imageUrl) {
                 setMarketingBg(imageUrl);
-                if (!isPro) {
-                    if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit();
-                } else {
-                    // Is Pro, increment daily count
+                
+                // --- COST DEDUCTION LOGIC ---
+                if (isPro) {
                     incrementDailyPro();
+                } else if (isSessionActive && sessionAiGens > 0) {
+                    setSessionAiGens(prev => prev - 1);
+                } else if (freeGenerations > 0) {
+                    setFreeGenerations(prev => prev - 1);
+                } else {
+                    await deductCredit(); // Should rarely hit if gating is correct
                 }
+
             } else {
                 console.error("No image data in response:", response);
                 alert("AI generation succeeded but returned no image. Please try again.");
@@ -209,7 +247,11 @@ export const useStudioLogic = (
         if (!sourceImage) return;
 
         const isPro = isSubscribed || isUnlocked;
-        if (!isPro && freeGenerations <= 0 && (!credits || credits <= 0)) {
+        
+        // If Session is active, BG removal is included (Free)
+        // If Pro, Free.
+        // If neither, Cost 1 Token.
+        if (!isPro && !isSessionActive && freeGenerations <= 0 && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
         }
@@ -234,7 +276,8 @@ export const useStudioLogic = (
             else if (type === 'sireLogo') setSireLogo(url);
             else if (type === 'damLogo') setDamLogo(url);
 
-            if (!isPro) {
+            // Cost Logic
+            if (!isPro && !isSessionActive) {
                 if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                 else await deductCredit();
             }
@@ -259,18 +302,19 @@ export const useStudioLogic = (
     const handleDownloadAll = async () => {
         if (!marketingRef.current) return;
         const isPro = isSubscribed || isUnlocked;
-        if (!isPro && freeGenerations <= 0 && (!credits || credits <= 0)) {
+        
+        // Cost: 1 Token if not Pro/Unlocked. 
+        // If Session Active, Download is free.
+        if (!isPro && !isSessionActive && freeGenerations <= 0 && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
         }
-        // Proceed with html2canvas download logic...
-        // For now, this logic is handled in StudioCanvas via direct manipulation or another utility
-        // This placeholder acknowledges the intent.
+
         if ((window as any).html2canvas) {
              try {
                 const canvas = await (window as any).html2canvas(marketingRef.current, {
                     backgroundColor: null,
-                    scale: 2, // High res
+                    scale: 2, 
                     useCORS: true
                 });
                 const link = document.createElement('a');
@@ -278,9 +322,10 @@ export const useStudioLogic = (
                 link.href = canvas.toDataURL();
                 link.click();
                 
-                if (!isPro) {
+                // Deduct token only if not pro and not in an active session
+                if (!isPro && !isSessionActive) {
                     if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit();
+                    else await deductCredit(); // Fallback
                 }
              } catch (e) {
                  console.error("Export failed", e);
@@ -297,8 +342,9 @@ export const useStudioLogic = (
         generatedLitterImage, setGeneratedLitterImage, selectedLayer, setSelectedLayer, layerTransforms,
         showHeader, setShowHeader, showStudName, setShowStudName, showDamName, setShowDamName, showPhenotype, setShowPhenotype, showGenotype, setShowGenotype,
         headerColor, setHeaderColor, studNameColor, setStudNameColor, damNameColor, setDamNameColor, studDnaColor, setStudDnaColor, studPhenoColor, setStudPhenoColor,
-        bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene, marketingRef, litterRef, sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef,
+        bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene, marketingRef, litterRef, 
+        sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef, watermarkRef,
         updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll,
-        dailyProCount, DAILY_LIMIT // Exporting logic vars
+        dailyProCount, DAILY_LIMIT, isSessionActive, activateSession, sessionAiGens
     };
 };
