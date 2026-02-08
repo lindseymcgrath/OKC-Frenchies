@@ -167,7 +167,7 @@ export const getPhenotype = (dna: any): VisualTraits => {
 
     if (isFluffy) layers.push(path('overlay-fluffy.png')); 
     if (isCurly) layers.push(path('overlay-curl.png'));
-    layers.push(path('overlay-outline.png'));
+    
 
     // Phenotype Building
     phenotypeParts.push(baseColorName);
