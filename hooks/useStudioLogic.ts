@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
+import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { DEFAULT_SCENE_PROMPT } from '../utils/calculatorHelpers';
 
