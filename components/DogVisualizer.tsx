@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { VisualTraits } from '../utils/calculatorHelpers';
+import { VisualTraits } from '../utils/calculatorHelpers'; // ✅ Removed REMOTE_BASE_URL
+
 export const DogVisualizer: React.FC<{ traits: VisualTraits, scale?: number, label?: string, showLabel?: boolean }> = React.memo(({ traits, scale = 1, label, showLabel = true }) => {
-    const getUrl = (img: string) => `${REMOTE_BASE_URL}/${img}`;
+    
+    // ✅ FIX: Since 'layer' already contains the full path from the helper, 
+    // we don't need getUrl anymore. Just return the string.
     const [errors, setErrors] = useState<Record<string, boolean>>({});
 
     const handleImageError = (imgName: string) => {
@@ -19,7 +22,7 @@ export const DogVisualizer: React.FC<{ traits: VisualTraits, scale?: number, lab
                     return (
                         <img 
                             key={`${layer}-${index}`}
-                            src={getUrl(layer)} 
+                            src={layer} // ✅ FIX: Use the layer path directly
                             alt="" 
                             className="absolute inset-0 w-full h-full object-contain z-10 transition-all duration-300"
                             style={{ zIndex: 10 + index }}
