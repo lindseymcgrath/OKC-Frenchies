@@ -55,6 +55,10 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
         action();
     };
 
+    // Calculate total available turns for the user
+    const totalTurns = freeGenerations + (credits || 0);
+    const isPro = isSubscribed || isUnlocked;
+
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
             
@@ -64,11 +68,16 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                     <div className="flex flex-col">
                         <span className="text-[8px] uppercase tracking-[0.2em] text-luxury-gold font-black mb-1">Studio Status</span>
                         <span className="text-lg font-serif text-white">
-                            {isSubscribed || isUnlocked ? "Unlimited Pro" : `${credits ?? 0} Credits`}
+                            {isPro 
+                                ? "Unlimited Pro" 
+                                : freeGenerations > 0 
+                                    ? `${freeGenerations} Free Turns` 
+                                    : `${credits ?? 0} Credits`}
                         </span>
                     </div>
                     
-                    {(!isSubscribed && !isUnlocked && (credits || 0) <= 0) && (
+                    {/* Only show Unlock if they are completely out of turns and credits */}
+                    {(!isPro && totalTurns <= 0) && (
                         <button 
                             onClick={() => setShowPaywall(true)}
                             className="px-4 py-2 bg-luxury-gold hover:bg-yellow-400 text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
@@ -77,6 +86,16 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         </button>
                     )}
                 </div>
+
+                {/* ✅ Added: Visual badge to show total combined availability */}
+                {!isPro && totalTurns > 0 && (
+                    <div className="mb-3 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-sm flex items-center gap-2">
+                         <Sparkles size={10} className="text-emerald-400 animate-pulse"/>
+                         <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
+                            Ready: {totalTurns} Generations Available
+                         </span>
+                    </div>
+                )}
                 
                 <div className="space-y-1 border-t border-slate-800 pt-2">
                     <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase">
@@ -201,7 +220,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         
                         <div className="flex justify-between items-center">
                             <span className="text-[9px] uppercase text-slate-500 font-bold">
-                                {(isSubscribed || isUnlocked) ? "Unlimited Session" : `${credits || 0} Credits Left`}
+                                {isPro ? "Unlimited Session" : `${totalTurns} Turns Left`}
                             </span>
                             <button 
                                 onClick={() => handleProtectedAction(studio.handleGenerateScene)} 
@@ -261,7 +280,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </div>
             )}
 
-            {/* ✅ ADDED: ATMOSPHERE BROWSE MODAL */}
+            {/* ✅ ATMOSPHERE BROWSE MODAL */}
             {studio.showPromptModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
                     <div className="bg-slate-900 border border-white/10 p-6 rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
