@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 // 1. Initialize Supabase inside the API
-// These use the environment variables you'll add to Vercel
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.VITE_SUPABASE_ANON_KEY || ''
-);
+// Use placeholders to prevent "supabaseUrl is required" error if env vars are missing during build
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const config = {
   api: {
@@ -24,6 +24,12 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'User email is required to verify credits.' });
   }
 
+  // Double check that we have a valid Supabase connection before proceeding
+  if (!process.env.VITE_SUPABASE_URL) {
+     console.error("Missing VITE_SUPABASE_URL environment variable");
+     return res.status(500).json({ error: 'Server configuration error' });
+  }
+
   try {
     // 3. CREDIT CHECK: Ask Supabase if this user has credits
     const { data: profile, error: fetchError } = await supabase
@@ -33,6 +39,8 @@ export default async function handler(req, res) {
       .single();
 
     if (fetchError || !profile) {
+      // Handle case where user might not exist yet - optional: auto-create? 
+      // For now, return error
       return res.status(404).json({ error: 'User profile not found.' });
     }
 
