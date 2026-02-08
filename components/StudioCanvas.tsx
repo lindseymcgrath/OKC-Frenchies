@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef, useMemo } from 'react';
 import Draggable from 'react-draggable';
-import { Move, Download, Crown, CheckCircle2, Flame, Dna, PawPrint, Lock } from 'lucide-react';
+import { Move, Download, Crown, CheckCircle2, Flame, Dna, PawPrint, Lock, X } from 'lucide-react';
 import { Sticker as StickerType } from '../hooks/useStudioLogic';
 
 interface StudioCanvasProps {
@@ -16,6 +16,9 @@ interface StudioCanvasProps {
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({ 
     studio, isMobile, isSubscribed, isUnlocked, credits, userEmail, setShowPaywall 
 }) => {
+
+    // Dynamic ref map for stickers to prevent Draggable nodeRef crash
+    const stickerRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const handleDownloadClick = () => {
         const isPro = isSubscribed || isUnlocked;
@@ -33,20 +36,33 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity / 100})` : 'transparent';
     };
 
-    // Style Generator for Text Elements - NOW PER LAYER
+    // Style Generator for Text Elements - FIX: Outline cuts off text
+    // Instead of WebkitTextStroke, we use a 8-point text shadow for a clean outer stroke
     const getTextStyle = (layerKey: string) => {
         const style = studio.textStyles[layerKey];
         if (!style) return {};
 
+        let shadow = style.shadow ? '0px 4px 8px rgba(0,0,0,0.8)' : 'none';
+        
+        // If outline is ON, overlay the outline shadow on top of existing shadow
+        if (style.outline) {
+            const c = style.outlineColor;
+            // Thick stroke simulation
+            const outlineShadow = `
+                -1px -1px 0 ${c}, 1px -1px 0 ${c}, -1px 1px 0 ${c}, 1px 1px 0 ${c},
+                -2px 0px 0 ${c}, 2px 0px 0 ${c}, 0px -2px 0 ${c}, 0px 2px 0 ${c}
+            `;
+            shadow = style.shadow ? `${outlineShadow}, 0px 6px 12px rgba(0,0,0,0.9)` : outlineShadow;
+        }
+
         return {
             color: style.color,
             fontFamily: style.font,
-            textShadow: style.shadow ? '0px 4px 8px rgba(0,0,0,0.8)' : 'none', 
-            WebkitTextStroke: style.outline ? `1px ${style.outlineColor}` : '0',
+            textShadow: shadow, 
             backgroundColor: style.bg ? hexToRgba(style.bgColor, style.bgOpacity) : 'transparent',
             padding: style.bg ? '0.2em 0.5em' : '0',
             borderRadius: '0.1em',
-            textTransform: style.casing as any, // Apply casing (uppercase/capitalize/none)
+            textTransform: style.casing as any, 
         };
     };
 
@@ -57,6 +73,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             case 'fire': return <Flame size="100%" className="text-orange-500 drop-shadow-lg" fill="currentColor" />;
             case 'dna': return <Dna size="100%" className="text-purple-400 drop-shadow-lg" />;
             case 'paw': return <PawPrint size="100%" className="text-slate-200 drop-shadow-lg" fill="currentColor" />;
+            case 'cross': return <X size="100%" className="text-white drop-shadow-lg font-bold" strokeWidth={4} />;
             default: return null;
         }
     };
@@ -83,7 +100,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                         
                         <div className="absolute inset-0 z-10 w-full h-full overflow-hidden flex items-center justify-center">
                             
-                            {/* Watermark - Centered by default now */}
+                            {/* Watermark */}
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <Draggable 
                                     nodeRef={studio.watermarkRef} 
@@ -107,8 +124,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                             {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" position={{x: studio.layerTransforms.sireLogo.x, y: studio.layerTransforms.sireLogo.y}} onStop={(e, data) => studio.updatePosition('sireLogo', data.x, data.y)}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
                             {studio.damLogo && <Draggable nodeRef={studio.damLogoRef} bounds="parent" position={{x: studio.layerTransforms.damLogo.x, y: studio.layerTransforms.damLogo.y}} onStop={(e, data) => studio.updatePosition('damLogo', data.x, data.y)}><div ref={studio.damLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damLogo')}><img src={studio.damLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.damLogo.rotate}deg) scale(${studio.layerTransforms.damLogo.scale})`}}/></div></Draggable>}
                             
-                            {/* TEXT LAYERS - Now using position directly from state for smart resizing */}
-                            
+                            {/* TEXT LAYERS */}
                             {studio.showHeader && (
                                 <Draggable nodeRef={studio.headerRef} position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)}>
                                     <div ref={studio.headerRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('header')}>
@@ -184,16 +200,21 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* STICKERS RENDER */}
+                            {/* STICKERS RENDER - FIX: Using valid ref callback to prevent crash */}
                             {studio.stickers.map((sticker: StickerType) => (
                                 <Draggable 
                                     key={sticker.id}
+                                    nodeRef={{ current: stickerRefs.current[sticker.id] } as any}
                                     position={{x: sticker.x, y: sticker.y}}
                                     onStop={(e, data) => studio.updatePosition(sticker.id, data.x, data.y)}
                                 >
-                                    <div className="absolute z-40 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer(sticker.id)}>
+                                    <div 
+                                        ref={(el) => { stickerRefs.current[sticker.id] = el; }}
+                                        className="absolute z-40 cursor-move pointer-events-auto" 
+                                        onClick={() => studio.setSelectedLayer(sticker.id)}
+                                    >
                                         <div 
-                                            className={`w-12 h-12 transition-all ${studio.selectedLayer === sticker.id ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
+                                            className={`w-12 h-12 transition-all flex items-center justify-center ${studio.selectedLayer === sticker.id ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
                                             style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
                                         >
                                             {getStickerIcon(sticker.type)}
