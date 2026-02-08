@@ -13,32 +13,37 @@ export const useStudioLogic = (
     userEmail: string 
 ) => {
     // --- STATE ---
-    const [activeAccordion, setActiveAccordion] = useState<string>(''); 
+    const [activeAccordion, setActiveAccordion] = useState<string>('studio'); // Set default to studio to prevent jumping
     const [sireImage, setSireImage] = useState<string | null>(null);
     const [damImage, setDamImage] = useState<string | null>(null);
     const [sireLogo, setSireLogo] = useState<string | null>(null);
     const [damLogo, setDamLogo] = useState<string | null>(null);
     const [isProcessingImage, setIsProcessingImage] = useState(false);
     const [processingType, setProcessingType] = useState<'sire' | 'dam' | 'sireLogo' | 'damLogo' | null>(null);
+
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1');
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
+
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
     const [studDna, setStudDna] = useState('at/at n/b n/co d/d E/e n/KB');
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
+
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
+
     const [headerColor, setHeaderColor] = useState('#ffffff');
     const [studNameColor, setStudNameColor] = useState('#fbbf24');
     const [damNameColor, setDamNameColor] = useState('#d946ef');
     const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
     const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
+
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
@@ -46,6 +51,7 @@ export const useStudioLogic = (
 
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
+    
     const [layerTransforms, setLayerTransforms] = useState<Record<string, { rotate: number, scale: number, x: number, y: number }>>({
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
@@ -75,17 +81,21 @@ export const useStudioLogic = (
         if (!selectedLayer) return;
         setLayerTransforms(prev => ({ ...prev, [selectedLayer]: { ...prev[selectedLayer], [key]: value } }));
     };
+  
     const updatePosition = (layer: string, x: number, y: number) => {
         setLayerTransforms(prev => ({ ...prev, [layer]: { ...prev[layer], x, y } }));
     };
+  
     const snapToCenter = () => {
         if (!selectedLayer) return;
         updatePosition(selectedLayer, 0, 0);
     };
+  
     const handlePresetSelect = (text: string) => { 
         setAiPrompt(`${aspectRatio === '1:1' ? 'Square' : aspectRatio}. ${text}`); 
         setShowPromptModal(false);
     };
+  
     const changeAspectRatio = (ratio: '1:1' | '4:5' | '9:16') => {
         setAspectRatio(ratio);
         setAiPrompt(prev => {
@@ -134,7 +144,7 @@ export const useStudioLogic = (
 
         const isPro = isUnlocked || isSubscribed;
         const hasFreebie = !isPro && freeGenerations > 0;
-        const hasCredits = credits !== null && credits > 0;
+        const hasCredits = (credits !== null && credits > 0);
 
         if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
 
@@ -171,28 +181,24 @@ export const useStudioLogic = (
 
         const KEY = import.meta.env.VITE_GEMINI_API_KEY;
         const isPro = isSubscribed || isUnlocked;
-        
-        // ✅ CRITICAL FIX: Ensure the logic checks freeGenerations FIRST
         const hasFreebie = freeGenerations > 0;
         const hasCredits = (credits !== null && credits > 0);
 
-        console.log("Access Check:", { freeGenerations, credits, isPro });
-
-        // If user isn't Pro AND has no freebies AND no credits, THEN show paywall
+        // ✅ 1. Gatekeeper Logic Check
         if (!isPro && !hasFreebie && !hasCredits) {
             setShowPaywall(true);
             return;
         }
 
-        if (!KEY) {
-            alert("API Error: Key missing. Please check Vercel Environment Variables.");
-            return;
-        }
+        if (!KEY) { alert("API Error: Key missing in Environment. Check Vercel Settings."); return; }
 
         setIsGeneratingScene(true);
+        // Force the view to stay on studio during generation
+        setActiveAccordion('studio');
+
         try {
             const ai = new GoogleGenAI(KEY);
-            // Using your highest-limit model from the dashboard
+            // ✅ 2. Use Nano Banana Pro for higher rate limits
             const model = ai.getGenerativeModel({ model: "gemini-3-pro-image" }); 
 
             const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
@@ -202,7 +208,7 @@ export const useStudioLogic = (
             if (part?.inlineData) {
                 setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
                 
-                // ✅ DEDUCTION LOGIC
+                // ✅ 3. Deduction Logic: Only after success
                 if (!isPro) {
                     if (hasFreebie) {
                         setFreeGenerations(prev => prev - 1);
@@ -210,14 +216,12 @@ export const useStudioLogic = (
                         await deductCredit();
                     }
                 }
-            } else {
-                throw new Error("Model failed to return image data.");
-            }
+            } else { throw new Error("Model failed to return data. Check if Nano Banana Pro is enabled."); }
         } catch (e: any) {
             console.error("AI Error:", e);
             alert(`AI Gen Failed: ${e.message}`);
-        } finally {
-            setIsGeneratingScene(false);
+        } finally { 
+            setIsGeneratingScene(false); 
         }
     };
 
@@ -233,7 +237,7 @@ export const useStudioLogic = (
         setSelectedLayer(null);
         const isPro = isSubscribed || isUnlocked;
         const hasFreebie = !isPro && freeGenerations > 0;
-        const hasCredits = credits !== null && credits > 0;
+        const hasCredits = (credits !== null && credits > 0);
 
         if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
 
