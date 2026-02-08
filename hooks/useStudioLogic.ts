@@ -20,30 +20,25 @@ export const useStudioLogic = (
     const [damLogo, setDamLogo] = useState<string | null>(null);
     const [isProcessingImage, setIsProcessingImage] = useState(false);
     const [processingType, setProcessingType] = useState<'sire' | 'dam' | 'sireLogo' | 'damLogo' | null>(null);
-
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1');
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
-
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
     const [studDna, setStudDna] = useState('at/at n/b n/co d/d E/e n/KB');
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
-
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
-
     const [headerColor, setHeaderColor] = useState('#ffffff');
     const [studNameColor, setStudNameColor] = useState('#fbbf24');
     const [damNameColor, setDamNameColor] = useState('#d946ef');
     const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
     const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
-
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
@@ -51,7 +46,6 @@ export const useStudioLogic = (
 
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
-    
     const [layerTransforms, setLayerTransforms] = useState<Record<string, { rotate: number, scale: number, x: number, y: number }>>({
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
@@ -81,21 +75,17 @@ export const useStudioLogic = (
         if (!selectedLayer) return;
         setLayerTransforms(prev => ({ ...prev, [selectedLayer]: { ...prev[selectedLayer], [key]: value } }));
     };
-  
     const updatePosition = (layer: string, x: number, y: number) => {
         setLayerTransforms(prev => ({ ...prev, [layer]: { ...prev[layer], x, y } }));
     };
-  
     const snapToCenter = () => {
         if (!selectedLayer) return;
         updatePosition(selectedLayer, 0, 0);
     };
-  
     const handlePresetSelect = (text: string) => { 
         setAiPrompt(`${aspectRatio === '1:1' ? 'Square' : aspectRatio}. ${text}`); 
         setShowPromptModal(false);
     };
-  
     const changeAspectRatio = (ratio: '1:1' | '4:5' | '9:16') => {
         setAspectRatio(ratio);
         setAiPrompt(prev => {
@@ -129,18 +119,12 @@ export const useStudioLogic = (
             const res = await fetch('/api/remove-bg', { 
                 method: 'POST', 
                 body: imageInput,
-                headers: {
-                    'Content-Type': 'application/octet-stream',
-                    'x-user-email': userEmail 
-                }
+                headers: { 'Content-Type': 'application/octet-stream', 'x-user-email': userEmail }
             });
             if (!res.ok) throw new Error(`Server Error ${res.status}`);
             const processedBlob = await res.blob();
             return URL.createObjectURL(processedBlob);
-        } catch (e: any) {
-            console.error("BG Removal Error:", e.message);
-            throw e; 
-        }
+        } catch (e: any) { throw e; }
     };
 
     const handleBgRemoval = async (type: 'sire' | 'dam' | 'sireLogo' | 'damLogo') => {
@@ -185,25 +169,18 @@ export const useStudioLogic = (
     const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
 
-        const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+        const KEY = import.meta.env.VITE_GEMINI_API_KEY;
         const isPro = isSubscribed || isUnlocked;
         const hasFreebie = !isPro && freeGenerations > 0;
         const hasCredits = credits !== null && credits > 0;
 
-        if (!isPro && !hasFreebie && !hasCredits) {
-            setShowPaywall(true);
-            return;
-        }
-
-        if (!GEMINI_KEY) {
-            alert("Error: API Key not found.");
-            return;
-        }
+        if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
+        if (!KEY) { alert("API Error: Key missing in Environment. Check Vercel Settings."); return; }
 
         setIsGeneratingScene(true);
         try {
-            const ai = new GoogleGenAI(GEMINI_KEY);
-            // ✅ Using Nano Banana Pro for higher rate limits (250 RPD)
+            const ai = new GoogleGenAI(KEY);
+            // ✅ Updated to use Nano Banana Pro's ID
             const model = ai.getGenerativeModel({ model: "gemini-3-pro-image" }); 
 
             const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
@@ -216,15 +193,11 @@ export const useStudioLogic = (
                     if (hasFreebie) setFreeGenerations(prev => prev - 1);
                     else await deductCredit();
                 }
-            } else {
-                throw new Error("Model failed to return image data.");
-            }
+            } else { throw new Error("Model failed to return data. Check if Nano Banana Pro is enabled."); }
         } catch (e: any) {
             console.error("AI Error:", e);
             alert(`AI Gen Failed: ${e.message}`);
-        } finally {
-            setIsGeneratingScene(false);
-        }
+        } finally { setIsGeneratingScene(false); }
     };
 
     const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
@@ -237,30 +210,20 @@ export const useStudioLogic = (
     const handleDownloadAll = async () => {
         if (!marketingRef.current) return;
         setSelectedLayer(null);
-
-        const isPro = isUnlocked || isSubscribed;
+        const isPro = isSubscribed || isUnlocked;
         const hasFreebie = !isPro && freeGenerations > 0;
         const hasCredits = credits !== null && credits > 0;
 
-        if (!isPro && !hasFreebie && !hasCredits) {
-            setShowPaywall(true);
-            return;
-        }
+        if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
 
         if (!isPro) {
-             if (hasFreebie) {
-                 setFreeGenerations(prev => prev - 1);
-             } else {
-                 const success = await deductCredit();
-                 if (!success) return;
-             }
+             if (hasFreebie) setFreeGenerations(prev => prev - 1);
+             else { const success = await deductCredit(); if (!success) return; }
         }
 
         if ((window as any).html2canvas) {
             try {
-                const masterCanvas = await (window as any).html2canvas(marketingRef.current, { 
-                    scale: 3, useCORS: true, allowTaint: true, logging: false 
-                });
+                const masterCanvas = await (window as any).html2canvas(marketingRef.current, { scale: 3, useCORS: true, allowTaint: true, logging: false });
                 downloadImage(masterCanvas, `OKC_Studio_${aspectRatio.replace(':','-')}.jpg`);
             } catch (e) { console.error("Export failed", e); }
         }
@@ -282,53 +245,15 @@ export const useStudioLogic = (
         damImage, setDamImage,
         sireLogo, setSireLogo,
         damLogo, setDamLogo,
-        isProcessingImage,
-        processingType,
-        aspectRatio,
-        showPromptModal, setShowPromptModal,
-        showEditorModal, setShowEditorModal,
-        headerText, setHeaderText,
-        studName, setStudName,
-        damName, setDamName,
-        studDna, setStudDna,
-        studPhenotype, setStudPhenotype,
+        isProcessingImage, processingType,
+        aspectRatio, showPromptModal, setShowPromptModal, showEditorModal, setShowEditorModal,
+        headerText, setHeaderText, studName, setStudName, damName, setDamName, studDna, setStudDna, studPhenotype, setStudPhenotype,
         generatedLitterImage, setGeneratedLitterImage,
-        selectedLayer, setSelectedLayer,
-        layerTransforms,
-        showHeader, setShowHeader,
-        showStudName, setShowStudName,
-        showDamName, setShowDamName,
-        showPhenotype, setShowPhenotype,
-        showGenotype, setShowGenotype,
-        headerColor, setHeaderColor,
-        studNameColor, setStudNameColor,
-        damNameColor, setDamNameColor,
-        studDnaColor, setStudDnaColor,
-        studPhenoColor, setStudPhenoColor,
-        bgRemovalError,
-        marketingBg,
-        aiPrompt, setAiPrompt,
-        isGeneratingScene,
-        marketingRef,
-        litterRef,
-        sireNodeRef,
-        damNodeRef,
-        sireLogoRef,
-        damLogoRef,
-        headerRef,
-        studNameRef,
-        damNameRef,
-        studPhenoRef,
-        studGenoRef,
-        updateTransform,
-        updatePosition,
-        snapToCenter,
-        handlePresetSelect,
-        changeAspectRatio,
-        handleBgRemoval,
-        handleImageUpload,
-        handleGenerateScene,
-        handleDownloadAll,
-        handleExportLitter
+        selectedLayer, setSelectedLayer, layerTransforms,
+        showHeader, setShowHeader, showStudName, setShowStudName, showDamName, setShowDamName, showPhenotype, setShowPhenotype, showGenotype, setShowGenotype,
+        headerColor, setHeaderColor, studNameColor, setStudNameColor, damNameColor, setDamNameColor, studDnaColor, setStudDnaColor, studPhenoColor, setStudPhenoColor,
+        bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene,
+        marketingRef, litterRef, sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef,
+        updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll, handleExportLitter
     };
 };
