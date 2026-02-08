@@ -171,16 +171,28 @@ export const useStudioLogic = (
 
         const KEY = import.meta.env.VITE_GEMINI_API_KEY;
         const isPro = isSubscribed || isUnlocked;
-        const hasFreebie = !isPro && freeGenerations > 0;
-        const hasCredits = credits !== null && credits > 0;
+        
+        // ✅ CRITICAL FIX: Ensure the logic checks freeGenerations FIRST
+        const hasFreebie = freeGenerations > 0;
+        const hasCredits = (credits !== null && credits > 0);
 
-        if (!isPro && !hasFreebie && !hasCredits) { setShowPaywall(true); return; }
-        if (!KEY) { alert("API Error: Key missing in Environment. Check Vercel Settings."); return; }
+        console.log("Access Check:", { freeGenerations, credits, isPro });
+
+        // If user isn't Pro AND has no freebies AND no credits, THEN show paywall
+        if (!isPro && !hasFreebie && !hasCredits) {
+            setShowPaywall(true);
+            return;
+        }
+
+        if (!KEY) {
+            alert("API Error: Key missing. Please check Vercel Environment Variables.");
+            return;
+        }
 
         setIsGeneratingScene(true);
         try {
             const ai = new GoogleGenAI(KEY);
-            // ✅ Updated to use Nano Banana Pro's ID
+            // Using your highest-limit model from the dashboard
             const model = ai.getGenerativeModel({ model: "gemini-3-pro-image" }); 
 
             const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
@@ -189,15 +201,24 @@ export const useStudioLogic = (
             
             if (part?.inlineData) {
                 setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
+                
+                // ✅ DEDUCTION LOGIC
                 if (!isPro) {
-                    if (hasFreebie) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit();
+                    if (hasFreebie) {
+                        setFreeGenerations(prev => prev - 1);
+                    } else {
+                        await deductCredit();
+                    }
                 }
-            } else { throw new Error("Model failed to return data. Check if Nano Banana Pro is enabled."); }
+            } else {
+                throw new Error("Model failed to return image data.");
+            }
         } catch (e: any) {
             console.error("AI Error:", e);
             alert(`AI Gen Failed: ${e.message}`);
-        } finally { setIsGeneratingScene(false); }
+        } finally {
+            setIsGeneratingScene(false);
+        }
     };
 
     const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
