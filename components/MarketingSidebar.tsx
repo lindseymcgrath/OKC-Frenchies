@@ -200,9 +200,24 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                                     ))}
                                 </div>
 
-                                {/* Color Picker */}
+                                {/* Text Case & Color */}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[9px] uppercase text-slate-400">Text Color</span>
+                                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-sm border border-slate-800">
+                                        <button 
+                                            onClick={() => studio.updateSelectedStyle('casing', 'uppercase')}
+                                            className={`w-6 h-5 flex items-center justify-center text-[10px] font-bold rounded-sm ${currentStyle.casing === 'uppercase' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-white'}`}
+                                            title="Uppercase"
+                                        >
+                                            AA
+                                        </button>
+                                        <button 
+                                            onClick={() => studio.updateSelectedStyle('casing', 'capitalize')}
+                                            className={`w-6 h-5 flex items-center justify-center text-[10px] font-bold rounded-sm ${currentStyle.casing === 'capitalize' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-white'}`}
+                                            title="Title Case"
+                                        >
+                                            Aa
+                                        </button>
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <input type="color" value={currentStyle.color} onChange={(e) => studio.updateSelectedStyle('color', e.target.value)} className="w-6 h-6 bg-transparent cursor-pointer border-none"/>
                                     </div>
