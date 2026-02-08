@@ -37,7 +37,7 @@ export const FREEBIE_CODE = "OKCFREE";
 export const PROMPTS = [
     { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", suggestion: "Puppies / Litter" },
     { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", suggestion: "Puppies / Soft" },
-    { name: "Velvet Luxury", text: "Empty high-end studio scene with a deep royal blue velvet tufted wall in the background, gold accents and trim, wide expansive floor area in the foreground with a plush cream carpet, professional cinematic lighting, luxury aesthetic, rich textures, sophisticated mood, 8k resolution.", suggestion: "Puppies / Royal" },
+    { name: "Velvet Luxury", text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", suggestion: "Puppies / Royal" },
     { name: "Grey Wool Knit", text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", suggestion: "Puppies / Cozy" },
     { name: "Marble Sunbeam", text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", suggestion: "Dams" },
     { name: "Luxury Vault", text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", suggestion: "Dams" },
@@ -86,35 +86,49 @@ export interface SavedDog {
     date: string;
 }
 
+// 🟢 SWITCHING TO REMOTE SOURCE TO ENSURE IMAGES LOAD IN ALL ENVIRONMENTS
+const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/";
+
 export const getPhenotype = (dna: any): VisualTraits => {
     let phenotypeParts: string[] = [];
     let baseColorName = "Black";
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
 
-    const path = (name: string) => "/images/visuals/" + name.trim();
+    if (!dna) return { baseColorName, phenotypeName: '', layers: [], isHighRisk: false, proTips: [], isFloodleProducer: false, dnaString: '', compactDnaString: '' };
+
+    // Helper for safe access
+    const get = (key: string) => dna[key] || (LOCI as any)[key]?.options[0] || 'n/n';
+
+    // Updated path logic to use remote URL
+    const path = (name: string) => REMOTE_BASE_URL + name.trim();
     
-    const b = dna.B === 'b/b';
-    const co = dna.Co === 'co/co';
-    const d = dna.D === 'd/d';
-    const isPink = dna.Pink === 'A/A'; 
-    const isCream = dna.E === 'e/e';
-    const isPied = dna.S !== 'n/n';
-    const isDoubleIntensity = dna.Int === 'Int/Int';
-    const isWhiteMasked = isDoubleIntensity || (dna.Int !== 'n/n' && isPied);
-    const isSolidBlack = dna.K === 'KB/KB'; 
-    const hasMerle = dna.M !== 'n/n' || dna.Panda === 'Koi'; 
-    const isFullPied = dna.S === 'S/S';
-    const hasFurnishings = dna.F !== 'n/n'; 
-    const isCurly = dna.C !== 'n/n';
-    const recessiveL = dna.L.split('/').filter((x: string) => x !== 'L').length;
+    const b = get('B') === 'b/b';
+    const co = get('Co') === 'co/co';
+    const d = get('D') === 'd/d';
+    const isPink = get('Pink') === 'A/A'; 
+    const isCream = get('E') === 'e/e';
+    const isPied = get('S') !== 'n/n';
+    const isDoubleIntensity = get('Int') === 'Int/Int';
+    const isWhiteMasked = isDoubleIntensity || (get('Int') !== 'n/n' && isPied);
+    const isSolidBlack = get('K') === 'KB/KB'; 
+    const hasMerle = get('M') !== 'n/n' || get('Panda') === 'Koi'; 
+    const isFullPied = get('S') === 'S/S';
+    const hasFurnishings = get('F') !== 'n/n'; 
+    const isCurly = get('C') !== 'n/n';
+    
+    const lVal = get('L');
+    const recessiveL = lVal.split('/').filter((x: string) => x !== 'L').length;
     const isFluffy = recessiveL === 2;
-    const aAlleles = dna.A.split('/');
+    
+    const aVal = get('A');
+    const aAlleles = aVal.split('/');
     const hasAy = aAlleles.includes('Ay');
     const hasAw = aAlleles.includes('aw') && !hasAy;
     const hasAt = aAlleles.includes('at') && !hasAy && !hasAw;
 
-    const isBrindle = (dna.K.includes('Kbr') || dna.K === 'n/KB') && !isSolidBlack && !isCream && !isPink && !isWhiteMasked && !hasAt;
+    const kVal = get('K');
+    const isBrindle = (kVal.includes('Kbr') || kVal === 'n/KB') && !isSolidBlack && !isCream && !isPink && !isWhiteMasked && !hasAt;
 
     if (b && co && d) { baseColorName = "New Shade Isabella"; baseColorSlug = "new-shade-isabella"; }
     else if (b && co) { baseColorName = "New Shade Rojo"; baseColorSlug = "rojo"; } 
@@ -144,14 +158,16 @@ export const getPhenotype = (dna: any): VisualTraits => {
 
     // 🎨 OVERLAY LAYERS
     if (!isWhiteMasked) {
-        if (dna.E.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
+        const eVal = get('E');
+        if (eVal.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
         else if (hasAt && !isBrindle && !isCream && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
         
-        if (dna.E.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
+        if (eVal.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
         
         // Pattern Overlays (Panda/Koi)
-        if (dna.Panda === 'Koi') layers.push(path('overlay-koi.png'));
-        else if (dna.Panda === 'Panda') layers.push(path('overlay-husky.png'));
+        const pandaVal = get('Panda');
+        if (pandaVal === 'Koi') layers.push(path('overlay-koi.png'));
+        else if (pandaVal === 'Panda') layers.push(path('overlay-husky.png'));
 
         // Merle Logic
         if (hasMerle && !isCream) {
@@ -204,18 +220,88 @@ export const getPhenotype = (dna: any): VisualTraits => {
     if (isCurly) phenotypeParts.push("Curly");
     if (hasFurnishings) phenotypeParts.push("Furnishings");
 
+    // Compact DNA String Construction
+    const compact: string[] = [];
+    const a = get('A'); if (a && a !== 'Ay/Ay') compact.push(a.replace('/', ''));
+    const b_val = get('B'); if (b_val === 'b/b') compact.push('bb'); else if (b_val.includes('b')) compact.push('Bb');
+    const co_val = get('Co'); if (co_val === 'co/co') compact.push('coco'); else if (co_val.includes('co')) compact.push('Nco');
+    const d_val = get('D'); if (d_val === 'd/d') compact.push('dd'); else if (d_val.includes('d')) compact.push('Dd');
+    const e_val = get('E'); if (e_val === 'e/e') compact.push('ee'); else if (e_val.includes('e')) compact.push('Ee');
+    const k_val = get('K'); if (k_val === 'KB/KB') compact.push('KB');
+    const l_val = get('L'); if (l_val && l_val.includes('l')) compact.push(l_val.replace('/', ''));
+    const m_val = get('M'); if (m_val && m_val.includes('M')) compact.push('Merle');
+    const s_val = get('S'); if (s_val && s_val !== 'n/n') compact.push('Pied');
+
+    const compactDnaString = compact.length > 0 ? compact.join(' ') : "Standard";
+
     return {
         baseColorName,
         phenotypeName: phenotypeParts.join(" "), 
         layers,
-        isHighRisk: dna.M === 'M/M',
+        isHighRisk: get('M') === 'M/M',
         proTips: [],
         isFloodleProducer: hasFurnishings && recessiveL > 0,
         dnaString: Object.values(dna).join(' '),
-        compactDnaString: ''
+        compactDnaString
     };
 };
 
 export const calculateLitterPrediction = (sire: any, dam: any) => {
-    return []; 
+    // Safety check - if data is missing, return empty
+    if (!sire || !dam) return [];
+
+    const offspring: any[] = [];
+    const iterations = 16; 
+
+    // Helper to split allele string safely
+    const getA = (dna: any, locus: string) => {
+        const val = dna[locus] || (LOCI as any)[locus]?.options[0] || 'n/n';
+        return val.split('/');
+    };
+
+    // Helper to mix alleles
+    const mix = (locus: string) => {
+        const s = getA(sire, locus);
+        const d = getA(dam, locus);
+        // Fallback to 'n' if random index somehow fails or array is empty
+        const a1 = s[Math.floor(Math.random() * s.length)] || 'n';
+        const a2 = d[Math.floor(Math.random() * d.length)] || 'n';
+        return [a1, a2].sort().join('/');
+    };
+
+    // Generate simulations
+    for (let i = 0; i < iterations; i++) {
+        const puppyDna: any = {};
+        Object.keys(LOCI).forEach(key => {
+            puppyDna[key] = mix(key);
+        });
+        offspring.push(puppyDna);
+    }
+
+    // Group by Phenotype to calculate probabilities
+    const grouped: Record<string, { dna: any, count: number, name: string }> = {};
+    
+    offspring.forEach(dna => {
+        const traits = getPhenotype(dna);
+        const signature = traits.phenotypeName || 'Standard'; 
+        
+        if (!grouped[signature]) {
+            grouped[signature] = { dna, count: 0, name: signature };
+        }
+        grouped[signature].count++;
+    });
+
+    // Convert to array and format
+    const result = Object.values(grouped).map(item => {
+        const percent = (item.count / iterations) * 100;
+        const traits = getPhenotype(item.dna);
+        return {
+            dna: item.dna,
+            dnaString: traits.compactDnaString,
+            probability: `${Math.round(percent)}%`
+        };
+    });
+
+    // Sort by probability desc and take top 8
+    return result.sort((a, b) => parseInt(b.probability) - parseInt(a.probability)).slice(0, 8);
 };
