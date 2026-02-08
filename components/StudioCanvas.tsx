@@ -46,7 +46,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             backgroundColor: style.bg ? hexToRgba(style.bgColor, style.bgOpacity) : 'transparent',
             padding: style.bg ? '0.2em 0.5em' : '0',
             borderRadius: '0.1em',
-            // Note: Transform is handled by the parent draggable div
+            textTransform: style.casing as any, // Apply casing (uppercase/capitalize/none)
         };
     };
 
@@ -129,7 +129,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     <div ref={studio.studNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studName')}>
                                         <div className="whitespace-nowrap text-center">
                                             <h2 
-                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
                                                 style={{...getTextStyle('studName'), transform: `rotate(${studio.layerTransforms.studName.rotate}deg) scale(${studio.layerTransforms.studName.scale})`}}
                                             >
                                                 {studio.studName}
@@ -144,7 +144,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     <div ref={studio.damNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damName')}>
                                         <div className="whitespace-nowrap text-center">
                                             <h2 
-                                                className="text-2xl font-bold uppercase tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
                                                 style={{...getTextStyle('damName'), transform: `rotate(${studio.layerTransforms.damName.rotate}deg) scale(${studio.layerTransforms.damName.scale})`}}
                                             >
                                                 {studio.damName}
@@ -159,7 +159,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     <div ref={studio.studPhenoRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studPheno')}>
                                         <div className="whitespace-nowrap text-center">
                                             <span 
-                                                className="font-sans text-[10px] uppercase tracking-[0.3em] drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="font-sans text-[10px] tracking-[0.3em] drop-shadow-md pointer-events-none inline-block transition-all" 
                                                 style={{...getTextStyle('studPheno'), transform: `rotate(${studio.layerTransforms.studPheno.rotate}deg) scale(${studio.layerTransforms.studPheno.scale})`}}
                                             >
                                                 {studio.studPhenotype}
