@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import Draggable from 'react-draggable';
 import { Move, Download, Crown, CheckCircle2, Flame, Dna, PawPrint, Lock, X } from 'lucide-react';
 import { Sticker as StickerType } from '../hooks/useStudioLogic';
@@ -13,12 +13,52 @@ interface StudioCanvasProps {
     setShowPaywall: (show: boolean) => void;
 }
 
+const getStickerIcon = (type: string) => {
+    switch(type) {
+        case 'crown': return <Crown size="100%" className="text-yellow-400 drop-shadow-lg" fill="currentColor" />;
+        case 'verified': return <CheckCircle2 size="100%" className="text-blue-400 drop-shadow-lg" fill="currentColor" />;
+        case 'fire': return <Flame size="100%" className="text-orange-500 drop-shadow-lg" fill="currentColor" />;
+        case 'dna': return <Dna size="100%" className="text-purple-400 drop-shadow-lg" />;
+        case 'paw': return <PawPrint size="100%" className="text-slate-200 drop-shadow-lg" fill="currentColor" />;
+        case 'cross': return <X size="100%" className="text-white drop-shadow-lg font-bold" strokeWidth={4} />;
+        default: return null;
+    }
+};
+
+// Extracted Component to Handle Ref Lifecycle Correctly
+const DraggableSticker = ({ sticker, studio }: { sticker: StickerType, studio: any }) => {
+    const nodeRef = useRef<HTMLDivElement>(null);
+    const isSelected = studio.selectedLayer === sticker.id;
+
+    return (
+        <Draggable 
+            nodeRef={nodeRef}
+            position={{x: sticker.x, y: sticker.y}}
+            onStop={(e, data) => studio.updatePosition(sticker.id, data.x, data.y)}
+            bounds="parent"
+        >
+            <div 
+                ref={nodeRef}
+                className="absolute z-40 cursor-move pointer-events-auto" 
+                onClick={(e) => {
+                    e.stopPropagation();
+                    studio.setSelectedLayer(sticker.id);
+                }}
+            >
+                <div 
+                    className={`w-12 h-12 transition-all flex items-center justify-center ${isSelected ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
+                    style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
+                >
+                    {getStickerIcon(sticker.type)}
+                </div>
+            </div>
+        </Draggable>
+    );
+};
+
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({ 
     studio, isMobile, isSubscribed, isUnlocked, credits, userEmail, setShowPaywall 
 }) => {
-
-    // Dynamic ref map for stickers to prevent Draggable nodeRef crash
-    const stickerRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const handleDownloadClick = () => {
         const isPro = isSubscribed || isUnlocked;
@@ -36,18 +76,14 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity / 100})` : 'transparent';
     };
 
-    // Style Generator for Text Elements - FIX: Outline cuts off text
-    // Instead of WebkitTextStroke, we use a 8-point text shadow for a clean outer stroke
     const getTextStyle = (layerKey: string) => {
         const style = studio.textStyles[layerKey];
         if (!style) return {};
 
         let shadow = style.shadow ? '0px 4px 8px rgba(0,0,0,0.8)' : 'none';
         
-        // If outline is ON, overlay the outline shadow on top of existing shadow
         if (style.outline) {
             const c = style.outlineColor;
-            // Thick stroke simulation
             const outlineShadow = `
                 -1px -1px 0 ${c}, 1px -1px 0 ${c}, -1px 1px 0 ${c}, 1px 1px 0 ${c},
                 -2px 0px 0 ${c}, 2px 0px 0 ${c}, 0px -2px 0 ${c}, 0px 2px 0 ${c}
@@ -64,18 +100,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             borderRadius: '0.1em',
             textTransform: style.casing as any, 
         };
-    };
-
-    const getStickerIcon = (type: string) => {
-        switch(type) {
-            case 'crown': return <Crown size="100%" className="text-yellow-400 drop-shadow-lg" fill="currentColor" />;
-            case 'verified': return <CheckCircle2 size="100%" className="text-blue-400 drop-shadow-lg" fill="currentColor" />;
-            case 'fire': return <Flame size="100%" className="text-orange-500 drop-shadow-lg" fill="currentColor" />;
-            case 'dna': return <Dna size="100%" className="text-purple-400 drop-shadow-lg" />;
-            case 'paw': return <PawPrint size="100%" className="text-slate-200 drop-shadow-lg" fill="currentColor" />;
-            case 'cross': return <X size="100%" className="text-white drop-shadow-lg font-bold" strokeWidth={4} />;
-            default: return null;
-        }
     };
 
     return (
@@ -200,27 +224,13 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* STICKERS RENDER - FIX: Using valid ref callback to prevent crash */}
+                            {/* STICKERS RENDER - FIX: Using Component Wrapper */}
                             {studio.stickers.map((sticker: StickerType) => (
-                                <Draggable 
+                                <DraggableSticker 
                                     key={sticker.id}
-                                    nodeRef={{ current: stickerRefs.current[sticker.id] } as any}
-                                    position={{x: sticker.x, y: sticker.y}}
-                                    onStop={(e, data) => studio.updatePosition(sticker.id, data.x, data.y)}
-                                >
-                                    <div 
-                                        ref={(el) => { stickerRefs.current[sticker.id] = el; }}
-                                        className="absolute z-40 cursor-move pointer-events-auto" 
-                                        onClick={() => studio.setSelectedLayer(sticker.id)}
-                                    >
-                                        <div 
-                                            className={`w-12 h-12 transition-all flex items-center justify-center ${studio.selectedLayer === sticker.id ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
-                                            style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
-                                        >
-                                            {getStickerIcon(sticker.type)}
-                                        </div>
-                                    </div>
-                                </Draggable>
+                                    sticker={sticker}
+                                    studio={studio}
+                                />
                             ))}
 
                         </div>
