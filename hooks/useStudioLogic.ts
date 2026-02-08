@@ -198,58 +198,45 @@ export const useStudioLogic = (
 
    const handleGenerateScene = async () => {
         if (!aiPrompt.trim()) return;
-
-        // 1. Get the Key
         const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.NEXT_PUBLIC_GEMINI_API_KEY;
         
         if (!GEMINI_KEY) {
-            console.error("DEBUG: Gemini Key is missing");
             alert("Error: API Key not found.");
             return;
         }
 
-        // 2. THE GATEKEEPER (Fixes the "blocked despite having free turns" issue)
         const hasFreebie = !isUnlocked && !isSubscribed && freeGenerations > 0;
         const hasCredits = credits !== null && credits > 0;
         const isPro = isUnlocked || isSubscribed;
 
-        // Only show paywall if they aren't Pro AND have no free turns AND no credits
         if (!isPro && !hasFreebie && !hasCredits) {
             setShowPaywall(true);
             return;
         }
 
         setIsGeneratingScene(true);
-        
         try {
             const ai = new GoogleGenAI(GEMINI_KEY);
             const model = ai.getGenerativeModel({ model: "imagen-3" }); 
-
             const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
             const response = await result.response;
             const part = response.candidates?.[0]?.content?.parts?.[0];
             
             if (part?.inlineData) {
                 setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
-                
-                // 3. THE DEDUCTION (Actually uses up the free turns)
                 if (!isPro) {
-                    if (hasFreebie) {
-                        setFreeGenerations(prev => prev - 1);
-                    } else {
-                        await deductCredit();
-                    }
+                    if (hasFreebie) setFreeGenerations(prev => prev - 1);
+                    else await deductCredit();
                 }
             } else {
                 throw new Error("Model failed to return image data.");
             }
         } catch (e: any) {
-            console.error("AI Gen Failed:", e);
             alert(`AI Gen Failed: ${e.message}`);
         } finally {
             setIsGeneratingScene(false);
         }
-    }; // ✅ This brace is now correct and ends the function.
+    };
 
     const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
         const link = document.createElement('a');
@@ -260,11 +247,8 @@ export const useStudioLogic = (
   
     const handleDownloadAll = async () => {
         if (!marketingRef.current) return;
-        
-        // Close the editor controls before snapping the photo
         setSelectedLayer(null);
 
-        // ✅ LOGIC: Download is FREE if they are Pro OR have free turns OR have credits
         const hasFreebie = !isUnlocked && !isSubscribed && freeGenerations > 0;
         const hasCredits = credits !== null && credits > 0;
         const isPro = isUnlocked || isSubscribed;
@@ -274,9 +258,7 @@ export const useStudioLogic = (
             return;
         }
 
-        // Only deduct if they aren't Pro
         if (!isPro) {
-             // If they have free generations, we don't even call deductCredit()
              if (hasFreebie) {
                  setFreeGenerations(prev => prev - 1);
              } else {
@@ -285,19 +267,23 @@ export const useStudioLogic = (
              }
         }
 
-        // Trigger the actual image creation
         if ((window as any).html2canvas) {
             try {
                 const masterCanvas = await (window as any).html2canvas(marketingRef.current, { 
-                    scale: 3, 
-                    useCORS: true, 
-                    allowTaint: true, 
-                    logging: false 
+                    scale: 3, useCORS: true, allowTaint: true, logging: false 
                 });
                 downloadImage(masterCanvas, `OKC_Studio_${aspectRatio.replace(':','-')}.jpg`);
-            } catch (e) { 
-                console.error("Export failed", e); 
-            }
+            } catch (e) { console.error("Export failed", e); }
+        }
+    };
+
+    const handleExportLitter = async () => {
+        if (!litterRef.current) return;
+        if ((window as any).html2canvas) {
+            try {
+                const canvas = await (window as any).html2canvas(litterRef.current, { scale: 2, backgroundColor: '#020617' });
+                setGeneratedLitterImage(canvas.toDataURL('image/jpeg', 0.9));
+            } catch (e) { console.error("Litter export failed", e); }
         }
     };
 
