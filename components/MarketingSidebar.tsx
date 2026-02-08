@@ -48,16 +48,25 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
 }) => {
 
     const handleProtectedAction = (action: () => void) => {
+        // 1. Allow if user has free generations (localStorage based), even without email
+        if (freeGenerations > 0) {
+            action();
+            return;
+        }
+
+        // 2. Otherwise, require email (login)
         if (!userEmail || userEmail === "") {
             setShowPaywall(true);
             return;
         }
+        
         action();
     };
 
     // Calculate total available turns for the user
     const totalTurns = freeGenerations + (credits || 0);
     const isPro = isSubscribed || isUnlocked;
+    const dailyRemaining = isPro ? Math.max(0, studio.DAILY_LIMIT - studio.dailyProCount) : 0;
 
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
@@ -69,7 +78,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         <span className="text-[8px] uppercase tracking-[0.2em] text-luxury-gold font-black mb-1">Studio Status</span>
                         <span className="text-lg font-serif text-white">
                             {isPro 
-                                ? "Unlimited Pro" 
+                                ? `Pro Access (${dailyRemaining}/${studio.DAILY_LIMIT} Daily)` 
                                 : freeGenerations > 0 
                                     ? `${freeGenerations} Free Turns` 
                                     : `${credits ?? 0} Credits`}
@@ -87,7 +96,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                     )}
                 </div>
 
-                {/* ✅ Added: Visual badge to show total combined availability */}
+                {/* ✅ Visual badge to show total combined availability */}
                 {!isPro && totalTurns > 0 && (
                     <div className="mb-3 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-sm flex items-center gap-2">
                          <Sparkles size={10} className="text-emerald-400 animate-pulse"/>
@@ -220,12 +229,12 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         
                         <div className="flex justify-between items-center">
                             <span className="text-[9px] uppercase text-slate-500 font-bold">
-                                {isPro ? "Unlimited Session" : `${totalTurns} Turns Left`}
+                                {isPro ? `${dailyRemaining} Daily Gens Left` : `${totalTurns} Turns Left`}
                             </span>
                             <button 
                                 onClick={() => handleProtectedAction(studio.handleGenerateScene)} 
                                 disabled={studio.isGeneratingScene}
-                                className="px-4 py-2 bg-indigo-600 text-white text-[10px] uppercase font-bold rounded-sm flex items-center gap-2 hover:bg-indigo-500 shadow-lg"
+                                className="px-4 py-2 bg-indigo-600 text-white text-[10px] uppercase font-bold rounded-sm flex items-center gap-2 hover:bg-indigo-500 shadow-lg disabled:opacity-50"
                             >
                                 {studio.isGeneratingScene ? <Loader2 className="animate-spin" size={12}/> : <><Sparkles size={12}/> Generate</>}
                             </button>
