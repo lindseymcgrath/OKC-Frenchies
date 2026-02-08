@@ -4,6 +4,8 @@ import {
     Edit3, Sparkles, Type, ToggleRight, ToggleLeft, AlignCenter, X, 
     RotateCw, Scaling, ChevronDown, CheckCircle2 
 } from 'lucide-react';
+// ✅ Import PROMPTS so the browse list works
+import { PROMPTS } from '../utils/calculatorHelpers';
 
 interface MarketingSidebarProps {
     studio: any;
@@ -42,20 +44,16 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     credits, 
     freeGenerations, 
     setShowPaywall,
-    userEmail // 👈 This is the key
+    userEmail 
 }) => {
 
-    // ✅ FIXED: This was failing because it wasn't checking the live prop
     const handleProtectedAction = (action: () => void) => {
-        console.log("Verifying access for:", userEmail); // Debug check
         if (!userEmail || userEmail === "") {
             setShowPaywall(true);
             return;
         }
         action();
     };
-
-    // ... (rest of the component)
 
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
@@ -70,7 +68,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         </span>
                     </div>
                     
-                    {/* ✅ HIDE button if user has credits or unlimited access */}
                     {(!isSubscribed && !isUnlocked && (credits || 0) <= 0) && (
                         <button 
                             onClick={() => setShowPaywall(true)}
@@ -129,7 +126,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             )}
                         </div>
                     </div>
-                    {/* Logos */}
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="flex flex-col gap-1">
                             <label className={`h-12 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer ${studio.sireLogo ? 'border-blue-500 bg-blue-900/20' : 'border-slate-800 hover:border-white'}`}>
@@ -261,6 +257,39 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             <Scaling size={10} className="text-slate-400"/>
                             <input type="range" min="0.1" max="3.0" step="0.1" value={studio.layerTransforms[studio.selectedLayer].scale} onChange={(e) => studio.updateTransform('scale', parseFloat(e.target.value))} className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer"/>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ✅ ADDED: ATMOSPHERE BROWSE MODAL */}
+            {studio.showPromptModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                    <div className="bg-slate-900 border border-white/10 p-6 rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-white font-serif text-xl tracking-wide">Choose Atmosphere</h2>
+                            <button onClick={() => studio.setShowPromptModal(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="grid gap-3">
+                            {PROMPTS.map((p) => (
+                                <button 
+                                    key={p.name}
+                                    onClick={() => studio.handlePresetSelect(p.text)}
+                                    className="group text-left p-4 bg-white/5 hover:bg-luxury-gold/10 border border-white/5 hover:border-luxury-gold/30 rounded-sm transition-all duration-300"
+                                >
+                                    <div className="text-luxury-gold font-black text-[9px] uppercase tracking-[0.2em] mb-1">{p.suggestion}</div>
+                                    <div className="text-white font-bold text-sm group-hover:text-white transition-colors">{p.name}</div>
+                                    <div className="text-slate-500 text-[10px] mt-1 line-clamp-1 group-hover:text-slate-300 transition-colors">{p.text}</div>
+                                </button>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => studio.setShowPromptModal(false)}
+                            className="w-full mt-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-all"
+                        >
+                            Close Library
+                        </button>
                     </div>
                 </div>
             )}
