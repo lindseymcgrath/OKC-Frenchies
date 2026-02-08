@@ -23,31 +23,45 @@ export const useStudioLogic = (
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:5' | '9:16'>('1:1');
     const [showPromptModal, setShowPromptModal] = useState(false);
     const [showEditorModal, setShowEditorModal] = useState(false); 
+    
+    // TEXT CONTENT STATE
     const [headerText, setHeaderText] = useState('STUD SERVICE');
     const [studName, setStudName] = useState('SIRE NAME');
     const [damName, setDamName] = useState('DAM NAME');
     const [studDna, setStudDna] = useState('at/at n/b n/co d/d E/e n/KB');
     const [studPhenotype, setStudPhenotype] = useState('Blue & Tan');
     const [generatedLitterImage, setGeneratedLitterImage] = useState<string | null>(null);
+    
+    // TEXT VISIBILITY STATE
     const [showHeader, setShowHeader] = useState(true);
     const [showStudName, setShowStudName] = useState(true);
     const [showDamName, setShowDamName] = useState(false);
     const [showPhenotype, setShowPhenotype] = useState(true);
     const [showGenotype, setShowGenotype] = useState(true);
+    
+    // TEXT COLOR STATE
     const [headerColor, setHeaderColor] = useState('#ffffff');
     const [studNameColor, setStudNameColor] = useState('#fbbf24');
     const [damNameColor, setDamNameColor] = useState('#d946ef');
     const [studDnaColor, setStudDnaColor] = useState('#2dd4bf');
     const [studPhenoColor, setStudPhenoColor] = useState('#ffffff');
+    
+    // NEW: TEXT STYLING STATE
+    const [activeFont, setActiveFont] = useState('Cinzel');
+    const [showTextShadow, setShowTextShadow] = useState(true);
+    const [showTextOutline, setShowTextOutline] = useState(false);
+    const [textOutlineColor, setTextOutlineColor] = useState('#000000');
+    const [showTextBg, setShowTextBg] = useState(false);
+    const [textBgColor, setTextBgColor] = useState('#000000');
+    const [textBgOpacity, setTextBgOpacity] = useState(40); // 0-100
+
     const [bgRemovalError, setBgRemovalError] = useState<string | null>(null);
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
     const [isGeneratingScene, setIsGeneratingScene] = useState(false);
     
     // --- SESSION / COST LOGIC ---
-    // isSessionActive: True if user spent 1 credit to unlock this specific session
     const [isSessionActive, setIsSessionActive] = useState(false);
-    // sessionAiGens: The 5 free gens included in the 1 credit session
     const [sessionAiGens, setSessionAiGens] = useState(0); 
 
     // --- DAILY LIMIT STATE (For Subs) ---
@@ -55,7 +69,6 @@ export const useStudioLogic = (
     const DAILY_LIMIT = 8;
 
     useEffect(() => {
-        // Initialize daily count from local storage
         const dateKey = 'okc_last_gen_date';
         const countKey = 'okc_daily_gen_count';
         const today = new Date().toDateString();
@@ -82,7 +95,6 @@ export const useStudioLogic = (
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
-    // Added watermark to transforms
     const [layerTransforms, setLayerTransforms] = useState<Record<string, { rotate: number, scale: number, x: number, y: number }>>({
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
@@ -93,12 +105,11 @@ export const useStudioLogic = (
         damName: { rotate: 0, scale: 1, x: 0, y: 0 },
         studPheno: { rotate: 0, scale: 1, x: 0, y: 0 },
         studGeno: { rotate: 0, scale: 1, x: 0, y: 0 },
-        watermark: { rotate: 0, scale: 1, x: 0, y: 0 }, // Init Watermark position
+        watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
     });
 
     const marketingRef = useRef<HTMLDivElement>(null);
     const litterRef = useRef<HTMLDivElement>(null);
-    // Node Refs for Draggable to avoid findDOMNode warnings
     const sireNodeRef = useRef(null);
     const damNodeRef = useRef(null);
     const sireLogoRef = useRef(null);
@@ -155,7 +166,6 @@ export const useStudioLogic = (
 
         const isPro = isSubscribed || isUnlocked;
         
-        // 1. Check Eligibility & Cost
         if (isPro) {
             if (dailyProCount >= DAILY_LIMIT) {
                 alert(`Daily limit of ${DAILY_LIMIT} generations reached. Please check back tomorrow.`);
@@ -163,15 +173,12 @@ export const useStudioLogic = (
             }
         } else if (isSessionActive) {
             if (sessionAiGens <= 0) {
-                // If they used up their 5 included, does it cost a token? 
-                // Let's say yes, it reverts to token usage or credit usage.
                 if (freeGenerations <= 0 && (!credits || credits <= 0)) {
                     setShowPaywall(true);
                     return;
                 }
             }
         } else {
-            // Free User / No Session
             if (freeGenerations <= 0 && (!credits || credits <= 0)) {
                 setShowPaywall(true);
                 return;
@@ -206,7 +213,6 @@ export const useStudioLogic = (
                 }
             });
 
-            // Extract image from response
             let imageUrl = null;
             if (response.candidates?.[0]?.content?.parts) {
                 for (const part of response.candidates[0].content.parts) {
@@ -220,7 +226,6 @@ export const useStudioLogic = (
             if (imageUrl) {
                 setMarketingBg(imageUrl);
                 
-                // --- COST DEDUCTION LOGIC ---
                 if (isPro) {
                     incrementDailyPro();
                 } else if (isSessionActive && sessionAiGens > 0) {
@@ -228,7 +233,7 @@ export const useStudioLogic = (
                 } else if (freeGenerations > 0) {
                     setFreeGenerations(prev => prev - 1);
                 } else {
-                    await deductCredit(); // Should rarely hit if gating is correct
+                    await deductCredit();
                 }
 
             } else {
@@ -248,9 +253,6 @@ export const useStudioLogic = (
 
         const isPro = isSubscribed || isUnlocked;
         
-        // If Session is active, BG removal is included (Free)
-        // If Pro, Free.
-        // If neither, Cost 1 Token.
         if (!isPro && !isSessionActive && freeGenerations <= 0 && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
@@ -276,7 +278,6 @@ export const useStudioLogic = (
             else if (type === 'sireLogo') setSireLogo(url);
             else if (type === 'damLogo') setDamLogo(url);
 
-            // Cost Logic
             if (!isPro && !isSessionActive) {
                 if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                 else await deductCredit();
@@ -303,8 +304,6 @@ export const useStudioLogic = (
         if (!marketingRef.current) return;
         const isPro = isSubscribed || isUnlocked;
         
-        // Cost: 1 Token if not Pro/Unlocked. 
-        // If Session Active, Download is free.
         if (!isPro && !isSessionActive && freeGenerations <= 0 && (!credits || credits <= 0)) {
             setShowPaywall(true);
             return;
@@ -322,10 +321,9 @@ export const useStudioLogic = (
                 link.href = canvas.toDataURL();
                 link.click();
                 
-                // Deduct token only if not pro and not in an active session
                 if (!isPro && !isSessionActive) {
                     if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit(); // Fallback
+                    else await deductCredit(); 
                 }
              } catch (e) {
                  console.error("Export failed", e);
@@ -335,6 +333,7 @@ export const useStudioLogic = (
     };
 
     return {
+        freeGenerations, // ✅ EXPOSED TO FIX DOWNLOAD BUG
         activeAccordion, setActiveAccordion,
         sireImage, setSireImage, damImage, setDamImage, sireLogo, setSireLogo, damLogo, setDamLogo,
         isProcessingImage, processingType, aspectRatio, showPromptModal, setShowPromptModal, showEditorModal, setShowEditorModal,
@@ -345,6 +344,15 @@ export const useStudioLogic = (
         bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene, marketingRef, litterRef, 
         sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef, watermarkRef,
         updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll,
-        dailyProCount, DAILY_LIMIT, isSessionActive, activateSession, sessionAiGens
+        dailyProCount, DAILY_LIMIT, isSessionActive, activateSession, sessionAiGens,
+        
+        // New Text Styling Exports
+        activeFont, setActiveFont,
+        showTextShadow, setShowTextShadow,
+        showTextOutline, setShowTextOutline,
+        textOutlineColor, setTextOutlineColor,
+        showTextBg, setShowTextBg,
+        textBgColor, setTextBgColor,
+        textBgOpacity, setTextBgOpacity
     };
 };
