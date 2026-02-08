@@ -13,6 +13,7 @@ export interface TextStyle {
     bgColor: string;
     bgOpacity: number;
     size: number; // Scale factor relative to base size
+    casing: 'uppercase' | 'capitalize' | 'none'; // New: Text Transform
 }
 
 export interface Sticker {
@@ -71,15 +72,16 @@ export const useStudioLogic = (
         bg: false,
         bgColor: '#000000',
         bgOpacity: 40,
-        size: 1
+        size: 1,
+        casing: 'uppercase'
     };
 
     const [textStyles, setTextStyles] = useState<Record<string, TextStyle>>({
-        header: { ...defaultStyle, size: 1.5 },
-        studName: { ...defaultStyle, color: '#fbbf24', font: 'Cinzel' },
-        damName: { ...defaultStyle, color: '#d946ef', font: 'Cinzel' },
-        studPheno: { ...defaultStyle, font: 'Manrope', bg: true, size: 0.8 },
-        studGeno: { ...defaultStyle, font: 'Manrope', color: '#2dd4bf', bg: true, size: 0.8 },
+        header: { ...defaultStyle, size: 1.5, casing: 'uppercase' },
+        studName: { ...defaultStyle, color: '#fbbf24', font: 'Cinzel', casing: 'uppercase' },
+        damName: { ...defaultStyle, color: '#d946ef', font: 'Cinzel', casing: 'uppercase' },
+        studPheno: { ...defaultStyle, font: 'Manrope', bg: true, size: 0.8, casing: 'uppercase' },
+        studGeno: { ...defaultStyle, font: 'Manrope', color: '#2dd4bf', bg: true, size: 0.8, casing: 'none' }, // DNA usually better raw or uppercase, but none lets user decide
     });
 
     // STICKERS STATE
