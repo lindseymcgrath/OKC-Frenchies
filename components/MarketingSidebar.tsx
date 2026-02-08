@@ -4,7 +4,6 @@ import {
     Edit3, Sparkles, Type, ToggleRight, ToggleLeft, AlignCenter, X, 
     RotateCw, Scaling, ChevronDown, CheckCircle2 
 } from 'lucide-react';
-// ✅ Import PROMPTS so the browse list works
 import { PROMPTS } from '../utils/calculatorHelpers';
 
 interface MarketingSidebarProps {
@@ -48,25 +47,32 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
 }) => {
 
     const handleProtectedAction = (action: () => void) => {
-        // 1. Allow if user has free generations (localStorage based), even without email
+        // If Session Active, always allow
+        if (studio.isSessionActive) {
+            action();
+            return;
+        }
+        // Allow if user has free tokens
         if (freeGenerations > 0) {
             action();
             return;
         }
-
-        // 2. Otherwise, require email (login)
+        // Require Login if no tokens
         if (!userEmail || userEmail === "") {
             setShowPaywall(true);
             return;
         }
-        
         action();
     };
 
-    // Calculate total available turns for the user
-    const totalTurns = freeGenerations + (credits || 0);
     const isPro = isSubscribed || isUnlocked;
     const dailyRemaining = isPro ? Math.max(0, studio.DAILY_LIMIT - studio.dailyProCount) : 0;
+    
+    // Status Logic
+    let statusText = `${freeGenerations} Free Tokens`;
+    if (isPro) statusText = `Pro Access (${dailyRemaining} Daily)`;
+    else if (studio.isSessionActive) statusText = `Project Unlocked`;
+    else if (credits && credits > 0) statusText = `${credits} Credits Available`;
 
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
@@ -77,33 +83,39 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                     <div className="flex flex-col">
                         <span className="text-[8px] uppercase tracking-[0.2em] text-luxury-gold font-black mb-1">Studio Status</span>
                         <span className="text-lg font-serif text-white">
-                            {isPro 
-                                ? `Pro Access (${dailyRemaining}/${studio.DAILY_LIMIT} Daily)` 
-                                : freeGenerations > 0 
-                                    ? `${freeGenerations} Free Turns` 
-                                    : `${credits ?? 0} Credits`}
+                            {statusText}
                         </span>
                     </div>
                     
-                    {/* Only show Unlock if they are completely out of turns and credits */}
-                    {(!isPro && totalTurns <= 0) && (
+                    {/* Show "Unlock" if user is NOT pro, session NOT active, and has 0 credits (or wants to add more) */}
+                    {(!isPro) && (
                         <button 
                             onClick={() => setShowPaywall(true)}
                             className="px-4 py-2 bg-luxury-gold hover:bg-yellow-400 text-black text-[10px] font-black uppercase tracking-widest rounded-sm transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)]"
                         >
-                            {userEmail ? 'Unlock' : 'Sign In'}
+                            {userEmail ? 'Add Credits' : 'Unlock / Login'}
                         </button>
                     )}
                 </div>
 
-                {/* ✅ Visual badge to show total combined availability */}
-                {!isPro && totalTurns > 0 && (
+                {/* Free Token Badge */}
+                {!isPro && freeGenerations > 0 && !studio.isSessionActive && (
                     <div className="mb-3 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-sm flex items-center gap-2">
                          <Sparkles size={10} className="text-emerald-400 animate-pulse"/>
                          <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
-                            Ready: {totalTurns} Generations Available
+                            Using Free Tokens ({freeGenerations} Left)
                          </span>
                     </div>
+                )}
+                
+                {/* Session Active Badge */}
+                {studio.isSessionActive && (
+                     <div className="mb-3 px-2 py-1 bg-luxury-teal/10 border border-luxury-teal/20 rounded-sm flex items-center gap-2">
+                        <CheckCircle2 size={10} className="text-luxury-teal"/>
+                        <span className="text-[9px] text-luxury-teal font-bold uppercase tracking-wider">
+                           Session Unlocked ({studio.sessionAiGens} AI Gens Left)
+                        </span>
+                   </div>
                 )}
                 
                 <div className="space-y-1 border-t border-slate-800 pt-2">
@@ -229,7 +241,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         
                         <div className="flex justify-between items-center">
                             <span className="text-[9px] uppercase text-slate-500 font-bold">
-                                {isPro ? `${dailyRemaining} Daily Gens Left` : `${totalTurns} Turns Left`}
+                                {isPro ? `${dailyRemaining} Daily Gens Left` : studio.isSessionActive ? `${studio.sessionAiGens} Included` : `${freeGenerations} Tokens Left`}
                             </span>
                             <button 
                                 onClick={() => handleProtectedAction(studio.handleGenerateScene)} 
@@ -246,21 +258,85 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
             {/* 3. TEXT OVERLAYS ACCORDION */}
             <div className="order-3">
                 <Accordion id="text" title="Text Overlays & Colors" icon={Type} studio={studio}>
-                    <div className="space-y-2">
-                        <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded border border-slate-800">
-                            <button onClick={() => studio.setShowHeader(!studio.showHeader)}>{studio.showHeader ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}</button>
-                            <input value={studio.headerText} onChange={(e) => studio.setHeaderText(e.target.value)} className="flex-1 bg-transparent text-[10px] text-white outline-none" placeholder="Header"/>
-                            <input type="color" value={studio.headerColor} onChange={(e) => studio.setHeaderColor(e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>
+                    <div className="space-y-3">
+                        {/* Header Control */}
+                        <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
+                            <button onClick={() => studio.setShowHeader(!studio.showHeader)} className="hover:scale-110 transition-transform">
+                                {studio.showHeader ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
+                            </button>
+                            <input 
+                                value={studio.headerText} 
+                                onChange={(e) => studio.setHeaderText(e.target.value)} 
+                                className="flex-1 bg-transparent text-[10px] text-white outline-none placeholder-slate-600" 
+                                placeholder="Header Text"
+                            />
+                            <div className="relative w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                                <input type="color" value={studio.headerColor} onChange={(e) => studio.setHeaderColor(e.target.value)} className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer p-0 border-0"/>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded border border-slate-800">
-                            <button onClick={() => studio.setShowStudName(!studio.showStudName)}>{studio.showStudName ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}</button>
-                            <input value={studio.studName} onChange={(e) => studio.setStudName(e.target.value)} className="flex-1 bg-transparent text-[10px] text-white outline-none" placeholder="Stud Name"/>
-                            <input type="color" value={studio.studNameColor} onChange={(e) => studio.setStudNameColor(e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>
+
+                        {/* Stud Name Control */}
+                        <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
+                            <button onClick={() => studio.setShowStudName(!studio.showStudName)} className="hover:scale-110 transition-transform">
+                                {studio.showStudName ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
+                            </button>
+                            <input 
+                                value={studio.studName} 
+                                onChange={(e) => studio.setStudName(e.target.value)} 
+                                className="flex-1 bg-transparent text-[10px] text-white outline-none placeholder-slate-600" 
+                                placeholder="Sire Name"
+                            />
+                            <div className="relative w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                                <input type="color" value={studio.studNameColor} onChange={(e) => studio.setStudNameColor(e.target.value)} className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer p-0 border-0"/>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 bg-black/20 p-1.5 rounded border border-slate-800">
-                            <button onClick={() => studio.setShowDamName(!studio.showDamName)}>{studio.showDamName ? <ToggleRight size={14} className="text-emerald-400"/> : <ToggleLeft size={14} className="text-slate-500"/>}</button>
-                            <input value={studio.damName} onChange={(e) => studio.setDamName(e.target.value)} className="flex-1 bg-transparent text-[10px] text-white outline-none" placeholder="Dam Name"/>
-                            <input type="color" value={studio.damNameColor} onChange={(e) => studio.setDamNameColor(e.target.value)} className="w-4 h-4 bg-transparent cursor-pointer border-none"/>
+
+                        {/* Dam Name Control */}
+                        <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
+                            <button onClick={() => studio.setShowDamName(!studio.showDamName)} className="hover:scale-110 transition-transform">
+                                {studio.showDamName ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
+                            </button>
+                            <input 
+                                value={studio.damName} 
+                                onChange={(e) => studio.setDamName(e.target.value)} 
+                                className="flex-1 bg-transparent text-[10px] text-white outline-none placeholder-slate-600" 
+                                placeholder="Dam Name"
+                            />
+                            <div className="relative w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                                <input type="color" value={studio.damNameColor} onChange={(e) => studio.setDamNameColor(e.target.value)} className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer p-0 border-0"/>
+                            </div>
+                        </div>
+
+                         {/* Phenotype Control */}
+                        <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
+                            <button onClick={() => studio.setShowPhenotype(!studio.showPhenotype)} className="hover:scale-110 transition-transform">
+                                {studio.showPhenotype ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
+                            </button>
+                            <input 
+                                value={studio.studPhenotype} 
+                                onChange={(e) => studio.setStudPhenotype(e.target.value)} 
+                                className="flex-1 bg-transparent text-[10px] text-white outline-none placeholder-slate-600" 
+                                placeholder="Visual Phenotype"
+                            />
+                            <div className="relative w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                                <input type="color" value={studio.studPhenoColor} onChange={(e) => studio.setStudPhenoColor(e.target.value)} className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer p-0 border-0"/>
+                            </div>
+                        </div>
+
+                         {/* Genotype Control */}
+                        <div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-slate-800">
+                            <button onClick={() => studio.setShowGenotype(!studio.showGenotype)} className="hover:scale-110 transition-transform">
+                                {studio.showGenotype ? <ToggleRight size={18} className="text-emerald-400"/> : <ToggleLeft size={18} className="text-slate-500"/>}
+                            </button>
+                            <input 
+                                value={studio.studDna} 
+                                onChange={(e) => studio.setStudDna(e.target.value)} 
+                                className="flex-1 bg-transparent text-[10px] text-white outline-none placeholder-slate-600 font-mono" 
+                                placeholder="DNA String"
+                            />
+                            <div className="relative w-5 h-5 rounded-full overflow-hidden border border-slate-600">
+                                <input type="color" value={studio.studDnaColor} onChange={(e) => studio.setStudDnaColor(e.target.value)} className="absolute -top-2 -left-2 w-10 h-10 cursor-pointer p-0 border-0"/>
+                            </div>
                         </div>
                     </div>
                 </Accordion>
