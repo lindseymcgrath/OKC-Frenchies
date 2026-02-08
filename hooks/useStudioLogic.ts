@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import { GoogleGenAI } from "@google/genai";
-import { PROMPTS, DEFAULT_SCENE_PROMPT } from '../utils/calculatorHelpers';
+import { DEFAULT_SCENE_PROMPT } from '../utils/calculatorHelpers';
 
 // Define the shape of a text layer's style
 export interface TextStyle {
