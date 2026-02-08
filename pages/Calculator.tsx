@@ -24,9 +24,10 @@ export default function Calculator() {
   const user = useUserCredits();
   
   // ✅ ROBUST INITIALIZATION: Protect against NaN or corrupted local storage
+  // Updated key to 'okc_free_gens_v2' to give all users a fresh set of free turns
   const [freeGenerations, setFreeGenerations] = useState(() => {
       try {
-          const saved = localStorage.getItem('okc_free_gens');
+          const saved = localStorage.getItem('okc_free_gens_v2');
           const parsed = saved !== null ? parseInt(saved, 10) : 3;
           // If parsed is NaN, default to 3
           return isNaN(parsed) ? 3 : parsed;
@@ -36,7 +37,7 @@ export default function Calculator() {
   });
 
   useEffect(() => {
-      localStorage.setItem('okc_free_gens', freeGenerations.toString());
+      localStorage.setItem('okc_free_gens_v2', freeGenerations.toString());
   }, [freeGenerations]);
 
   const [savedDogs, setSavedDogs] = useState<SavedDog[]>([]);
