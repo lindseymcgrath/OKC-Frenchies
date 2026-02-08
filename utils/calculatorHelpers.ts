@@ -1,9 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Robust environment variable retrieval for both Vite (import.meta.env) and standard Node/Vercel (process.env)
+const getEnv = (key: string) => {
+    // Check import.meta.env (Vite) - Safe Access
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env[key]) {
+        return (import.meta as any).env[key];
+    }
+    // Check process.env (Node/Polyfilled)
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+        return process.env[key];
+    }
+    return '';
+};
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = getEnv('VITE_SUPABASE_URL');
+const SUPABASE_KEY = getEnv('VITE_SUPABASE_ANON_KEY');
+
+// Ensure we don't crash if keys are missing during build/SSR, but warn if missing at runtime
+if (!SUPABASE_URL) console.warn("Supabase URL missing. Check .env or Vercel Environment Variables.");
+
+// Pass options to prevent error if URL is empty during initial load, though it will fail later if used
+export const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_KEY || 'placeholder');
 
 export const getStripeLinks = (email: string) => {
     const encodedEmail = encodeURIComponent(email || '');
@@ -20,7 +37,7 @@ export const FREEBIE_CODE = "OKCFREE";
 export const PROMPTS = [
     { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", suggestion: "Puppies / Litter" },
     { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", suggestion: "Puppies / Soft" },
-    { name: "Velvet Luxury", text: "Empty high-end studio scene with a deep royal blue velvet tufted wall in the background, gold accents and trim, wide expansive floor area in the foreground with a plush cream carpet, professional cinematic lighting, luxury aesthetic, rich textures, sophisticated mood, 8k resolution.", suggestion: "Puppies / Royal" },
+    { name: "Velvet Luxury", text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", suggestion: "Puppies / Royal" },
     { name: "Grey Wool Knit", text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", suggestion: "Puppies / Cozy" },
     { name: "Marble Sunbeam", text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", suggestion: "Dams" },
     { name: "Luxury Vault", text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", suggestion: "Dams" },
@@ -59,6 +76,14 @@ export interface VisualTraits {
     isFloodleProducer: boolean;
     dnaString: string;
     compactDnaString: string;
+}
+
+export interface SavedDog {
+    id: string;
+    name: string;
+    gender: 'Male' | 'Female';
+    dna: any;
+    date: string;
 }
 
 export const getPhenotype = (dna: any): VisualTraits => {
