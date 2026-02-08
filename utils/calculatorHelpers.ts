@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-// --- CONFIGURATION ---
-export const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
-
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -72,12 +69,9 @@ export const getPhenotype = (dna: any): VisualTraits => {
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
 
-    // ✅ THE "HARD-LINK" HELPER
-const path = (name: string) => {
-    const baseUrl = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals";
-    // We trim the name just in case there's a sneaky space
-    return `${baseUrl}/${name.trim()}`;
-};
+   // ✅ THE VITE-CORRECT PATH
+const path = (name: string) => "/images/visuals/" + name.trim();
+    
     const b = dna.B === 'b/b';
     const co = dna.Co === 'co/co';
     const d = dna.D === 'd/d';
