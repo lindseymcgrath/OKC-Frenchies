@@ -1,11 +1,11 @@
 import { Buffer } from 'buffer';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.VITE_SUPABASE_ANON_KEY || ''
-);
+// Initialize Supabase with fallbacks to prevent "supabaseUrl is required" error on build
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const config = {
   api: {
@@ -16,19 +16,23 @@ export const config = {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
+  // Check for env vars at runtime
+  if (!process.env.VITE_SUPABASE_URL) {
+      console.error("Missing VITE_SUPABASE_URL");
+      return res.status(500).send("Server Configuration Error");
+  }
+
   // 1. We get the data from Stripe
   const chunks = [];
   for await (const chunk of req) {
     chunks.push(chunk);
   }
   const payload = Buffer.concat(chunks).toString();
-  const sig = req.headers['stripe-signature'];
+  // const sig = req.headers['stripe-signature']; // Verification skipped for simplicity as per previous code
 
   let event;
 
   try {
-    // In a production environment with the 'stripe' library, we would verify 'sig'
-    // For now, we will process the payload directly
     event = JSON.parse(payload);
   } catch (err: any) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
