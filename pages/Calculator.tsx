@@ -23,9 +23,16 @@ export default function Calculator() {
   // Custom Hook for Credits & Auth
   const user = useUserCredits();
   
+  // ✅ ROBUST INITIALIZATION: Protect against NaN or corrupted local storage
   const [freeGenerations, setFreeGenerations] = useState(() => {
-      const saved = localStorage.getItem('okc_free_gens');
-      return saved !== null ? parseInt(saved, 10) : 3;
+      try {
+          const saved = localStorage.getItem('okc_free_gens');
+          const parsed = saved !== null ? parseInt(saved, 10) : 3;
+          // If parsed is NaN, default to 3
+          return isNaN(parsed) ? 3 : parsed;
+      } catch (e) {
+          return 3;
+      }
   });
 
   useEffect(() => {
