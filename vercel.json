@@ -1,8 +1,9 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/api/remove-bg",
-      "destination": "/api/remove-bg"
+      "source": "/images/visuals/:path*",
+      "destination": "/images/visuals/:path*"
     },
     {
       "source": "/(.*)",
