@@ -118,10 +118,19 @@ const path = (name: string) => "/images/visuals/" + name.trim();
         if (dna.E.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
         else if (hasAt && !isBrindle && !isCream && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
         if (dna.E.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
+        
         if (hasMerle && !isCream) {
-            const mKey = ['rojo', 'cocoa'].includes(baseColorSlug) ? baseColorSlug : (['isabella', 'new-shade-isabella'].includes(baseColorSlug) ? 'tan' : 'black');
-            layers.push(path(`overlay-merle-${mKey}.png`));
+            // ✅ Check for Pink first so it doesn't default to Black
+            if (isPink) {
+                layers.push(path('overlay-merle-pink.png'));
+            } else {
+                const mKey = ['rojo', 'cocoa'].includes(baseColorSlug) 
+                    ? baseColorSlug 
+                    : (['isabella', 'new-shade-isabella'].includes(baseColorSlug) ? 'tan' : 'black');
+                layers.push(path(`overlay-merle-${mKey}.png`));
+            }
         }
+
         if (!isCream && !isPink) { 
             if (isFullPied) layers.push(path('overlay-pied.png')); 
             else if (isPied) layers.push(path('overlay-pied-carrier.png')); 
@@ -135,7 +144,7 @@ const path = (name: string) => "/images/visuals/" + name.trim();
 
     return {
         baseColorName,
-        phenotypeName: phenotypeParts.join(" "), // You can re-add the phenotype logic here
+        phenotypeName: phenotypeParts.join(" "), 
         layers,
         isHighRisk: dna.M === 'M/M',
         proTips: [],
@@ -143,7 +152,6 @@ const path = (name: string) => "/images/visuals/" + name.trim();
         dnaString: Object.values(dna).join(' '),
         compactDnaString: ''
     };
-};
 
 export const calculateLitterPrediction = (sire: any, dam: any) => {
     // ... (Keep your existing litter prediction logic here)
