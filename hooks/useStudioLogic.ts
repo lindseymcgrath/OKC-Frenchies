@@ -43,6 +43,36 @@ export const useStudioLogic = (
     const [marketingBg, setMarketingBg] = useState<string>('platinum-vault'); 
     const [aiPrompt, setAiPrompt] = useState(`1:1 Square. ${DEFAULT_SCENE_PROMPT}`);
     const [isGeneratingScene, setIsGeneratingScene] = useState(false);
+    
+    // --- DAILY LIMIT STATE ---
+    const [dailyProCount, setDailyProCount] = useState(0);
+    const DAILY_LIMIT = 8;
+
+    useEffect(() => {
+        // Initialize daily count from local storage
+        const dateKey = 'okc_last_gen_date';
+        const countKey = 'okc_daily_gen_count';
+        const today = new Date().toDateString();
+        const lastDate = localStorage.getItem(dateKey);
+
+        if (lastDate !== today) {
+            // New day, reset count
+            localStorage.setItem(dateKey, today);
+            localStorage.setItem(countKey, '0');
+            setDailyProCount(0);
+        } else {
+            // Same day, load count
+            const count = parseInt(localStorage.getItem(countKey) || '0', 10);
+            setDailyProCount(isNaN(count) ? 0 : count);
+        }
+    }, []);
+
+    const incrementDailyPro = () => {
+        const countKey = 'okc_daily_gen_count';
+        const newCount = dailyProCount + 1;
+        setDailyProCount(newCount);
+        localStorage.setItem(countKey, newCount.toString());
+    };
 
     type LayerId = 'sire' | 'dam' | 'sireLogo' | 'damLogo' | 'header' | 'studName' | 'damName' | 'studPheno' | 'studGeno' | 'watermark';
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
@@ -105,23 +135,43 @@ export const useStudioLogic = (
             return;
         }
 
+        // Check Daily Limit for Pro Users
+        if (isPro && dailyProCount >= DAILY_LIMIT) {
+            alert(`Daily limit of ${DAILY_LIMIT} generations reached. Please check back tomorrow.`);
+            return;
+        }
+
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            alert("System Error: API Key is missing. Please contact support.");
+            return;
+        }
+
         setIsGeneratingScene(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            console.log("Initializing Gemini...");
+            const ai = new GoogleGenAI({ apiKey: apiKey });
             
             // Map aspect ratio. Gemini supports "1:1", "3:4", "4:3", "9:16", "16:9".
             let targetAspectRatio = '1:1';
             if (aspectRatio === '9:16') targetAspectRatio = '9:16';
             
+            console.log("Generating with prompt:", aiPrompt);
             const response = await ai.models.generateContent({
                 model: "gemini-3-pro-image-preview",
-                contents: `${aiPrompt}, architectural high-end photography, cinematic lighting, no dogs, 4k`,
+                contents: {
+                    parts: [
+                        { text: `${aiPrompt}, architectural high-end photography, cinematic lighting, no dogs, 4k` }
+                    ]
+                },
                 config: {
                     imageConfig: {
                         aspectRatio: targetAspectRatio
                     }
                 }
             });
+
+            console.log("Response received.");
 
             // Extract image from response
             let imageUrl = null;
@@ -139,9 +189,18 @@ export const useStudioLogic = (
                 if (!isPro) {
                     if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
                     else await deductCredit();
+                } else {
+                    // Is Pro, increment daily count
+                    incrementDailyPro();
                 }
+            } else {
+                console.error("No image data in response:", response);
+                alert("AI generation succeeded but returned no image. Please try again.");
             }
-        } catch (e: any) { alert(`AI Error: ${e.message}`); } 
+        } catch (e: any) { 
+            console.error("Gemini API Error:", e);
+            alert(`AI Error: ${e.message || "Unknown error occurred"}`); 
+        } 
         finally { setIsGeneratingScene(false); }
     };
 
@@ -205,6 +264,29 @@ export const useStudioLogic = (
             return;
         }
         // Proceed with html2canvas download logic...
+        // For now, this logic is handled in StudioCanvas via direct manipulation or another utility
+        // This placeholder acknowledges the intent.
+        if ((window as any).html2canvas) {
+             try {
+                const canvas = await (window as any).html2canvas(marketingRef.current, {
+                    backgroundColor: null,
+                    scale: 2, // High res
+                    useCORS: true
+                });
+                const link = document.createElement('a');
+                link.download = `okc-studio-${Date.now()}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                
+                if (!isPro) {
+                    if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
+                    else await deductCredit();
+                }
+             } catch (e) {
+                 console.error("Export failed", e);
+                 alert("Export failed. Please try again.");
+             }
+        }
     };
 
     return {
@@ -216,6 +298,7 @@ export const useStudioLogic = (
         showHeader, setShowHeader, showStudName, setShowStudName, showDamName, setShowDamName, showPhenotype, setShowPhenotype, showGenotype, setShowGenotype,
         headerColor, setHeaderColor, studNameColor, setStudNameColor, damNameColor, setDamNameColor, studDnaColor, setStudDnaColor, studPhenoColor, setStudPhenoColor,
         bgRemovalError, marketingBg, aiPrompt, setAiPrompt, isGeneratingScene, marketingRef, litterRef, sireNodeRef, damNodeRef, sireLogoRef, damLogoRef, headerRef, studNameRef, damNameRef, studPhenoRef, studGenoRef,
-        updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll
+        updateTransform, updatePosition, snapToCenter, handlePresetSelect, changeAspectRatio, handleBgRemoval, handleImageUpload, handleGenerateScene, handleDownloadAll,
+        dailyProCount, DAILY_LIMIT // Exporting logic vars
     };
 };
