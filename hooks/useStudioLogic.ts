@@ -214,29 +214,60 @@ export const useStudioLogic = (
             return;
         }
 
-        setIsGeneratingScene(true);
-        try {
-            const ai = new GoogleGenAI(GEMINI_KEY);
-            const model = ai.getGenerativeModel({ model: "imagen-3" }); 
-            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
-            const response = await result.response;
-            const part = response.candidates?.[0]?.content?.parts?.[0];
+        const handleGenerateScene = async () => {
+    if (!aiPrompt.trim()) return;
+
+    // 1. PULL THE KEY (Requires VITE_ prefix in .env.local)
+    const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    
+    // 2. DEFINE THE GATEKEEPER VARIABLES
+    const isPro = isSubscribed || isUnlocked;
+    const hasFreebie = !isPro && freeGenerations > 0;
+    const hasCredits = credits !== null && credits > 0;
+
+    // 3. CHECK ACCESS
+    if (!isPro && !hasFreebie && !hasCredits) {
+        setShowPaywall(true);
+        return;
+    }
+
+    // 4. CHECK KEY VALIDITY (Safety check)
+    if (!GEMINI_KEY) {
+        alert("System Error: API Key not detected. Please restart your dev server.");
+        return;
+    }
+
+    setIsGeneratingScene(true);
+    try {
+        const ai = new GoogleGenAI(GEMINI_KEY);
+        // Using Imagen-3 for high-end architectural shots
+        const model = ai.getGenerativeModel({ model: "imagen-3" }); 
+
+        const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
+        const response = await result.response;
+        const part = response.candidates?.[0]?.content?.parts?.[0];
+        
+        if (part?.inlineData) {
+            setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
             
-            if (part?.inlineData) {
-                setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
-                if (!isPro) {
-                    if (hasFreebie) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit();
+            // 5. DEDUCT ONLY AFTER SUCCESS
+            if (!isPro) {
+                if (hasFreebie) {
+                    setFreeGenerations(prev => prev - 1);
+                } else {
+                    await deductCredit();
                 }
-            } else {
-                throw new Error("Model failed to return image data.");
             }
-        } catch (e: any) {
-            alert(`AI Gen Failed: ${e.message}`);
-        } finally {
-            setIsGeneratingScene(false);
+        } else {
+            throw new Error("Model failed to return image data. Check if your API Key has Imagen access.");
         }
-    };
+    } catch (e: any) {
+        console.error("AI Error:", e);
+        alert(`AI Gen Failed: ${e.message}`);
+    } finally {
+        setIsGeneratingScene(false);
+    }
+};
 
     const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
         const link = document.createElement('a');
