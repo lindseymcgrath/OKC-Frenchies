@@ -196,47 +196,51 @@ export const useStudioLogic = (
         else if (type === 'damLogo') setDamLogo(originalUrl);
     };
 
-    const handleGenerateScene = async () => {
-        if (!aiPrompt.trim()) return;
+   const handleGenerateScene = async () => {
+    if (!aiPrompt.trim()) return;
 
-        const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-        if (!GEMINI_KEY) {
-            alert("Error: API Key not found. Please check your Studio settings.");
-            return;
-        }
+    // ✅ Try to grab the key from either common prefix
+    const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    
+    if (!GEMINI_KEY) {
+        console.error("DEBUG: Gemini Key is missing from Environment Variables");
+        alert("Error: API Key not found. Please trigger a 'Redeploy' in Vercel with 'Clean Build Cache' enabled.");
+        return;
+    }
 
-        if (!isUnlocked && !isSubscribed && freeGenerations <= 0 && (!credits || credits <= 0)) {
-            setShowPaywall(true);
-            return;
-        }
+    if (!isUnlocked && !isSubscribed && freeGenerations <= 0 && (!credits || credits <= 0)) {
+        setShowPaywall(true);
+        return;
+    }
 
-        setIsGeneratingScene(true);
-        try {
-            const ai = new GoogleGenAI(GEMINI_KEY);
-            const model = ai.getGenerativeModel({ model: "imagen-3" }); 
+    setIsGeneratingScene(true);
+    
+    try {
+        const ai = new GoogleGenAI(GEMINI_KEY);
+        const model = ai.getGenerativeModel({ model: "imagen-3" }); 
 
-            const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
-            const response = await result.response;
+        const result = await model.generateContent(`${aiPrompt}, architectural high-end photography, cinematic lighting, empty room, no dogs, 4k high definition`);
+        const response = await result.response;
+        
+        const part = response.candidates?.[0]?.content?.parts?.[0];
+        
+        if (part?.inlineData) {
+            setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
             
-            const part = response.candidates?.[0]?.content?.parts?.[0];
-            
-            if (part?.inlineData) {
-                setMarketingBg(`data:image/png;base64,${part.inlineData.data}`);
-                
-                if (!isUnlocked && !isSubscribed) {
-                    if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
-                    else await deductCredit();
-                }
-            } else {
-                throw new Error("Model failed to return image data. Ensure your key has Imagen access.");
+            if (!isUnlocked && !isSubscribed) {
+                if (freeGenerations > 0) setFreeGenerations(prev => prev - 1);
+                else await deductCredit();
             }
-        } catch (e: any) {
-            console.error("AI Gen Failed:", e);
-            alert(`AI Gen Failed: ${e.message}`);
-        } finally {
-            setIsGeneratingScene(false);
+        } else {
+            throw new Error("Model failed to return image data. Ensure your key has Imagen access.");
         }
-    };
+    } catch (e: any) {
+        console.error("AI Gen Failed:", e);
+        alert(`AI Gen Failed: ${e.message}`);
+    } finally {
+        setIsGeneratingScene(false);
+    }
+}; // This closes the function correctly.
 
     const downloadImage = (canvas: HTMLCanvasElement, filename: string) => {
         const link = document.createElement('a');
