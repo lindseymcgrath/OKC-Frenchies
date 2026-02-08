@@ -18,51 +18,15 @@ export const getStripeLinks = (email: string) => {
 export const FREEBIE_CODE = "OKCFREE";
 
 export const PROMPTS = [
-    { 
-        name: "Cream Shag Nursery", 
-        text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", 
-        suggestion: "Puppies / Litter" 
-    },
-    { 
-        name: "Cloud Nursery", 
-        text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", 
-        suggestion: "Puppies / Soft" 
-    },
-    { 
-        name: "Velvet Luxury", 
-        text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", 
-        suggestion: "Puppies / Royal" 
-    },
-    { 
-        name: "Grey Wool Knit", 
-        text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", 
-        suggestion: "Puppies / Cozy" 
-    },
-    { 
-        name: "Marble Sunbeam", 
-        text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", 
-        suggestion: "Dams" 
-    },
-    { 
-        name: "Luxury Vault", 
-        text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", 
-        suggestion: "Dams" 
-    },
-    { 
-        name: "OKC Midnight Tactical", 
-        text: "Aggressive urban cyberpunk setting, wet pavement, neon blue and orange reflections, tactical gear aesthetic, gritty midnight atmosphere.", 
-        suggestion: "Studs" 
-    },
-    { 
-        name: "Urban Cyberpunk", 
-        text: "Hyper-realistic cinematic urban alleyway at midnight, neon signs, rainy atmosphere, industrial textures, steam rising from vents.", 
-        suggestion: "Studs" 
-    },
-    { 
-        name: "Private Hangar", 
-        text: "Interior of a private luxury aircraft hangar, polished concrete floor, soft overhead industrial lighting, spacious and exclusive atmosphere.", 
-        suggestion: "Couples" 
-    },
+    { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", suggestion: "Puppies / Litter" },
+    { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", suggestion: "Puppies / Soft" },
+    { name: "Velvet Luxury", text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", suggestion: "Puppies / Royal" },
+    { name: "Grey Wool Knit", text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", suggestion: "Puppies / Cozy" },
+    { name: "Marble Sunbeam", text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", suggestion: "Dams" },
+    { name: "Luxury Vault", text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", suggestion: "Dams" },
+    { name: "OKC Midnight Tactical", text: "Aggressive urban cyberpunk setting, wet pavement, neon blue and orange reflections, tactical gear aesthetic, gritty midnight atmosphere.", suggestion: "Studs" },
+    { name: "Urban Cyberpunk", text: "Hyper-realistic cinematic urban alleyway at midnight, neon signs, rainy atmosphere, industrial textures, steam rising from vents.", suggestion: "Studs" },
+    { name: "Private Hangar", text: "Interior of a private luxury aircraft hangar, polished concrete floor, soft overhead industrial lighting, spacious and exclusive atmosphere.", suggestion: "Couples" },
 ];
 
 export const DEFAULT_SCENE_PROMPT = PROMPTS[0].text;
@@ -97,7 +61,6 @@ export interface VisualTraits {
     compactDnaString: string;
 }
 
-// --- DNA TO VISUAL TRANSLATOR ---
 export const getPhenotype = (dna: any): VisualTraits => {
     let phenotypeParts: string[] = [];
     let baseColorName = "Black";
@@ -118,6 +81,7 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const hasMerle = dna.M !== 'n/n' || dna.Panda === 'Koi'; 
     const isFullPied = dna.S === 'S/S';
     const hasFurnishings = dna.F !== 'n/n'; 
+    const isCurly = dna.C !== 'n/n';
     const recessiveL = dna.L.split('/').filter((x: string) => x !== 'L').length;
     const isFluffy = recessiveL === 2;
     const aAlleles = dna.A.split('/');
@@ -125,10 +89,8 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const hasAw = aAlleles.includes('aw') && !hasAy;
     const hasAt = aAlleles.includes('at') && !hasAy && !hasAw;
 
-    // ✅ LOGIC: Brindle hides if Double Tan Points (at/at) are active
     const isBrindle = (dna.K.includes('Kbr') || dna.K === 'n/KB') && !isSolidBlack && !isCream && !isPink && !isWhiteMasked && !hasAt;
 
-    // Determine Base Color
     if (b && co && d) { baseColorName = "New Shade Isabella"; baseColorSlug = "new-shade-isabella"; }
     else if (b && co) { baseColorName = "New Shade Rojo"; baseColorSlug = "rojo"; } 
     else if (b && d)  { baseColorName = "Isabella"; baseColorSlug = "isabella"; }
@@ -162,13 +124,21 @@ export const getPhenotype = (dna: any): VisualTraits => {
         
         if (dna.E.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
         
+        // Pattern Overlays (Panda/Koi)
+        if (dna.Panda === 'Koi') layers.push(path('overlay-koi.png'));
+        else if (dna.Panda === 'Panda') layers.push(path('overlay-husky.png'));
+
+        // Merle Logic
         if (hasMerle && !isCream) {
             if (isPink) {
                 layers.push(path('overlay-merle-pink.png'));
             } else {
-                const mKey = ['rojo', 'cocoa'].includes(baseColorSlug) 
-                    ? baseColorSlug 
-                    : (['isabella', 'new-shade-isabella'].includes(baseColorSlug) ? 'tan' : 'black');
+                let mKey = 'black';
+                if (['rojo', 'cocoa'].includes(baseColorSlug)) mKey = baseColorSlug;
+                else if (['isabella', 'new-shade-isabella'].includes(baseColorSlug)) mKey = 'tan';
+                else if (baseColorSlug === 'lilac') mKey = 'gray';
+                else if (['fawn', 'sable'].includes(baseColorSlug)) mKey = 'fawn';
+                
                 layers.push(path(`overlay-merle-${mKey}.png`));
             }
         }
@@ -180,29 +150,33 @@ export const getPhenotype = (dna: any): VisualTraits => {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
     }
 
-    // ✅ FURNISHING LOGIC: specific overlays for Pink vs Rojo/Isabella
+    // FURNISHING LOGIC
     if (hasFurnishings) {
         if (isPink) {
             layers.push(path('overlay-cream-furnishing.png'));
+        } else if (['blue', 'lilac'].includes(baseColorSlug)) {
+            layers.push(path('overlay-gray-furnishing.png'));
         } else if (['rojo', 'cocoa', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) {
             layers.push(path('overlay-cocoa-furnishing.png'));
         } else if (['fawn', 'sable'].includes(baseColorSlug)) {
-            layers.push(path('overlay-fawn-furnishing.png')); // Your Placeholder
+            layers.push(path('overlay-fawn-furnishing.png')); 
         } else {
-            layers.push(path('overlay-furnishing.png')); // Standard fallback
+            layers.push(path('overlay-furnishing.png'));
         }
     }
 
     if (isFluffy) layers.push(path('overlay-fluffy.png')); 
+    if (isCurly) layers.push(path('overlay-curl.png'));
     layers.push(path('overlay-outline.png'));
 
-    // Build Phenotype Name String
+    // Phenotype Building
     phenotypeParts.push(baseColorName);
     if (hasAt && !isBrindle) phenotypeParts.push("Tan Points");
     if (isBrindle) phenotypeParts.push("Brindle");
     if (hasMerle) phenotypeParts.push("Merle");
     if (isPink) phenotypeParts.push("Visual Pink");
     if (isFluffy) phenotypeParts.push("Fluffy");
+    if (isCurly) phenotypeParts.push("Curly");
     if (hasFurnishings) phenotypeParts.push("Furnishings");
 
     return {
@@ -218,6 +192,5 @@ export const getPhenotype = (dna: any): VisualTraits => {
 };
 
 export const calculateLitterPrediction = (sire: any, dam: any) => {
-    // Prediction logic usually goes here - if you lost this, I can help rebuild it.
     return []; 
 };
