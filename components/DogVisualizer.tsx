@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { VisualTraits, REMOTE_BASE_URL } from '../utils/calculatorHelpers';
-
+import { VisualTraits } from '../utils/calculatorHelpers';
 export const DogVisualizer: React.FC<{ traits: VisualTraits, scale?: number, label?: string, showLabel?: boolean }> = React.memo(({ traits, scale = 1, label, showLabel = true }) => {
     const getUrl = (img: string) => `${REMOTE_BASE_URL}/${img}`;
     const [errors, setErrors] = useState<Record<string, boolean>>({});
