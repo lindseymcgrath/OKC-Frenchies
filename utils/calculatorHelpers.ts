@@ -97,14 +97,13 @@ export interface VisualTraits {
     compactDnaString: string;
 }
 
-// --- LOGIC FUNCTIONS ---
+// --- DNA TO VISUAL TRANSLATOR ---
 export const getPhenotype = (dna: any): VisualTraits => {
-    let phenotypeParts = [];
+    let phenotypeParts: string[] = [];
     let baseColorName = "Black";
     let baseColorSlug = "black"; 
     let layers: string[] = []; 
 
-    // ✅ THE VITE-CORRECT PATH
     const path = (name: string) => "/images/visuals/" + name.trim();
     
     const b = dna.B === 'b/b';
@@ -116,7 +115,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const isDoubleIntensity = dna.Int === 'Int/Int';
     const isWhiteMasked = isDoubleIntensity || (dna.Int !== 'n/n' && isPied);
     const isSolidBlack = dna.K === 'KB/KB'; 
-    const isBrindle = (dna.K.includes('Kbr') || dna.K === 'n/KB') && !isSolidBlack && !isCream && !isPink && !isWhiteMasked;
     const hasMerle = dna.M !== 'n/n' || dna.Panda === 'Koi'; 
     const isFullPied = dna.S === 'S/S';
     const hasFurnishings = dna.F !== 'n/n'; 
@@ -127,6 +125,10 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const hasAw = aAlleles.includes('aw') && !hasAy;
     const hasAt = aAlleles.includes('at') && !hasAy && !hasAw;
 
+    // ✅ LOGIC: Brindle hides if Double Tan Points (at/at) are active
+    const isBrindle = (dna.K.includes('Kbr') || dna.K === 'n/KB') && !isSolidBlack && !isCream && !isPink && !isWhiteMasked && !hasAt;
+
+    // Determine Base Color
     if (b && co && d) { baseColorName = "New Shade Isabella"; baseColorSlug = "new-shade-isabella"; }
     else if (b && co) { baseColorName = "New Shade Rojo"; baseColorSlug = "rojo"; } 
     else if (b && d)  { baseColorName = "Isabella"; baseColorSlug = "isabella"; }
@@ -135,15 +137,20 @@ export const getPhenotype = (dna: any): VisualTraits => {
     else if (co)      { baseColorName = "Cocoa"; baseColorSlug = "cocoa"; }
     else if (d)       { baseColorName = "Blue"; baseColorSlug = "blue"; }
 
-    let visualBase = baseColorSlug;
-    const safeBase = visualBase.toLowerCase().replace(/\s+/g, '-');
+    const safeBase = baseColorSlug.toLowerCase().replace(/\s+/g, '-');
 
     // 🏗️ BASE LAYERS
-    if (isWhiteMasked) layers.push(path('base-cream.png')); 
-    else if (isPink) layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png')); 
-    else if (isCream) layers.push(path('base-cream.png'));
-    else if ((hasAy || hasAw) && !isBrindle && !isSolidBlack) layers.push(isFluffy ? path('base-fawn-fluffy.png') : path('base-fawn.png'));
-    else {
+    if (isWhiteMasked) {
+        layers.push(path('base-cream.png'));
+    } else if (isPink) {
+        layers.push(isFluffy ? path('base-pink-fluffy.png') : path('base-pink.png'));
+    } else if (isCream) {
+        layers.push(path('base-cream.png'));
+    } else if ((hasAy || hasAw) && !isBrindle && !isSolidBlack) {
+        layers.push(isFluffy ? path('base-fawn-fluffy.png') : path('base-fawn.png'));
+        baseColorName = hasAy ? "Fawn" : "Sable";
+        baseColorSlug = hasAy ? "fawn" : "sable";
+    } else {
         const suffix = isFluffy ? '-fluffy.png' : '.png';
         layers.push(path(`base-${safeBase}${suffix}`));
     }
@@ -152,10 +159,10 @@ export const getPhenotype = (dna: any): VisualTraits => {
     if (!isWhiteMasked) {
         if (dna.E.includes('eA') && !isCream) layers.push(path('overlay-ea.png'));
         else if (hasAt && !isBrindle && !isCream && !isSolidBlack) layers.push(path('overlay-tan-points.png'));
+        
         if (dna.E.includes('Em') && !isCream && !isSolidBlack) layers.push(path('overlay-mask.png'));
         
         if (hasMerle && !isCream) {
-            // ✅ Check for Pink first so it doesn't default to Black
             if (isPink) {
                 layers.push(path('overlay-merle-pink.png'));
             } else {
@@ -173,9 +180,30 @@ export const getPhenotype = (dna: any): VisualTraits => {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
     }
 
-    if (hasFurnishings) layers.push(path('overlay-furnishing.png'));
+    // ✅ FURNISHING LOGIC: specific overlays for Pink vs Rojo/Isabella
+    if (hasFurnishings) {
+        if (isPink) {
+            layers.push(path('overlay-cream-furnishing.png'));
+        } else if (['rojo', 'cocoa', 'isabella', 'new-shade-isabella'].includes(baseColorSlug)) {
+            layers.push(path('overlay-cocoa-furnishing.png'));
+        } else if (['fawn', 'sable'].includes(baseColorSlug)) {
+            layers.push(path('overlay-fawn-furnishing.png')); // Your Placeholder
+        } else {
+            layers.push(path('overlay-furnishing.png')); // Standard fallback
+        }
+    }
+
     if (isFluffy) layers.push(path('overlay-fluffy.png')); 
     layers.push(path('overlay-outline.png'));
+
+    // Build Phenotype Name String
+    phenotypeParts.push(baseColorName);
+    if (hasAt && !isBrindle) phenotypeParts.push("Tan Points");
+    if (isBrindle) phenotypeParts.push("Brindle");
+    if (hasMerle) phenotypeParts.push("Merle");
+    if (isPink) phenotypeParts.push("Visual Pink");
+    if (isFluffy) phenotypeParts.push("Fluffy");
+    if (hasFurnishings) phenotypeParts.push("Furnishings");
 
     return {
         baseColorName,
@@ -187,9 +215,9 @@ export const getPhenotype = (dna: any): VisualTraits => {
         dnaString: Object.values(dna).join(' '),
         compactDnaString: ''
     };
-}; // This was the missing brace
+};
 
 export const calculateLitterPrediction = (sire: any, dam: any) => {
-    // ... (Keep your existing litter prediction logic here)
-    return []; // Placeholder for brevity
+    // Prediction logic usually goes here - if you lost this, I can help rebuild it.
+    return []; 
 };
