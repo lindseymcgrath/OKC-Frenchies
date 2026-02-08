@@ -24,12 +24,20 @@ export default function Calculator() {
   const user = useUserCredits();
   
   // ✅ ROBUST INITIALIZATION: Protect against NaN or corrupted local storage
-  // Updated key to 'okc_free_gens_v2' to give all users a fresh set of free turns
+  // Updated key to 'okc_studio_tokens_v4' to force a fresh count and robust check
   const [freeGenerations, setFreeGenerations] = useState(() => {
       try {
-          const saved = localStorage.getItem('okc_free_gens_v2');
-          const parsed = saved !== null ? parseInt(saved, 10) : 3;
-          // If parsed is NaN, default to 3
+          // Check if window exists (SSR safety)
+          if (typeof window === 'undefined') return 3;
+          
+          const saved = window.localStorage.getItem('okc_studio_tokens_v4');
+          if (saved === null) {
+              // If key doesn't exist, initialize it
+              window.localStorage.setItem('okc_studio_tokens_v4', '3');
+              return 3;
+          }
+          
+          const parsed = parseInt(saved, 10);
           return isNaN(parsed) ? 3 : parsed;
       } catch (e) {
           return 3;
@@ -37,7 +45,13 @@ export default function Calculator() {
   });
 
   useEffect(() => {
-      localStorage.setItem('okc_free_gens_v2', freeGenerations.toString());
+      try {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem('okc_studio_tokens_v4', freeGenerations.toString());
+        }
+      } catch (e) {
+          console.error("Failed to save tokens to local storage", e);
+      }
   }, [freeGenerations]);
 
   const [savedDogs, setSavedDogs] = useState<SavedDog[]>([]);
