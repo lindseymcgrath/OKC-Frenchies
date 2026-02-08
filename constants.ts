@@ -75,7 +75,8 @@ export const PRODUCTS: Product[] = [
     name: 'Raw Beef Blend',
     subtitle: 'Foundation Nutrition',
     description: 'The base of our program. 80/10/10 premium raw beef blends sourced for maximum muscle development.',
-    image: 'https://images.unsplash.com/photo-1615937651187-8c4898144d04?auto=format&fit=crop&q=80&w=600',
+    // Fixed: Replaced 404 image
+    image: 'https://images.unsplash.com/photo-1628260412297-a3377e45006f?auto=format&fit=crop&q=80&w=600',
     price: 'From $4.50/lb',
     link: 'https://rawandpawco.com/collections/raw',
     benefits: [
