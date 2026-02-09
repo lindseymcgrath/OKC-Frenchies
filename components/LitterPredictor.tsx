@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Share2, Save } from 'lucide-react';
+import { X, Share2, Save, ToggleLeft, ToggleRight } from 'lucide-react';
 import { DogVisualizer } from './DogVisualizer';
 import { LOCI, getPhenotype, calculateLitterPrediction } from '../utils/calculatorHelpers';
 
@@ -28,6 +28,51 @@ export const LitterPredictor: React.FC<LitterPredictorProps> = ({
 }) => {
     const [selectedPuppy, setSelectedPuppy] = useState<any | null>(null);
 
+    // Helper to render loci rows
+    const renderLociRows = (dna: any, setDna: (val: any) => void, colorClass: string) => {
+        return Object.keys(LOCI).map(key => {
+            
+            if (key === 'Panda') {
+                const isKoiOn = dna['Panda'] === 'Koi';
+                const isPandaOn = dna['Panda'] === 'Panda';
+                
+                return (
+                    <div key="PatternMix" className="col-span-1 flex gap-1 border border-slate-800 p-1 bg-black/40">
+                       <div className="flex-1 flex flex-col items-center">
+                           <span className="text-[7px] text-slate-500 uppercase font-bold mb-1">Koi</span>
+                           <button 
+                                onClick={() => setDna({...dna, Panda: isKoiOn ? 'No' : 'Koi'})}
+                                className={`text-[9px] ${isKoiOn ? colorClass : 'text-slate-600'}`}
+                           >
+                               {isKoiOn ? <ToggleRight size={14}/> : <ToggleLeft size={14}/>}
+                           </button>
+                       </div>
+                       <div className="w-px bg-slate-800 mx-1"></div>
+                       <div className="flex-1 flex flex-col items-center">
+                           <span className="text-[7px] text-slate-500 uppercase font-bold mb-1">Panda</span>
+                           <button 
+                                onClick={() => setDna({...dna, Panda: isPandaOn ? 'No' : 'Panda'})}
+                                className={`text-[9px] ${isPandaOn ? colorClass : 'text-slate-600'}`}
+                           >
+                               {isPandaOn ? <ToggleRight size={14}/> : <ToggleLeft size={14}/>}
+                           </button>
+                       </div>
+                    </div>
+                );
+            }
+
+            const locus = (LOCI as any)[key];
+            return (
+                <div key={key} className="flex justify-between items-center bg-black/40 px-2 py-1 border border-slate-800">
+                    <label className="text-[9px] text-slate-500 uppercase truncate max-w-[60px]" title={locus.label}>{locus.label.split(' ')[0]}</label>
+                    <select value={dna[key]} onChange={(e) => setDna({...dna, [key]: e.target.value})} className="bg-transparent text-[9px] text-white outline-none font-mono text-right w-1/2">
+                        {locus.options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                </div>
+            );
+        });
+    };
+
     return (
         <div className="space-y-8">
             {/* Universal Save Input for Pair Mode */}
@@ -51,15 +96,8 @@ export const LitterPredictor: React.FC<LitterPredictorProps> = ({
                         </div>
                     </div>
                     <div className="flex justify-center mb-6 h-48"><DogVisualizer traits={getPhenotype(sire)} showLabel={true} /></div>
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
-                        {Object.keys(LOCI).map(key => (
-                            <div key={key} className="flex justify-between items-center bg-black/40 px-2 py-1 border border-slate-800">
-                                <label className="text-[9px] text-slate-500 uppercase">{(LOCI as any)[key].label}</label>
-                                <select value={(sire as any)[key]} onChange={(e) => setSire({...sire, [key]: e.target.value})} className="bg-transparent text-[10px] text-white outline-none font-mono text-right w-1/2">
-                                    {(LOCI as any)[key].options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-                                </select>
-                            </div>
-                        ))}
+                    <div className="grid grid-cols-2 gap-2 mt-auto max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                        {renderLociRows(sire, setSire, 'text-luxury-teal')}
                     </div>
                 </div>
                 {/* Dam Card */}
@@ -72,15 +110,8 @@ export const LitterPredictor: React.FC<LitterPredictorProps> = ({
                         </div>
                     </div>
                     <div className="flex justify-center mb-6 h-48"><DogVisualizer traits={getPhenotype(dam)} showLabel={true} /></div>
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
-                        {Object.keys(LOCI).map(key => (
-                            <div key={key} className="flex justify-between items-center bg-black/40 px-2 py-1 border border-slate-800">
-                                <label className="text-[9px] text-slate-500 uppercase">{(LOCI as any)[key].label}</label>
-                                <select value={(dam as any)[key]} onChange={(e) => setDam({...dam, [key]: e.target.value})} className="bg-transparent text-[10px] text-white outline-none font-mono text-right w-1/2">
-                                    {(LOCI as any)[key].options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-                                </select>
-                            </div>
-                        ))}
+                    <div className="grid grid-cols-2 gap-2 mt-auto max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                        {renderLociRows(dam, setDam, 'text-luxury-magenta')}
                     </div>
                 </div>
             </div>
