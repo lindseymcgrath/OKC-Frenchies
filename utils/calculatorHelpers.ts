@@ -212,6 +212,7 @@ export const getPhenotype = (dna: any): VisualTraits => {
 
     // Phenotype Building
     phenotypeParts.push(baseColorName);
+    if (get('E').includes('eA')) phenotypeParts.push("Intense");
     if (hasAt && !isBrindle) phenotypeParts.push("Tan Points");
     if (isBrindle) phenotypeParts.push("Brindle");
     if (hasMerle) phenotypeParts.push("Merle");
@@ -222,15 +223,57 @@ export const getPhenotype = (dna: any): VisualTraits => {
 
     // Compact DNA String Construction
     const compact: string[] = [];
-    const a = get('A'); if (a && a !== 'Ay/Ay') compact.push(a.replace('/', ''));
-    const b_val = get('B'); if (b_val === 'b/b') compact.push('bb'); else if (b_val.includes('b')) compact.push('Bb');
-    const co_val = get('Co'); if (co_val === 'co/co') compact.push('coco'); else if (co_val.includes('co')) compact.push('Nco');
-    const d_val = get('D'); if (d_val === 'd/d') compact.push('dd'); else if (d_val.includes('d')) compact.push('Dd');
-    const e_val = get('E'); if (e_val === 'e/e') compact.push('ee'); else if (e_val.includes('e')) compact.push('Ee');
-    const k_val = get('K'); if (k_val === 'KB/KB') compact.push('KB');
-    const l_val = get('L'); if (l_val && l_val.includes('l')) compact.push(l_val.replace('/', ''));
-    const m_val = get('M'); if (m_val && m_val.includes('M')) compact.push('Merle');
-    const s_val = get('S'); if (s_val && s_val !== 'n/n') compact.push('Pied');
+    
+    // Pink
+    const pink = get('Pink');
+    if (pink === 'A/A') compact.push('Pink');
+    else if (pink.includes('A')) compact.push('Pink Carrier');
+
+    // Agouti
+    const a = get('A'); 
+    if (a && a !== 'Ay/Ay') compact.push(a.replace('/', ''));
+
+    // K Locus
+    const k = get('K'); 
+    if (k === 'KB/KB') compact.push('KB');
+    else if (k.includes('Kbr')) compact.push('Brindle');
+    else if (k === 'n/KB') compact.push('KB Carrier');
+
+    // B Locus (Rojo)
+    const b_val = get('B'); 
+    if (b_val === 'b/b') compact.push('bb'); 
+    else if (b_val.includes('b')) compact.push('Bb');
+    
+    // Co Locus (Cocoa)
+    const co_val = get('Co'); 
+    if (co_val === 'co/co') compact.push('coco'); 
+    else if (co_val.includes('co')) compact.push('Nco');
+
+    // D Locus (Blue)
+    const d_val = get('D'); 
+    if (d_val === 'd/d') compact.push('dd'); 
+    else if (d_val.includes('d')) compact.push('Dd');
+
+    // E Locus (Cream/Mask/eA)
+    const e_val = get('E'); 
+    if (e_val === 'e/e') compact.push('ee'); 
+    else if (e_val !== 'E/E') compact.push(e_val.replace('/', ''));
+
+    // L Locus
+    const l_val = get('L'); 
+    if (l_val && l_val.includes('l')) compact.push(l_val.replace('/', ''));
+    
+    // Merle
+    const m_val = get('M'); 
+    if (m_val && m_val.includes('M')) compact.push('Merle');
+    
+    // Pied
+    const s_val = get('S'); 
+    if (s_val && s_val !== 'n/n') compact.push('Pied');
+
+    // Intensity
+    const int_val = get('Int');
+    if (int_val && int_val !== 'n/n') compact.push(int_val.replace('/', ''));
 
     const compactDnaString = compact.length > 0 ? compact.join(' ') : "Standard";
 
@@ -283,7 +326,8 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
     
     offspring.forEach(dna => {
         const traits = getPhenotype(dna);
-        const signature = traits.phenotypeName || 'Standard'; 
+        // Use full phenotype name AND compact genotype to distinguish variations
+        const signature = traits.phenotypeName + '|' + traits.compactDnaString; 
         
         if (!grouped[signature]) {
             grouped[signature] = { dna, count: 0, name: signature };
