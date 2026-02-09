@@ -45,7 +45,12 @@ const Navbar: React.FC = () => {
     >
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         {/* Logo Area */}
-        <Link to="/" className="flex items-center gap-2 group relative z-50">
+        <Link to="/" className="flex items-center gap-3 group relative z-50">
+          <img 
+            src="/logo.png" 
+            alt="OKC Frenchies Logo" 
+            className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.2)] transition-transform duration-500 group-hover:scale-110" 
+          />
           <span className="font-serif text-2xl font-bold tracking-widest text-slate-100 group-hover:text-white transition-colors">
             OKC<span className="text-luxury-teal group-hover:text-luxury-teal/80">FRENCHIES</span>
           </span>
