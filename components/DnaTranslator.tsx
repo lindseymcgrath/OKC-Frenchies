@@ -1,5 +1,5 @@
-import React from 'react';
-import { Save } from 'lucide-react';
+import React, { useState } from 'react';
+import { Save, Info, X, Check, ToggleLeft, ToggleRight } from 'lucide-react';
 import { DogVisualizer } from './DogVisualizer';
 import { LOCI, getPhenotype } from '../utils/calculatorHelpers';
 
@@ -18,6 +18,12 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
     handleChange,
     onSave
 }) => {
+    const [infoModalOpen, setInfoModalOpen] = useState<string | null>(null);
+
+    const getLocusInfo = (key: string) => {
+        return (LOCI as any)[key]?.description || "No description available.";
+    };
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-slate-900/50 border border-slate-800 p-6 rounded-sm">
             <div className="md:col-span-5 flex items-center justify-center bg-black/40 rounded-sm border border-slate-800 p-4 relative">
@@ -38,17 +44,86 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {Object.keys(LOCI).map(key => (
-                    <div key={key} className="flex justify-between items-center bg-black/40 px-3 py-2 rounded-sm border border-slate-800 hover:border-luxury-teal/30">
-                        <label className="text-[10px] text-slate-400 uppercase font-bold">{(LOCI as any)[key].label}</label>
-                        <select value={(currentDna as any)[key]} onChange={(e) => handleChange(key, e.target.value)} className="bg-transparent text-right text-[11px] text-white outline-none font-mono cursor-pointer ml-2">
-                            {(LOCI as any)[key].options.map((o: string) => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                    </div>
-                ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                    {Object.keys(LOCI).map(key => {
+                        const locus = (LOCI as any)[key];
+                        const val = (currentDna as any)[key];
+                        
+                        // Special Handling for Panda (which controls Koi too)
+                        if (key === 'Panda') {
+                            const isKoiOn = val === 'Koi';
+                            const isPandaOn = val === 'Panda';
+
+                            return (
+                                <div key="PatternMix" className="col-span-1 flex gap-1">
+                                    {/* Koi Half */}
+                                    <div className="flex-1 flex flex-col items-center justify-center bg-black/40 px-1 py-2 rounded-sm border border-slate-800 hover:border-luxury-teal/30">
+                                        <div className="flex items-center gap-1 mb-1">
+                                            <button onClick={() => setInfoModalOpen('Panda')} className="text-slate-600 hover:text-luxury-teal"><Info size={8} /></button>
+                                            <label className="text-[8px] text-slate-400 uppercase font-bold">Koi</label>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleChange('Panda', isKoiOn ? 'No' : 'Koi')}
+                                            className={`flex items-center gap-1 text-[9px] font-bold uppercase ${isKoiOn ? 'text-luxury-teal' : 'text-slate-500'}`}
+                                        >
+                                            {isKoiOn ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                        </button>
+                                    </div>
+                                    {/* Panda Half */}
+                                    <div className="flex-1 flex flex-col items-center justify-center bg-black/40 px-1 py-2 rounded-sm border border-slate-800 hover:border-luxury-teal/30">
+                                        <div className="flex items-center gap-1 mb-1">
+                                            <button onClick={() => setInfoModalOpen('Panda')} className="text-slate-600 hover:text-luxury-teal"><Info size={8} /></button>
+                                            <label className="text-[8px] text-slate-400 uppercase font-bold">Panda</label>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleChange('Panda', isPandaOn ? 'No' : 'Panda')}
+                                            className={`flex items-center gap-1 text-[9px] font-bold uppercase ${isPandaOn ? 'text-luxury-teal' : 'text-slate-500'}`}
+                                        >
+                                            {isPandaOn ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        }
+                        
+                        // Standard Rendering for other loci
+                        return (
+                            <div key={key} className="flex justify-between items-center bg-black/40 px-3 py-2 rounded-sm border border-slate-800 hover:border-luxury-teal/30 group transition-all">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => setInfoModalOpen(key)}
+                                        className="text-slate-600 hover:text-luxury-teal transition-colors"
+                                    >
+                                        <Info size={10} />
+                                    </button>
+                                    <label className="text-[9px] text-slate-400 uppercase font-bold truncate max-w-[80px]" title={locus.label}>
+                                        {locus.label.replace(/\(.*\)/, '')}
+                                    </label>
+                                </div>
+
+                                <select value={val} onChange={(e) => handleChange(key, e.target.value)} className="bg-transparent text-right text-[10px] text-white outline-none font-mono cursor-pointer ml-2 max-w-[80px]">
+                                    {locus.options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+
+            {/* INFO MODAL */}
+            {infoModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setInfoModalOpen(null)}>
+                    <div className="bg-[#0f172a] border border-luxury-teal/30 p-6 rounded-sm max-w-sm w-full shadow-2xl animate-in fade-in zoom-in-95" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                            <h3 className="font-serif text-xl text-white">{(LOCI as any)[infoModalOpen].label}</h3>
+                            <button onClick={() => setInfoModalOpen(null)} className="text-slate-500 hover:text-white"><X size={16}/></button>
+                        </div>
+                        <p className="font-sans text-sm text-slate-300 leading-relaxed">
+                            {getLocusInfo(infoModalOpen)}
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
