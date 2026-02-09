@@ -49,20 +49,81 @@ export const PROMPTS = [
 export const DEFAULT_SCENE_PROMPT = PROMPTS[0].text;
 
 export const LOCI = {
-  Pink: { label: 'Pink', options: ['n/n', 'n/A', 'A/A'] },
-  A: { label: 'Agouti', options: ['Ay/Ay', 'Ay/aw', 'Ay/at', 'Ay/a', 'aw/aw', 'aw/at', 'aw/a', 'at/at', 'at/a', 'a/a'] },
-  K: { label: 'K-Locus', options: ['n/n', 'n/KB', 'KB/KB'] },
-  B: { label: 'Rojo (B)', options: ['N/N', 'N/b', 'b/b'] },
-  Co: { label: 'Cocoa', options: ['n/n', 'N/co', 'co/co'] },
-  D: { label: 'Blue (D)', options: ['N/N', 'N/d', 'd/d'] },
-  E: { label: 'Red/Yellow', options: ['E/E', 'Em/Em', 'Em/E', 'Em/e', 'Em/eA', 'E/e', 'E/eA', 'e/e', 'eA/eA', 'eA/e'] }, 
-  S: { label: 'Pied', options: ['n/n', 'n/S', 'S/S'] }, 
-  L: { label: 'Fluffy', options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'] },
-  F: { label: 'Furnish', options: ['n/n', 'n/F', 'F/F'] },
-  C: { label: 'Curly', options: ['n/n', 'n/C1', 'n/C2', 'C1/C1', 'C1/C2', 'C2/C2'] },
-  M: { label: 'Merle', options: ['n/n', 'n/M', 'M/M'] }, 
-  Panda: { label: 'Pattern', options: ['No', 'Panda', 'Koi'] },
-  Int: { label: 'Intensity', options: ['n/n', 'n/Int', 'Int/Int'] }
+  Pink: { 
+      label: 'Pink', 
+      options: ['n/n', 'n/A', 'A/A'],
+      description: "A rare recessive dilution gene (Pink) that lightens the coat and eye color. 'A/A' results in a full visual Pink."
+  },
+  A: { 
+      label: 'Agouti (A-Locus)', 
+      options: ['Ay/Ay', 'Ay/aw', 'Ay/at', 'Ay/a', 'aw/aw', 'aw/at', 'aw/a', 'at/at', 'at/a', 'a/a'],
+      description: "Determines the base coat pattern. 'Ay' (Fawn/Sable) dominates. 'at' creates Tan Points. 'a' is recessive solid black."
+  },
+  B: { 
+      label: 'Rojo (B-Locus)', 
+      options: ['N/N', 'N/b', 'b/b'],
+      description: "Testable Chocolate (Rojo). 'b/b' dilutes black pigment to a rich chocolate color."
+  },
+  Co: { 
+      label: 'Cocoa (co-Locus)', 
+      options: ['n/n', 'N/co', 'co/co'],
+      description: "French Bulldog specific Chocolate. 'co/co' creates a darker brown cocoa color, distinct from Rojo."
+  },
+  D: { 
+      label: 'Blue (D-Locus)', 
+      options: ['N/N', 'N/d', 'd/d'],
+      description: "The Dilute gene. 'd/d' dilutes black pigment to Blue (Grey)."
+  },
+  E: { 
+      label: 'Red/Cream (E-Locus)', 
+      options: ['E/E', 'Em/Em', 'Em/E', 'Em/e', 'Em/eA', 'E/e', 'E/eA', 'e/e', 'eA/eA', 'eA/e'],
+      description: "Controls black pigment distribution. 'Em' adds a black mask. 'e/e' creates Cream (hiding other colors). 'eA' is Ancient Red."
+  },
+  Int: { 
+      label: 'Intensity (I-Locus)', 
+      options: ['n/n', 'n/Int', 'Int/Int'],
+      description: "Dilutes red/yellow pigment (phaeomelanin) to lighter cream or white."
+  },
+  K: { 
+      label: 'Brindle (K-Locus)', 
+      options: ['n/n', 'n/KB', 'KB/KB'],
+      description: "Dominant Black/Brindle. 'KB' allows brindle striping on fawn/tan areas or covers them completely."
+  },
+  M: { 
+      label: 'Merle (M-Locus)', 
+      options: ['n/n', 'n/M', 'M/M'],
+      description: "Creates mottled patches of diluted color. 'M' is the dominant Merle allele."
+  },
+  Koi: { 
+      label: 'Koi Pattern', 
+      options: ['No', 'Yes'],
+      description: "A specific spotting pattern, often appearing as a unique variation of Merle or Pied."
+  },
+  Panda: { 
+      label: 'Panda Pattern', 
+      options: ['No', 'Yes'],
+      description: "A rare white spotting pattern distinct from Pied, typically affecting the face and collar."
+  },
+  S: { 
+      label: 'Pied (S-Locus)', 
+      options: ['n/n', 'n/S', 'S/S'],
+      description: "Piebald gene causing random white spotting. 'S/S' is visual Pied."
+  },
+  L: { 
+      label: 'Fluffy (L-Locus)', 
+      options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'],
+      description: "FGF5 gene. Recessive 'l' alleles create a long, fluffy coat."
+  },
+  C: { 
+      label: 'Curly (Cu-Locus)', 
+      options: ['n/n', 'n/C1', 'n/C2', 'C1/C1', 'C1/C2', 'C2/C2'],
+      description: "KRT71 gene. Incomplete dominant gene causing a curly coat."
+  },
+  F: { 
+      label: 'Furnishing (F-Locus)', 
+      options: ['n/n', 'n/F', 'F/F'],
+      description: "RSPO2 gene. Creates facial furnishings (mustache/eyebrows) and a wire texture."
+  }
 };
 
 export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: LOCI[key as keyof typeof LOCI].options[0] }), {});
@@ -160,9 +221,10 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const isBrindle = hasKB && !isSolidRecessive && !isCream && !isPink && !isWhiteMasked;
 
     // Trindle Logic: Brindle + Tan Points (and 1 copy Brindle n/KB specific request)
-    // "Trindle" typically means Tan Points are visible but have brindle stripes. 
-    // This happens often when K is heterozygous (n/KB) with at/at.
     const isTrindle = isBrindle && isOneCopyBrindle && hasAt;
+
+    // Teddy/Floodle visual check: 2 copies Fluffy + 1 or 2 copies Furnishing
+    const isFloodle = isVisualFluffy && isVisualFurnishing;
 
     // --- BASE COLOR NAME ---
     if (b && co && d) { baseColorName = "New Shade Isabella"; baseColorSlug = "new-shade-isabella"; }
@@ -193,9 +255,8 @@ export const getPhenotype = (dna: any): VisualTraits => {
     if (!isWhiteMasked && !(isVisualEa && isEaDrownedOut)) {
         if (isVisualEa && !isEaDrownedOut && !isCream) layers.push(path('overlay-ea.png'));
         
-        // Tan Points Logic - Updated to allow Trindle (Brindle Points)
+        // Tan Points Logic
         else if (hasAt && !isCream && (!hasKB || isTrindle)) {
-            // Apply fluffy version of tan points if visual fluffy
             if (isVisualFluffy) {
                 layers.push(path('overlay-tan-points-fluffy.png'));
             } else {
@@ -205,9 +266,16 @@ export const getPhenotype = (dna: any): VisualTraits => {
         
         if (eVal.includes('Em') && !isCream && !hasKB) layers.push(path('overlay-mask.png'));
         
+        // Pattern logic: Separate Koi and Panda keys (with legacy support)
         const pandaVal = get('Panda');
-        if (pandaVal === 'Koi') layers.push(path('overlay-koi.png'));
-        else if (pandaVal === 'Panda') layers.push(path('overlay-husky.png'));
+        const koiVal = get('Koi'); // New key for independent toggle
+        
+        if (koiVal === 'Yes' || pandaVal === 'Koi') {
+            layers.push(path('overlay-koi.png'));
+        } 
+        else if (pandaVal === 'Yes' || pandaVal === 'Panda') {
+            layers.push(path('overlay-husky.png'));
+        }
 
         const hasMerle = get('M') !== 'n/n';
         if (hasMerle && !isCream) {
@@ -237,8 +305,29 @@ export const getPhenotype = (dna: any): VisualTraits => {
         }
     }
 
-    // Furnishings / Fluffy Layers
-    if (isVisualFurnishing) {
+    // --- STRUCTURE LAYERS (Furnishings / Fluffy / Floodle) ---
+    // If it's a Teddy/Floodle, we use specific combined overlays
+    if (isFloodle) {
+        if (isPink || isCream) {
+            layers.push(path('overlay-cream-floodle.png'));
+        } else if (baseColorSlug === 'blue') {
+            layers.push(path('overlay-blue-floodle.png'));
+        } else if (baseColorSlug === 'lilac') {
+            layers.push(path('overlay-lilac-floodle.png'));
+        } else if (baseColorSlug === 'isabella') {
+            layers.push(path('overlay-isabella-floodle.png'));
+        } else if (baseColorSlug === 'new-shade-isabella') {
+            layers.push(path('overlay-new-shade-floodle.png'));
+        } else if (baseColorSlug === 'cocoa' || baseColorSlug === 'rojo') {
+            // Mapping Rojo to Cocoa as closest brown tone if no specific rojo floodle provided
+            layers.push(path('overlay-cocoa-floodle.png'));
+        } else {
+            // Default Black/General
+            layers.push(path('overlay-black-floodle.png'));
+        }
+    } 
+    // Otherwise standard Furnishing Logic
+    else if (isVisualFurnishing) {
         if (isPink) {
             layers.push(path('overlay-cream-furnishing.png'));
         } else if (['blue', 'lilac'].includes(baseColorSlug)) {
@@ -251,7 +340,9 @@ export const getPhenotype = (dna: any): VisualTraits => {
             layers.push(path('overlay-furnishing.png'));
         }
     }
-    if (isVisualFluffy) layers.push(path('overlay-fluffy.png')); 
+    
+    // Additional structure layers
+    if (isVisualFluffy && !isFloodle) layers.push(path('overlay-fluffy.png')); 
     if (isVisualCurly) layers.push(path('overlay-curl.png'));
 
 
@@ -270,73 +361,74 @@ export const getPhenotype = (dna: any): VisualTraits => {
     // Goat Coat: 2 copies Fluffy (l/l), >=1 Furnishing, >=1 Curly
     else if (isVisualFluffy && isVisualFurnishing && isVisualCurly) {
         structureName = "Goat Coat";
-        // Specific Goat Coat Variations
         if (furnishingCount === 2) {
              structureName += " Double Furnishing";
         } else if (curlyCount === 2) {
              structureName += " Double Curly";
         }
     }
-    // Puffy: 2 copies Fluffy, >=1 Curly
     else if (isVisualFluffy && isVisualCurly) {
         structureName = "Puffy";
     }
-    // Teddy/Floodle: 2 copies Fluffy, >=1 Furnishing
     else if (isVisualFluffy && isVisualFurnishing) {
         structureName = "Teddy/Floodle";
     }
-    // Teddy/Floodle Producer: 1 copy Fluffy, >=1 Furnishing
     else if (isFluffyCarrier && isVisualFurnishing) {
         structureName = "Teddy/Floodle Producer";
     }
-    // Just Fluffy
     else if (isVisualFluffy) {
         structureName = "Fluffy";
     }
-    // Just Curly
     else if (isVisualCurly) {
         structureName = "Curly";
     }
-    // Just Furnished
     else if (isVisualFurnishing) {
         structureName = "Furnished";
     }
 
     // -- Build Name --
     
-    // 0. Visual Pink (Priority 1 - Must be first)
+    // 0. Visual Pink (Priority 1)
     if (isPink) {
         nameParts.push("Visual Pink");
     }
 
-    // 1. Special Prefix for "The Tony Hill"
+    // 1. Structure Prefix
     if (isTonyHill) {
         nameParts.push("The Tony Hill");
     }
 
-    // 2. Base Color
-    nameParts.push(baseColorName);
+    // 2. Base Color & Pattern
+    // Logic update: If Fawn (Ay), usually just "Fawn", not "Black Fawn"
+    if (hasAy) {
+        // If diluted, prepend color: e.g. "Blue Fawn", "Lilac Fawn"
+        if (baseColorName !== "Black") {
+            nameParts.push(`${baseColorName} Fawn`);
+        } else {
+            nameParts.push("Fawn");
+        }
+    } else {
+        // Not Fawn, use base color
+        nameParts.push(baseColorName);
+    }
 
-    // 3. Pattern
+    // 3. Additional Pattern Info
     if (isSolidRecessive) {
-        nameParts.push("Solid");
+        // Only say "Solid" if it's not already implied or if user wants explicit "Solid Black"
+        if (baseColorName === "Black" && !hasAy) nameParts.push("Solid"); 
     } else if (isTrindle) {
         nameParts.push("Trindle");
     } else if (isBrindle) {
         nameParts.push("Brindle");
-    } else if (hasAy) {
-        nameParts.push("Fawn");
     } else if (hasAt) {
         nameParts.push("Tan");
     }
 
-    if (isVisualEa) {
-        if (!isEaDrownedOut) {
-             nameParts.push("Visual eA Husky");
-        }
+    if (isVisualEa && !isEaDrownedOut) {
+         nameParts.push("Visual eA Husky");
     }
 
-    // Append structure name if it wasn't a prefix
+    // Append structure if valid
     if (structureName && !isTonyHill) {
         nameParts.push(structureName);
     }
@@ -403,7 +495,6 @@ export const getPhenotype = (dna: any): VisualTraits => {
     const s_val = get('S'); 
     if (s_val && s_val !== 'n/n') compact.push('Pied');
     
-    // Updated C Locus Compact logic for C1/C2
     const c_val = get('C');
     if (c_val && c_val !== 'n/n') compact.push(c_val.replace('/', ''));
 
@@ -446,6 +537,8 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
     // Helper to split allele string safely
     const getA = (dna: any, locus: string) => {
         const val = dna[locus] || (LOCI as any)[locus]?.options[0] || 'n/n';
+        // Handle boolean-style toggles (Koi/Panda) which don't have slashes
+        if (!val.includes('/')) return [val]; 
         return val.split('/');
     };
 
