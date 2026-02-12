@@ -47,7 +47,7 @@ const Navbar: React.FC = () => {
         {/* Logo Area */}
         <Link to="/" className="flex items-center gap-3 group relative z-50">
           <img 
-            src="/logo.png" 
+            src="https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/okc-frenchies-logo.PNG" 
             alt="OKC Frenchies Logo" 
             className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.2)] transition-transform duration-500 group-hover:scale-110" 
           />
