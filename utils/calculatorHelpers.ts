@@ -14,7 +14,16 @@ const getEnv = (key: string) => {
 
 export const supabase = createClient(
     getEnv('VITE_SUPABASE_URL') || SUPABASE_URL, 
-    getEnv('VITE_SUPABASE_ANON_KEY') || SUPABASE_ANON_KEY
+    getEnv('VITE_SUPABASE_ANON_KEY') || SUPABASE_ANON_KEY,
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            // 🔥 SAFARI FIX: Explicitly handle storage for iOS browsers
+            storage: window.localStorage 
+        }
+    }
 );
 
 export const FREEBIE_CODE = "OKCFREE";
