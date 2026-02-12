@@ -65,6 +65,10 @@ export const LOCI = {
 };
 export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: (LOCI as any)[key].options[0] }), {});
 
+// =============================================================
+// GPS 3: GET GENOTYPE 
+// =============================================================
+
 export const getPhenotype = (dna: any) => {
     if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
     
@@ -83,17 +87,17 @@ export const getPhenotype = (dna: any) => {
     const isCarrierPied = sVal === 'n/S' || sVal === 'S/n';
     const isDoubleIntensity = get('Int') === 'Int/Int';
 
-    // eA + Intensity + Pied Override logic
+    // 🔥 Visual Cream Override logic
     const isVisualCreamOverride = hasAncientRed && (isDoubleIntensity || ((isFullPied || isCarrierPied) && get('Int') !== 'n/n'));
     const showCreamBase = isGeneticCream || isVisualCreamOverride;
 
     const aVal = get('A'), kVal = get('K');
-    const lVal = get('L'), fVal = get('F'), cVal = get('C');
+    const lVal = get('L'), fVal = get('F'), cuVal = get('Cu'); // Corrected to Cu-Locus
     
     // Structural Definition
     const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
     const isFurnished = fVal.includes('F');
-    const isCurly = cVal.includes('C'); 
+    const isCurly = cuVal.includes('Cu'); 
     const isFloodle = isFluffy && isFurnished; 
 
     // 2. Base Color Determination
@@ -130,8 +134,9 @@ export const getPhenotype = (dna: any) => {
     if (!showCreamBase) {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
         if (hasAncientRed) layers.push(path('overlay-ea.png'));
-        if (isKoi) layers.push(path('overlay-koi.png'));
-        else {
+        if (isKoi) {
+            layers.push(path('overlay-koi.png'));
+        } else {
             if (isMerle) {
                 let mKey = (['blue', 'lilac'].includes(slug)) ? 'gray' : (slug.includes('rojo') ? slug : 'black');
                 layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
@@ -143,14 +148,17 @@ export const getPhenotype = (dna: any) => {
         else if (isHusky) layers.push(path('overlay-husky.png'));
     }
 
+    // Structural Overlays
+    if (isFurnished) layers.push(path('overlay-furnishings.png'));
+    if (isCurly) layers.push(path('overlay-curly.png'));
+
+    // Pied Logic
     if (isFullPied) layers.push(path('overlay-pied.png'));
     else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
 
-    // 4. Final Name Construction (RESTORED STRUCTURES)
+    // 4. Final Name Construction
     let names = [];
     if (isPink) names.push("PINK");
-    
-    // Structure Priority
     if (isFloodle) names.push("FLOODLE");
     else {
         if (isFluffy) names.push("FLUFFY");
@@ -163,6 +171,7 @@ export const getPhenotype = (dna: any) => {
         names.push("KOI");
     } else {
         if (hasAncientRed && !showCreamBase) {
+            // Priority Naming for eA Husky/Merle
             if (isMerle) names.push("eA MERLE");
             else if (isHusky) names.push("eA HUSKY");
             else names.push("eA");
@@ -175,28 +184,26 @@ export const getPhenotype = (dna: any) => {
     if (isBrindle && aVal.includes('at')) names.push("TRINDLE");
     else if (isBrindle) names.push("BRINDLE");
     if (isFullPied) names.push("PIED");
-    if (isCurly) names.push("CURLY");
+    if (isCurly && !isFloodle) names.push("CURLY");
 
-    // 5. DNA & Carrier Detection (RESTORED STRUCTURE DNA)
+    // 5. DNA Translator String (All Significant Alleles)
     const dnaParts = [];
-    const carriers = [];
-
     if (get('A') !== 'Ay/Ay') dnaParts.push(get('A'));
-    if (b) dnaParts.push('b/b');
-    if (co) dnaParts.push('co/co');
-    if (d) dnaParts.push('d/d');
-    dnaParts.push(get('E'));
-    if (isBrindle) dnaParts.push(get('K'));
+    if (get('B') !== 'N/N') dnaParts.push(get('B').replace('N/', ''));
+    if (get('Co') !== 'n/n') dnaParts.push(get('Co').replace('n/', ''));
+    if (get('D') !== 'N/N') dnaParts.push(get('D').replace('N/', ''));
+    if (get('E') !== 'E/E') dnaParts.push(get('E'));
+    if (get('K') !== 'n/n') dnaParts.push(get('K'));
     if (isMerle) dnaParts.push('M');
     if (isHusky) dnaParts.push('Panda');
-    
-    // RESTORED DNA VISUALS
     if (lVal !== 'L/L') dnaParts.push(lVal);
-    if (isFurnished) dnaParts.push(fVal);
-    if (isCurly) dnaParts.push(cVal);
-    if (isFullPied || isCarrierPied) dnaParts.push(sVal);
+    if (get('F') !== 'n/n') dnaParts.push(get('F'));
+    if (get('Cu') !== 'n/n') dnaParts.push(get('Cu'));
+    if (get('S') !== 'n/n') dnaParts.push(get('S'));
+    if (get('Int') !== 'n/n') dnaParts.push(get('Int'));
 
     // Carrier Detection
+    const carriers = [];
     if (get('D').includes('d') && !d) carriers.push('Blue');
     if (get('B').includes('b') && !b) carriers.push('Rojo');
     if (get('Co').includes('co') && !co) carriers.push('Cocoa');
