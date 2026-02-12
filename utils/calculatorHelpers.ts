@@ -87,17 +87,17 @@ export const getPhenotype = (dna: any) => {
     const isCarrierPied = sVal === 'n/S' || sVal === 'S/n';
     const isDoubleIntensity = get('Int') === 'Int/Int';
 
-    // 🔥 Visual Cream Override logic
+    // eA + Intensity + Pied Override logic
     const isVisualCreamOverride = hasAncientRed && (isDoubleIntensity || ((isFullPied || isCarrierPied) && get('Int') !== 'n/n'));
     const showCreamBase = isGeneticCream || isVisualCreamOverride;
 
     const aVal = get('A'), kVal = get('K');
-    const lVal = get('L'), fVal = get('F'), cuVal = get('Cu'); // Corrected to Cu-Locus
+    const lVal = get('L'), fVal = get('F'), cVal = get('C');
     
-    // Structural Definition
+    // 🔥 FIXED: isCurly is now defined here
     const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
     const isFurnished = fVal.includes('F');
-    const isCurly = cuVal.includes('Cu'); 
+    const isCurly = cVal.includes('C'); 
     const isFloodle = isFluffy && isFurnished; 
 
     // 2. Base Color Determination
@@ -130,9 +130,16 @@ export const getPhenotype = (dna: any) => {
     const isHusky = get('Panda') === 'Yes';
     const isKoi = isMerle && isHusky; 
     const isBrindle = kVal.includes('KB');
+    
+    // 🔥 TAN POINTS CHECK: Visual only if not masked by Cream
+    const isTanPoints = aVal.includes('at') && !isBrindle;
 
     if (!showCreamBase) {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
+        
+        // 🔥 ADDED: Tan Points Layer (Uses suffix for Fluffy/Standard)
+        if (isTanPoints) layers.push(path('overlay-tan' + suffix));
+
         if (hasAncientRed) layers.push(path('overlay-ea.png'));
         if (isKoi) {
             layers.push(path('overlay-koi.png'));
@@ -144,13 +151,10 @@ export const getPhenotype = (dna: any) => {
             if (isHusky) layers.push(path('overlay-husky.png'));
         }
     } else {
+        // Even in Cream base, Koi and Husky overlays are checked
         if (isKoi) layers.push(path('overlay-koi.png'));
         else if (isHusky) layers.push(path('overlay-husky.png'));
     }
-
-    // Structural Overlays
-    if (isFurnished) layers.push(path('overlay-furnishings.png'));
-    if (isCurly) layers.push(path('overlay-curly.png'));
 
     // Pied Logic
     if (isFullPied) layers.push(path('overlay-pied.png'));
@@ -160,10 +164,7 @@ export const getPhenotype = (dna: any) => {
     let names = [];
     if (isPink) names.push("PINK");
     if (isFloodle) names.push("FLOODLE");
-    else {
-        if (isFluffy) names.push("FLUFFY");
-        if (isFurnished) names.push("FURNISHED");
-    }
+    else if (isFluffy) names.push("FLUFFY");
     
     names.push(colorName.toUpperCase());
 
@@ -171,7 +172,6 @@ export const getPhenotype = (dna: any) => {
         names.push("KOI");
     } else {
         if (hasAncientRed && !showCreamBase) {
-            // Priority Naming for eA Husky/Merle
             if (isMerle) names.push("eA MERLE");
             else if (isHusky) names.push("eA HUSKY");
             else names.push("eA");
@@ -186,24 +186,21 @@ export const getPhenotype = (dna: any) => {
     if (isFullPied) names.push("PIED");
     if (isCurly && !isFloodle) names.push("CURLY");
 
-    // 5. DNA Translator String (All Significant Alleles)
+    // 5. DNA & Carrier Detection
     const dnaParts = [];
+    const carriers = [];
+
     if (get('A') !== 'Ay/Ay') dnaParts.push(get('A'));
-    if (get('B') !== 'N/N') dnaParts.push(get('B').replace('N/', ''));
-    if (get('Co') !== 'n/n') dnaParts.push(get('Co').replace('n/', ''));
-    if (get('D') !== 'N/N') dnaParts.push(get('D').replace('N/', ''));
-    if (get('E') !== 'E/E') dnaParts.push(get('E'));
-    if (get('K') !== 'n/n') dnaParts.push(get('K'));
+    if (b) dnaParts.push('b/b');
+    if (co) dnaParts.push('co/co');
+    if (d) dnaParts.push('d/d');
+    dnaParts.push(get('E'));
+    if (isBrindle) dnaParts.push(get('K'));
     if (isMerle) dnaParts.push('M');
     if (isHusky) dnaParts.push('Panda');
-    if (lVal !== 'L/L') dnaParts.push(lVal);
-    if (get('F') !== 'n/n') dnaParts.push(get('F'));
-    if (get('Cu') !== 'n/n') dnaParts.push(get('Cu'));
-    if (get('S') !== 'n/n') dnaParts.push(get('S'));
-    if (get('Int') !== 'n/n') dnaParts.push(get('Int'));
+    if (isFluffy) dnaParts.push(get('L'));
+    if (isFullPied || isCarrierPied) dnaParts.push(sVal);
 
-    // Carrier Detection
-    const carriers = [];
     if (get('D').includes('d') && !d) carriers.push('Blue');
     if (get('B').includes('b') && !b) carriers.push('Rojo');
     if (get('Co').includes('co') && !co) carriers.push('Cocoa');
@@ -213,7 +210,7 @@ export const getPhenotype = (dna: any) => {
 
     return { 
         baseColorName: colorName, 
-        phenotypeName: names.filter(Boolean).join(" "), 
+        phenotypeName: names.join(" "), 
         layers,
         compactDnaString: dnaParts.join(' ') || 'Standard', 
         carriersString: carriers.length > 0 ? carriers.join(', ') : ''
