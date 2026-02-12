@@ -16,9 +16,10 @@ export interface TextStyle {
     casing: 'uppercase' | 'capitalize' | 'none';
 }
 
+// ✅ UPDATED: Generic Sticker Interface for Giphy/Images
 export interface Sticker {
     id: string;
-    type: 'crown' | 'verified' | 'fire' | 'dna' | 'paw' | 'cross';
+    url: string; // Changed from 'type' to 'url' for Giphy support
     x: number;
     y: number;
     scale: number;
@@ -160,17 +161,31 @@ export const useStudioLogic = (
     
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
+    // ✅ FIXED DEFAULT POSITIONS (Visual Order)
     const defaultTransforms = {
+        // 1. Watermark (Designed By OKC) - Very Top
+        watermark: { rotate: 0, scale: 1, x: 0, y: -280 },
+        
+        // 2. Header (Stud Service) - Directly Below Watermark
+        header: { rotate: 0, scale: 1, x: 0, y: -240 },
+        
+        // 3. Sire Name - Below Header
+        studName: { rotate: 0, scale: 1, x: 0, y: -180 },
+        
+        // 4. Dam Name - Below Sire Name
+        damName: { rotate: 0, scale: 1, x: 0, y: -130 },
+        
+        // Middle (Images)
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
         sireLogo: { rotate: 0, scale: 1, x: 0, y: 0 },
         damLogo: { rotate: 0, scale: 1, x: 0, y: 0 },
-        header: { rotate: 0, scale: 1, x: 0, y: -150 },
-        studName: { rotate: 0, scale: 1, x: 0, y: -50 },
-        damName: { rotate: 0, scale: 1, x: 0, y: 0 },
-        studPheno: { rotate: 0, scale: 1, x: 0, y: 150 },
-        studGeno: { rotate: 0, scale: 1, x: 0, y: 200 },
-        watermark: { rotate: 0, scale: 1, x: 0, y: 0 },
+        
+        // 5. Phenotype - Bottom
+        studPheno: { rotate: 0, scale: 1, x: 0, y: 220 },
+        
+        // 6. Genotype - Very Bottom
+        studGeno: { rotate: 0, scale: 1, x: 0, y: 260 },
     };
 
     const [layerTransforms, setLayerTransforms] = useStickyState<Record<string, { rotate: number, scale: number, x: number, y: number }>>(defaultTransforms, 'okc_studio_transforms');
@@ -198,10 +213,10 @@ export const useStudioLogic = (
         }));
     };
 
-    // --- HELPER: Stickers ---
-    const addSticker = (type: Sticker['type']) => {
+    // --- HELPER: Stickers (Now URL Based for Giphy) ---
+    const addSticker = (url: string) => {
         const id = `sticker-${Date.now()}`;
-        setStickers(prev => [...prev, { id, type, x: 0, y: 0, scale: 1, rotate: 0 }]);
+        setStickers(prev => [...prev, { id, url, x: 0, y: 0, scale: 1, rotate: 0 }]);
         setSelectedLayer(id);
     };
 
@@ -262,13 +277,15 @@ export const useStudioLogic = (
         
         setLayerTransforms(prev => ({
             ...prev,
-            header: { ...prev.header, y: isTall ? -350 : -200, x: 0 },
-            studName: { ...prev.studName, y: isTall ? -250 : -50, x: 0 },
-            damName: { ...prev.damName, y: isTall ? -200 : 0, x: 0 },
+            // Adjust vertical positions for taller canvas
+            watermark: { ...prev.watermark, y: isTall ? -380 : -280, x: 0 },
+            header: { ...prev.header, y: isTall ? -340 : -240, x: 0 },
+            studName: { ...prev.studName, y: isTall ? -200 : -150, x: 0 },
+            damName: { ...prev.damName, y: isTall ? -150 : -100, x: 0 },
             sire: { ...prev.sire, y: 0, x: 0 },
             dam: { ...prev.dam, y: 0, x: 0 },
             studPheno: { ...prev.studPheno, y: isTall ? 300 : 200, x: 0 },
-            studGeno: { ...prev.studGeno, y: isTall ? 350 : 250, x: 0 },
+            studGeno: { ...prev.studGeno, y: isTall ? 350 : 240, x: 0 },
             sireLogo: { ...prev.sireLogo, x: 0, y: isTall ? -400 : -250 },
             damLogo: { ...prev.damLogo, x: 0, y: isTall ? -400 : -250 },
         }));

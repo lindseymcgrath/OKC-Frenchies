@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
+import { Buffer } from 'buffer';
 
 // 1. Initialize Supabase inside the API
 // Use placeholders to prevent "supabaseUrl is required" error if env vars are missing during build
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://phesicyzrddvediskbop.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

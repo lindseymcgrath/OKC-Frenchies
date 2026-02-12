@@ -34,7 +34,6 @@ const Hero: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
 
     // Animation constants
-    const helixX = width * 0.85; // Position on right
     let time = 0;
 
     const drawGrid = (vpX: number, vpY: number) => {
@@ -85,6 +84,9 @@ const Hero: React.FC = () => {
     };
 
     const drawDNA = (t: number) => {
+        // Dynamic positioning: 80% to the right to sit next to centered text
+        const helixX = width * 0.80; 
+        
         const amplitude = 40;
         const frequency = 0.02;
         const gap = 200; // Height of strand

@@ -12,54 +12,36 @@ export const useUserCredits = () => {
     const [isUnlocking, setIsUnlocking] = useState(false);
     const [promoCodeInput, setPromoCodeInput] = useState('');
 
-    // Use a ref to prevent stale closures in the subscription
     const currentEmailRef = useRef('');
 
-    // --- LOGIC ---
+    // --- FETCH LOGIC (READ ONLY) ---
     const fetchCredits = async (email: string) => {
-    if (!email) return;
-    setIsUnlocking(true); 
-    
-    const { data, error } = await supabase
-        .from('user_credits')
-        .select('*')
-        .eq('email', email.toLowerCase().trim())
-        .single();
-    
-    setIsUnlocking(false);
-    
-    if (data) {
-        // ✅ Match confirmed: using credits_remaining
-        const count = data.credits_remaining;
-        setCredits(count);
-        setUserId(data.id); 
-
-        if (data.subscription_end) {
-            const endDate = new Date(data.subscription_end);
-            if (endDate > new Date()) {
-                setIsSubscribed(true);
-                setIsUnlocked(true); 
-            } else {
-                setIsSubscribed(false);
+        if (!email) return null;
+        setIsUnlocking(true); 
+        
+        const { data, error } = await supabase
+            .from('user_credits')
+            .select('*')
+            .eq('email', email.toLowerCase().trim())
+            .single();
+        
+        setIsUnlocking(false);
+        
+        if (data) {
+            setCredits(data.credits_remaining);
+            setUserId(data.id); // ✅ Found existing user
+            
+            if (data.subscription_end) {
+                const active = new Date(data.subscription_end) > new Date();
+                setIsSubscribed(active);
+                setIsUnlocked(active);
             }
+            return data;
         }
+        return null;
+    };
 
-        // 📢 NOTIFICATION: Tell us what was found
-        if (count > 0) {
-            console.log("💎 Success! Found credits:", count);
-            // The Modal should flip automatically now
-        } else {
-            alert("Verification successful, but your balance is 0. Please purchase a pass below.");
-        }
-
-    } else if (error) {
-        console.error("Supabase Error:", error.message);
-        setCredits(0);
-        alert("We couldn't find an account for " + email + ". Please check your spelling or purchase a session pass.");
-    }
-};
-
-    // 1. INITIAL LOAD & REALTIME SUBSCRIPTION
+    // --- INITIAL LOAD ---
     useEffect(() => {
         const storedEmail = localStorage.getItem('okc_user_email');
         if (storedEmail) { 
@@ -69,86 +51,87 @@ export const useUserCredits = () => {
             fetchCredits(formattedEmail); 
         }
 
-        // 🚀 REALTIME LISTENER: Watch for Stripe updates automatically
+        // Realtime Listener
         const channel = supabase
             .channel('credit_updates')
-            .on(
-                'postgres_changes', 
-                { event: 'UPDATE', schema: 'public', table: 'user_credits' },
-                (payload) => {
-                    if (payload.new.email === currentEmailRef.current) {
-                        setCredits(payload.new.credits_remaining);
-                        if (payload.new.subscription_end) {
-                            const active = new Date(payload.new.subscription_end) > new Date();
-                            setIsSubscribed(active);
-                            setIsUnlocked(active);
-                        }
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_credits' }, (payload) => {
+                if (payload.new.email === currentEmailRef.current) {
+                    setCredits(payload.new.credits_remaining);
+                    if (payload.new.id) setUserId(payload.new.id);
+                    if (payload.new.subscription_end) {
+                        const active = new Date(payload.new.subscription_end) > new Date();
+                        setIsSubscribed(active);
+                        setIsUnlocked(active);
                     }
                 }
-            )
+            })
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, []);
+
+    // --- LOGIN / CREATE ACCOUNT HANDLER ---
+    const handleLoginSubmit = async (emailInput?: string) => {
+        const emailToVerify = (emailInput || userEmail || '').trim().toLowerCase();
+
+        if (emailToVerify.includes('@')) { 
+            console.log("🚀 Connecting Kennel for:", emailToVerify);
+            
+            // 1. Try to find existing user
+            let user = await fetchCredits(emailToVerify);
+
+            // 2. If NO user exists, CREATE one (The "Shadow Account")
+            if (!user) {
+                console.log("🆕 Creating new account for:", emailToVerify);
+                const { data, error } = await supabase
+                    .from('user_credits')
+                    .insert([{ 
+                        email: emailToVerify, 
+                        credits_remaining: 0 // Default for free users
+                    }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    alert("Error creating profile: " + error.message);
+                    return;
+                }
+                user = data;
+            }
+
+            // 3. Log them in locally
+            if (user) {
+                localStorage.setItem('okc_user_email', emailToVerify); 
+                currentEmailRef.current = emailToVerify;
+                setUserEmail(emailToVerify);
+                setUserId(user.id);
+                setCredits(user.credits_remaining);
+                setShowLogin(false);
+                alert(`✅ Connected! Kennel linked to ${emailToVerify}`);
+            }
+        } else {
+            alert("Please enter a valid email.");
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('okc_user_email');
+        setUserEmail('');
+        setUserId(null);
+        setCredits(null);
+        setIsSubscribed(false);
+        setIsUnlocked(false);
+    };
 
     const deductCredit = async (): Promise<boolean> => {
         if (isSubscribed || isUnlocked) return true;
-        
         if (credits && credits > 0) {
             const newCount = credits - 1;
-            // Optimistic Update (Update UI immediately)
             setCredits(newCount);
-            
-            const { error } = await supabase
-                .from('user_credits')
-                .update({ credits_remaining: newCount })
-                .eq('email', userEmail);
-            
-            if (error) {
-                setCredits(credits); // Rollback
-                return false;
-            }
+            await supabase.from('user_credits').update({ credits_remaining: newCount }).eq('email', userEmail);
             return true;
         }
         return false;
-    };
-
-const handleLoginSubmit = async (emailInput?: string) => {
-    const emailToVerify = (emailInput || userEmail || '').trim().toLowerCase();
-
-    if (emailToVerify.includes('@')) { 
-        console.log("🚀 Handshake initiated for:", emailToVerify);
-        
-        // 1. Update local storage and state
-        localStorage.setItem('okc_user_email', emailToVerify); 
-        currentEmailRef.current = emailToVerify;
-        setUserEmail(emailToVerify); 
-        
-        // 2. FETCH AND WAIT (Crucial for the screen to swap)
-        try {
-            await fetchCredits(emailToVerify); 
-            console.log("✅ Credits fetched successfully");
-        } catch (err) {
-            console.error("❌ Database fetch failed:", err);
-        }
-        
-        setShowLogin(false);
-    } else {
-        alert("Please enter a valid email.");
-    }
-};
-
-    const handlePromoSubmit = (onSuccess: () => void) => {
-        if (promoCodeInput.toUpperCase() === FREEBIE_CODE) {
-            setIsUnlocked(true); 
-            setPromoCodeInput('');
-            alert("Free Session Unlocked!");
-            onSuccess();
-        } else {
-            alert("Invalid Code");
-        }
     };
 
     return {
@@ -162,7 +145,14 @@ const handleLoginSubmit = async (emailInput?: string) => {
         promoCodeInput, setPromoCodeInput,
         fetchCredits,
         deductCredit,
-        handleLoginSubmit,
-        handlePromoSubmit
+        handleLoginSubmit, // Now handles creation too
+        handleLogout,
+        handlePromoSubmit: (onSuccess: () => void) => {
+             if (promoCodeInput.toUpperCase() === FREEBIE_CODE) {
+                setIsUnlocked(true);
+                alert("Free Session Unlocked!");
+                onSuccess();
+             }
+        }
     };
 };

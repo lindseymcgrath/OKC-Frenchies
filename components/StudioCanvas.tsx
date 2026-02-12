@@ -25,7 +25,6 @@ const getStickerIcon = (type: string) => {
     }
 };
 
-// Extracted Component to Handle Ref Lifecycle Correctly
 const DraggableSticker = ({ sticker, studio }: { sticker: StickerType, studio: any }) => {
     const nodeRef = useRef<HTMLDivElement>(null);
     const isSelected = studio.selectedLayer === sticker.id;
@@ -49,7 +48,7 @@ const DraggableSticker = ({ sticker, studio }: { sticker: StickerType, studio: a
                     className={`w-12 h-12 transition-all flex items-center justify-center ${isSelected ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
                     style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
                 >
-                    {getStickerIcon(sticker.type)}
+                    {getStickerIcon(sticker.url)}
                 </div>
             </div>
         </Draggable>
@@ -76,7 +75,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         return result ? `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${opacity / 100})` : 'transparent';
     };
 
-    const getTextStyle = (layerKey: string) => {
+    const getTextStyle = (layerKey: string): React.CSSProperties => {
         const style = studio.textStyles[layerKey];
         if (!style) return {};
 
@@ -99,6 +98,10 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             padding: style.bg ? '0.2em 0.5em' : '0',
             borderRadius: '0.1em',
             textTransform: style.casing as any, 
+            whiteSpace: 'normal',
+            maxWidth: '100%',
+            lineHeight: '1.2',
+            wordWrap: 'break-word' as const,
         };
     };
 
@@ -124,7 +127,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                         
                         <div className="absolute inset-0 z-10 w-full h-full overflow-hidden flex items-center justify-center">
                             
-                            {/* Watermark */}
+                            {/* Watermark - Ensure Z-Index is high */}
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <Draggable 
                                     nodeRef={studio.watermarkRef} 
@@ -148,13 +151,15 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                             {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" position={{x: studio.layerTransforms.sireLogo.x, y: studio.layerTransforms.sireLogo.y}} onStop={(e, data) => studio.updatePosition('sireLogo', data.x, data.y)}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
                             {studio.damLogo && <Draggable nodeRef={studio.damLogoRef} bounds="parent" position={{x: studio.layerTransforms.damLogo.x, y: studio.layerTransforms.damLogo.y}} onStop={(e, data) => studio.updatePosition('damLogo', data.x, data.y)}><div ref={studio.damLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damLogo')}><img src={studio.damLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.damLogo.rotate}deg) scale(${studio.layerTransforms.damLogo.scale})`}}/></div></Draggable>}
                             
-                            {/* TEXT LAYERS */}
+                            {/* TEXT LAYERS - FIXED: Replaced w-[600px] with w-full to prevent off-canvas rendering */}
+                            
+                            {/* Header */}
                             {studio.showHeader && (
-                                <Draggable nodeRef={studio.headerRef} position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)}>
-                                    <div ref={studio.headerRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('header')}>
-                                        <div className="whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.headerRef} bounds="parent" position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)}>
+                                    <div ref={studio.headerRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 pt-4 flex justify-center" onClick={() => studio.setSelectedLayer('header')}>
+                                        <div className="text-center w-full">
                                             <h1 
-                                                className="text-3xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="text-3xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all break-words w-full" 
                                                 style={{...getTextStyle('header'), transform: `rotate(${studio.layerTransforms.header.rotate}deg) scale(${studio.layerTransforms.header.scale})`}}
                                             >
                                                 {studio.headerText}
@@ -164,12 +169,13 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
                             
+                            {/* Stud Name */}
                             {studio.showStudName && (
-                                <Draggable nodeRef={studio.studNameRef} position={{x: studio.layerTransforms.studName.x, y: studio.layerTransforms.studName.y}} onStop={(e, data) => studio.updatePosition('studName', data.x, data.y)}>
-                                    <div ref={studio.studNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studName')}>
-                                        <div className="whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.studNameRef} bounds="parent" position={{x: studio.layerTransforms.studName.x, y: studio.layerTransforms.studName.y}} onStop={(e, data) => studio.updatePosition('studName', data.x, data.y)}>
+                                    <div ref={studio.studNameRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studName')}>
+                                        <div className="text-center w-full">
                                             <h2 
-                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all break-words w-full" 
                                                 style={{...getTextStyle('studName'), transform: `rotate(${studio.layerTransforms.studName.rotate}deg) scale(${studio.layerTransforms.studName.scale})`}}
                                             >
                                                 {studio.studName}
@@ -179,12 +185,13 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
+                            {/* Dam Name */}
                             {studio.showDamName && (
-                                <Draggable nodeRef={studio.damNameRef} position={{x: studio.layerTransforms.damName.x, y: studio.layerTransforms.damName.y}} onStop={(e, data) => studio.updatePosition('damName', data.x, data.y)}>
-                                    <div ref={studio.damNameRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damName')}>
-                                        <div className="whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.damNameRef} bounds="parent" position={{x: studio.layerTransforms.damName.x, y: studio.layerTransforms.damName.y}} onStop={(e, data) => studio.updatePosition('damName', data.x, data.y)}>
+                                    <div ref={studio.damNameRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('damName')}>
+                                        <div className="text-center w-full">
                                             <h2 
-                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="text-2xl font-bold tracking-widest drop-shadow-md pointer-events-none inline-block transition-all break-words w-full" 
                                                 style={{...getTextStyle('damName'), transform: `rotate(${studio.layerTransforms.damName.rotate}deg) scale(${studio.layerTransforms.damName.scale})`}}
                                             >
                                                 {studio.damName}
@@ -194,12 +201,13 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
+                            {/* Phenotype */}
                             {studio.showPhenotype && (
-                                <Draggable nodeRef={studio.studPhenoRef} position={{x: studio.layerTransforms.studPheno.x, y: studio.layerTransforms.studPheno.y}} onStop={(e, data) => studio.updatePosition('studPheno', data.x, data.y)}>
-                                    <div ref={studio.studPhenoRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studPheno')}>
-                                        <div className="whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.studPhenoRef} bounds="parent" position={{x: studio.layerTransforms.studPheno.x, y: studio.layerTransforms.studPheno.y}} onStop={(e, data) => studio.updatePosition('studPheno', data.x, data.y)}>
+                                    <div ref={studio.studPhenoRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studPheno')}>
+                                        <div className="text-center w-full">
                                             <span 
-                                                className="font-sans text-[10px] tracking-[0.3em] drop-shadow-md pointer-events-none inline-block transition-all" 
+                                                className="font-sans text-[10px] tracking-[0.3em] drop-shadow-md pointer-events-none inline-block transition-all break-words w-full" 
                                                 style={{...getTextStyle('studPheno'), transform: `rotate(${studio.layerTransforms.studPheno.rotate}deg) scale(${studio.layerTransforms.studPheno.scale})`}}
                                             >
                                                 {studio.studPhenotype}
@@ -209,12 +217,13 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
+                            {/* Genotype */}
                             {studio.showGenotype && (
-                                <Draggable nodeRef={studio.studGenoRef} position={{x: studio.layerTransforms.studGeno.x, y: studio.layerTransforms.studGeno.y}} onStop={(e, data) => studio.updatePosition('studGeno', data.x, data.y)}>
-                                    <div ref={studio.studGenoRef} className="absolute z-30 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('studGeno')}>
-                                        <div className="whitespace-nowrap text-center">
+                                <Draggable nodeRef={studio.studGenoRef} bounds="parent" position={{x: studio.layerTransforms.studGeno.x, y: studio.layerTransforms.studGeno.y}} onStop={(e, data) => studio.updatePosition('studGeno', data.x, data.y)}>
+                                    <div ref={studio.studGenoRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studGeno')}>
+                                        <div className="text-center w-full">
                                             <div 
-                                                className="backdrop-blur-md pointer-events-none inline-block transition-all" 
+                                                className="backdrop-blur-md pointer-events-none inline-block transition-all break-words w-full" 
                                                 style={{...getTextStyle('studGeno'), transform: `rotate(${studio.layerTransforms.studGeno.rotate}deg) scale(${studio.layerTransforms.studGeno.scale})`}}
                                             >
                                                 <p className="font-mono text-xs font-bold tracking-wider">{studio.studDna}</p>
@@ -224,7 +233,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* STICKERS RENDER - FIX: Using Component Wrapper */}
+                            {/* Stickers */}
                             {studio.stickers.map((sticker: StickerType) => (
                                 <DraggableSticker 
                                     key={sticker.id}
@@ -237,10 +246,8 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                     </div>
                 </div>
 
-                {/* 🏆 UI SECTION UNDER IMAGE */}
+                {/* UI SECTION UNDER IMAGE */}
                 <div className="w-full max-w-[600px] mt-4 px-4 lg:px-0 space-y-3">
-                    
-                    {/* MASTER UNLOCK BOX */}
                     <div className="bg-gradient-to-br from-[#0f172a] to-black border border-luxury-gold/30 p-5 rounded-sm shadow-2xl">
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div className="text-center sm:text-left flex-1">
@@ -260,8 +267,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                     </div>
                                 )}
                             </div>
-                            
-                            {/* UNLOCK SESSION BUTTON - ONLY SHOWS IF NOT PRO AND SESSION NOT ACTIVE */}
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <button 
                                     onClick={() => {
@@ -279,22 +284,12 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                         </div>
                     </div>
 
-                    {/* BIG DOWNLOAD BUTTON */}
-                    <button 
-                        onClick={handleDownloadClick}
-                        className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black uppercase tracking-[0.2em] text-[12px] rounded-sm hover:brightness-110 shadow-xl transition-all flex flex-col items-center justify-center border border-emerald-400/20"
-                    >
+                    <button onClick={handleDownloadClick} className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black uppercase tracking-[0.2em] text-[12px] rounded-sm hover:brightness-110 shadow-xl transition-all flex flex-col items-center justify-center border border-emerald-400/20">
                         <span className="flex items-center gap-2"><Download size={18}/> Export Advertisement</span>
-                        <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">
-                            {isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked) - Costs 1 Token"}
-                        </span>
+                        <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">{isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked) - Costs 1 Token"}</span>
                     </button>
 
-                    <div className="text-center">
-                        <span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1">
-                            <Move size={10} /> Drag Elements to Position
-                        </span>
-                    </div>
+                    <div className="text-center"><span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1"><Move size={10} /> Drag Elements to Position</span></div>
                 </div>
             </div>
         </div>
