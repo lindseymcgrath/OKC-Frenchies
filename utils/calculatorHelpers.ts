@@ -138,7 +138,7 @@ export const getPhenotype = (dna: any) => {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
         
         // 🔥 ADDED: Tan Points Layer (Uses suffix for Fluffy/Standard)
-        if (isTanPoints) layers.push(path('overlay-tan' + suffix));
+        if (isTanPoints) layers.push(path('overlay-tan-point' + suffix));
 
         if (hasAncientRed) layers.push(path('overlay-ea.png'));
         if (isKoi) {
