@@ -40,47 +40,59 @@ export const LitterPredictor = (props: any) => {
         (!searchTerm || p.phenotypeName.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
-    const renderControls = (dna: any, setDna: any, label: string, name: string, setName: any) => {
-        const traits = getPhenotype(dna);
-        return (
-            <div className="bg-[#0f172a] border border-slate-800 p-4 rounded-sm flex flex-col h-full">
-                <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
-                    <h3 className={`font-serif text-lg ${label === 'SIRE' ? 'text-luxury-teal' : 'text-luxury-magenta'}`}>{label}</h3>
-                    <div className="flex gap-2">
-                        <button onClick={() => { setActiveLoadSlot(label.toLowerCase()); setShowKennel(true); }} className="px-2 py-1 bg-slate-800 text-[9px] font-bold uppercase border border-slate-700">Load</button>
-                        <button onClick={() => onSaveDog(name, label === 'SIRE' ? 'Male' : 'Female', dna)} className="px-2 py-1 bg-luxury-teal text-black text-[9px] font-bold uppercase">Save</button>
-                    </div>
-                </div>
-                <div className="relative h-72 w-full flex items-center justify-center mb-2 overflow-hidden pointer-events-none">
-                    <DogVisualizer traits={traits} scale={0.9} showLabel={false} />
-                </div>
-                {/* Parent Text Labels Restored */}
-                <div className="text-center mb-3">
-                    <p className="text-white font-bold text-xs uppercase tracking-wider">{traits.phenotypeName}</p>
-                    <p className="text-luxury-teal font-mono text-[10px]">{traits.compactDnaString}</p>
-                </div>
-                <input value={name} onChange={(e) => setName(e.target.value.toUpperCase())} placeholder="NAME..." className="w-full bg-black/40 border border-slate-800 p-2 text-[10px] text-white text-center mb-4" />
-                <div className="grid grid-cols-2 gap-1">
-                    {Object.keys(LOCI).map(key => {
-                        const locus = (LOCI as any)[key];
-                        const isToggle = locus.options.length === 2 && locus.options.includes('No');
-                        return (
-                            <div key={key} className="flex justify-between items-center bg-black/20 px-2 py-1 border border-slate-800/50">
-                                <label className="text-[8px] text-slate-500 font-bold truncate">{locus.label}</label>
-                                {isToggle ? (
-                                    <button onClick={() => setDna({...dna, [key]: dna[key] === 'Yes' ? 'No' : 'Yes'})} className={`text-[8px] font-bold ${dna[key] === 'Yes' ? 'text-luxury-teal' : 'text-slate-600'}`}>{dna[key] === 'Yes' ? 'ON' : 'OFF'}</button>
-                                ) : (
-                                    <select value={dna[key]} onChange={(e) => setDna({...dna, [key]: e.target.value})} className="bg-transparent text-[8px] text-white outline-none text-right w-16 appearance-none">
-                                        {locus.options.map((o:string) => <option key={o} value={o} className="bg-slate-900">{o}</option>)}
-                                    </select>
-                                )}
-                            </div>
-                        );
-                    })}
+ const renderControls = (dna: any, setDna: any, label: string, name: string, setName: any) => {
+    // 1. Get traits here so we can use the text (Name + DNA + Carriers)
+    const traits = getPhenotype(dna);
+
+    return (
+        <div className="bg-[#0f172a] border border-slate-800 p-4 rounded-sm flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+                <h3 className={`font-serif text-lg ${label === 'SIRE' ? 'text-luxury-teal' : 'text-luxury-magenta'}`}>{label}</h3>
+                <div className="flex gap-2">
+                    <button onClick={() => { setActiveLoadSlot(label.toLowerCase()); setShowKennel(true); }} className="px-2 py-1 bg-slate-800 text-[9px] font-bold uppercase border border-slate-700">Load</button>
+                    <button onClick={() => onSaveDog(name, label === 'SIRE' ? 'Male' : 'Female', dna)} className="px-2 py-1 bg-luxury-teal text-black text-[9px] font-bold uppercase">Save</button>
                 </div>
             </div>
-        );
-    };
+
+            {/* Structure Kept Exactly as requested */}
+            <div className="relative h-62 w-full flex items-center justify-center mb-2 overflow-hidden pointer-events-none">
+                <DogVisualizer traits={traits} scale={0.9} showLabel={false} />
+            </div>
+
+            {/* 🔥 RESTORED: Carries text added below DNA */}
+            <div className="text-center mb-3 min-h-[50px] flex flex-col justify-center">
+                <p className="text-white font-bold text-xs uppercase tracking-wider leading-tight">{traits.phenotypeName}</p>
+                <p className="text-luxury-teal font-mono text-[10px] mt-0.5">{traits.compactDnaString}</p>
+                {traits.carriersString && (
+                    <p className="text-emerald-400 font-mono text-[9px] mt-0.5">
+                        Carries: {traits.carriersString}
+                    </p>
+                )}
+            </div>
+
+            <input value={name} onChange={(e) => setName(e.target.value.toUpperCase())} placeholder="NAME..." className="w-full bg-black/40 border border-slate-800 p-2 text-[10px] text-white text-center mb-4" />
+            
+            <div className="grid grid-cols-2 gap-1">
+                {Object.keys(LOCI).map(key => {
+                    const locus = (LOCI as any)[key];
+                    const isToggle = locus.options.length === 2 && locus.options.includes('No');
+                    return (
+                        <div key={key} className="flex justify-between items-center bg-black/20 px-2 py-1 border border-slate-800/50">
+                            <label className="text-[8px] text-slate-500 font-bold truncate">{locus.label}</label>
+                            {isToggle ? (
+                                <button onClick={() => setDna({...dna, [key]: dna[key] === 'Yes' ? 'No' : 'Yes'})} className={`text-[8px] font-bold ${dna[key] === 'Yes' ? 'text-luxury-teal' : 'text-slate-600'}`}>{dna[key] === 'Yes' ? 'ON' : 'OFF'}</button>
+                            ) : (
+                                <select value={dna[key]} onChange={(e) => setDna({...dna, [key]: e.target.value})} className="bg-transparent text-[8px] text-white outline-none text-right w-16 appearance-none">
+                                    {locus.options.map((o:string) => <option key={o} value={o} className="bg-slate-900">{o}</option>)}
+                                </select>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
 
     return (
         <div className="space-y-8">
