@@ -94,7 +94,6 @@ export const getPhenotype = (dna: any) => {
     const aVal = get('A'), kVal = get('K');
     const lVal = get('L'), fVal = get('F'), cVal = get('C');
     
-    // 🔥 FIXED: isCurly is now defined here
     const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
     const isFurnished = fVal.includes('F');
     const isCurly = cVal.includes('C'); 
@@ -115,6 +114,7 @@ export const getPhenotype = (dna: any) => {
     let layers: string[] = [];
     const suffix = (isFluffy || isFloodle) ? '-fluffy.png' : '.png';
 
+    // --- BASE LAYER ---
     if (showCreamBase) {
         layers.push(path('base-cream.png'));
     } else if (isPink) {
@@ -124,39 +124,41 @@ export const getPhenotype = (dna: any) => {
     } else {
         layers.push(path(`base-${slug}${suffix}`)); 
     }
-
-    // Patterns
+    
+    // --- PATTERNS ---
     const isMerle = get('M') !== 'n/n';
-    const isHusky = get('Panda') === 'Yes';
+    const isHusky = get('Panda') === 'Yes' || get('Koi') === 'Yes';
     const isKoi = isMerle && isHusky; 
     const isBrindle = kVal.includes('KB');
-    
-    // 🔥 TAN POINTS CHECK: Visual only if not masked by Cream
     const isTanPoints = aVal.includes('at') && !isBrindle;
 
     if (!showCreamBase) {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
         
-        // 🔥 ADDED: Tan Points Layer (Uses suffix for Fluffy/Standard)
-        if (isTanPoints) layers.push(path('overlay-tan-point' + suffix));
+        // Tan Points (Corrected asset name from your structure)
+        if (isTanPoints) layers.push(path('overlay-tan' + suffix));
 
         if (hasAncientRed) layers.push(path('overlay-ea.png'));
-        if (isKoi) {
-            layers.push(path('overlay-koi.png'));
-        } else {
-            if (isMerle) {
-                let mKey = (['blue', 'lilac'].includes(slug)) ? 'gray' : (slug.includes('rojo') ? slug : 'black');
-                layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
-            }
-            if (isHusky) layers.push(path('overlay-husky.png'));
+
+        // Merle (Drawn additive so it stays under white markings)
+        if (isMerle) {
+            let mKey = (['blue', 'lilac'].includes(slug)) ? 'gray' : (slug.includes('rojo') ? slug : 'black');
+            layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
         }
-    } else {
-        // Even in Cream base, Koi and Husky overlays are checked
-        if (isKoi) layers.push(path('overlay-koi.png'));
-        else if (isHusky) layers.push(path('overlay-husky.png'));
     }
 
-    // Pied Logic
+    // White-Space Overlays (Koi/Husky show on top of everything)
+    if (isKoi) {
+        layers.push(path('overlay-koi.png'));
+    } else if (isHusky) {
+        layers.push(path('overlay-husky.png'));
+    }
+
+    // Structural Overlays (Restored missing push commands)
+    if (isFurnished) layers.push(path('overlay-furnishings.png'));
+    if (isCurly) layers.push(path('overlay-curly.png'));
+
+    // Pied Logic (Final top layer)
     if (isFullPied) layers.push(path('overlay-pied.png'));
     else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
 
@@ -164,7 +166,10 @@ export const getPhenotype = (dna: any) => {
     let names = [];
     if (isPink) names.push("PINK");
     if (isFloodle) names.push("FLOODLE");
-    else if (isFluffy) names.push("FLUFFY");
+    else {
+        if (isFluffy) names.push("FLUFFY");
+        if (isFurnished) names.push("FURNISHED");
+    }
     
     names.push(colorName.toUpperCase());
 
@@ -186,7 +191,7 @@ export const getPhenotype = (dna: any) => {
     if (isFullPied) names.push("PIED");
     if (isCurly && !isFloodle) names.push("CURLY");
 
-    // 5. DNA & Carrier Detection
+    // 5. DNA & Carrier Detection (Restored L, F, and C visibility)
     const dnaParts = [];
     const carriers = [];
 
@@ -198,7 +203,9 @@ export const getPhenotype = (dna: any) => {
     if (isBrindle) dnaParts.push(get('K'));
     if (isMerle) dnaParts.push('M');
     if (isHusky) dnaParts.push('Panda');
-    if (isFluffy) dnaParts.push(get('L'));
+    if (lVal !== 'L/L') dnaParts.push(get('L'));
+    if (fVal !== 'n/n') dnaParts.push(get('F'));
+    if (cVal !== 'n/n') dnaParts.push(get('C'));
     if (isFullPied || isCarrierPied) dnaParts.push(sVal);
 
     if (get('D').includes('d') && !d) carriers.push('Blue');
@@ -210,7 +217,7 @@ export const getPhenotype = (dna: any) => {
 
     return { 
         baseColorName: colorName, 
-        phenotypeName: names.join(" "), 
+        phenotypeName: names.filter(Boolean).join(" "), 
         layers,
         compactDnaString: dnaParts.join(' ') || 'Standard', 
         carriersString: carriers.length > 0 ? carriers.join(', ') : ''
