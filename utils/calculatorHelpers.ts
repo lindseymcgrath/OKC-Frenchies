@@ -65,10 +65,6 @@ export const LOCI = {
 };
 export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: (LOCI as any)[key].options[0] }), {});
 
-// =============================================================
-// GPS 3: GET GENOTYPE 
-// =============================================================
-
 export const getPhenotype = (dna: any) => {
     if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
     
@@ -94,7 +90,7 @@ export const getPhenotype = (dna: any) => {
     const aVal = get('A'), kVal = get('K');
     const lVal = get('L'), fVal = get('F'), cVal = get('C');
     
-    // 🔥 FIXED: isCurly is now defined here
+    // Structural Definition
     const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
     const isFurnished = fVal.includes('F');
     const isCurly = cVal.includes('C'); 
@@ -147,15 +143,19 @@ export const getPhenotype = (dna: any) => {
         else if (isHusky) layers.push(path('overlay-husky.png'));
     }
 
-    // Pied Logic
     if (isFullPied) layers.push(path('overlay-pied.png'));
     else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
 
-    // 4. Final Name Construction
+    // 4. Final Name Construction (RESTORED STRUCTURES)
     let names = [];
     if (isPink) names.push("PINK");
+    
+    // Structure Priority
     if (isFloodle) names.push("FLOODLE");
-    else if (isFluffy) names.push("FLUFFY");
+    else {
+        if (isFluffy) names.push("FLUFFY");
+        if (isFurnished) names.push("FURNISHED");
+    }
     
     names.push(colorName.toUpperCase());
 
@@ -175,9 +175,9 @@ export const getPhenotype = (dna: any) => {
     if (isBrindle && aVal.includes('at')) names.push("TRINDLE");
     else if (isBrindle) names.push("BRINDLE");
     if (isFullPied) names.push("PIED");
-    if (isCurly && !isFloodle) names.push("CURLY");
+    if (isCurly) names.push("CURLY");
 
-    // 5. DNA & Carrier Detection
+    // 5. DNA & Carrier Detection (RESTORED STRUCTURE DNA)
     const dnaParts = [];
     const carriers = [];
 
@@ -189,9 +189,14 @@ export const getPhenotype = (dna: any) => {
     if (isBrindle) dnaParts.push(get('K'));
     if (isMerle) dnaParts.push('M');
     if (isHusky) dnaParts.push('Panda');
-    if (isFluffy) dnaParts.push(get('L'));
+    
+    // RESTORED DNA VISUALS
+    if (lVal !== 'L/L') dnaParts.push(lVal);
+    if (isFurnished) dnaParts.push(fVal);
+    if (isCurly) dnaParts.push(cVal);
     if (isFullPied || isCarrierPied) dnaParts.push(sVal);
 
+    // Carrier Detection
     if (get('D').includes('d') && !d) carriers.push('Blue');
     if (get('B').includes('b') && !b) carriers.push('Rojo');
     if (get('Co').includes('co') && !co) carriers.push('Cocoa');
@@ -201,7 +206,7 @@ export const getPhenotype = (dna: any) => {
 
     return { 
         baseColorName: colorName, 
-        phenotypeName: names.join(" "), 
+        phenotypeName: names.filter(Boolean).join(" "), 
         layers,
         compactDnaString: dnaParts.join(' ') || 'Standard', 
         carriersString: carriers.length > 0 ? carriers.join(', ') : ''
