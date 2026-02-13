@@ -6,7 +6,11 @@
       "destination": "/images/visuals/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/((?!api/|images/visuals/).*)",
       "destination": "/index.html"
     }
   ]
