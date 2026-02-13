@@ -8,8 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { q } = req.query;
     
     // This grabs the key securely from the server environment
-    const API_KEY = process.env.GIPHY_API_KEY;
-
+const API_KEY = process.env.GIPHY_API_KEY || process.env.VITE_GIPHY_API_KEY;
+    
     if (!API_KEY) {
         return res.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
