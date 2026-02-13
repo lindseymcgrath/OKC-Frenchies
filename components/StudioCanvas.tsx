@@ -68,7 +68,12 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
 
     return (
         <div className="w-full lg:w-auto lg:flex-shrink-0 order-2 lg:order-1 lg:sticky lg:top-24 z-20 flex flex-col items-center">
-            <div className="w-screen ml-[calc(50%-50vw)] lg:w-auto lg:ml-0 bg-[#020617]/90 backdrop-blur-xl lg:bg-transparent pb-4 lg:p-0 lg:border-none flex flex-col items-center">
+            {/* 
+               🔥 MOBILE UPDATE: 
+               Added pb-[80px] to ensure the canvas isn't hidden behind the fixed bottom dock.
+               Removed negative margins on mobile to prevent full-width overflow issues.
+            */}
+            <div className="w-full lg:w-auto bg-[#020617]/90 backdrop-blur-xl lg:bg-transparent pb-[100px] lg:p-0 lg:border-none flex flex-col items-center">
                 
                 <div className="bg-[#0a0a0a] border-y lg:border border-slate-800 lg:rounded-sm relative shadow-2xl w-full lg:w-fit mx-auto overflow-hidden">
                     <div 
@@ -78,9 +83,10 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                         style={{ 
                             aspectRatio: studio.aspectRatio.replace(':','/'), 
                             background: '#0a0a0a',
+                            // On mobile, let the width drive height via aspect-ratio, but cap max-height so it fits screen
                             height: isMobile ? 'auto' : '60vh', 
                             width: isMobile ? '100%' : 'auto', 
-                            maxHeight: isMobile ? 'none' : '600px'
+                            maxHeight: isMobile ? '65vh' : '600px'
                         }}
                     >
                         {studio.marketingBg.startsWith('data:') && <img src={studio.marketingBg} className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" />}
@@ -187,44 +193,68 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                        </div>
-                    </div>
-                </div>
-
-                {/* UI Section */}
-                <div className="w-full max-w-[600px] mt-4 px-4 lg:px-0 space-y-3">
-                    <div className="bg-gradient-to-br from-[#0f172a] to-black border border-luxury-gold/30 p-5 rounded-sm shadow-2xl">
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="text-center sm:text-left flex-1">
-                                <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold flex items-center justify-center sm:justify-start gap-2">
-                                    <Crown size={12}/> Pro Studio
-                                </p>
-                                <h3 className="text-white text-lg font-serif mt-1">
-                                    {isSubscribed || isUnlocked 
-                                        ? "Unlimited Session Active" 
-                                        : studio.isSessionActive 
-                                            ? `Project Unlocked (${studio.sessionAiGens} AI Gens Included)` 
-                                            : `${credits ?? 0} Credits Available`}
-                                </h3>
-                            </div>
-                            {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
-                                <button 
-                                    onClick={() => (credits && credits > 0) ? studio.activateSession() : setShowPaywall(true)}
-                                    className="w-full sm:w-auto px-6 py-3 bg-luxury-teal hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-[10px] rounded-sm transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)] flex items-center justify-center gap-2"
+                            {/* Stickers Layer */}
+                            {studio.stickers.map((s: any) => (
+                                <Draggable 
+                                    key={s.id} 
+                                    bounds="parent" 
+                                    position={{x: s.x, y: s.y}} 
+                                    onStop={(e, data) => studio.updatePosition(s.id, data.x, data.y)}
                                 >
-                                    <Lock size={12} /> Unlock Project (1 Credit)
-                                </button>
-                            )}
+                                    <div className="absolute z-40 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer(s.id)}>
+                                        <img 
+                                            src={s.url} 
+                                            className="pointer-events-none" 
+                                            style={{
+                                                transform: `rotate(${s.rotate}deg) scale(${s.scale})`, 
+                                                width: '100px', // Base width for stickers
+                                            }}
+                                            alt="sticker"
+                                        />
+                                    </div>
+                                </Draggable>
+                            ))}
+
                         </div>
                     </div>
-
-                    <button onClick={handleDownloadClick} className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black uppercase tracking-[0.2em] text-[12px] rounded-sm hover:brightness-110 shadow-xl transition-all flex flex-col items-center justify-center border border-emerald-400/20">
-                        <span className="flex items-center gap-2"><Download size={18}/> Export Advertisement</span>
-                        <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">{isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked)"}</span>
-                    </button>
-
-                    <div className="text-center"><span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1"><Move size={10} /> Drag Elements to Position</span></div>
                 </div>
+
+                {/* UI Section - Only show on Desktop here. Mobile logic moved to Sidebar dock */}
+                {!isMobile && (
+                    <div className="w-full max-w-[600px] mt-4 px-4 lg:px-0 space-y-3">
+                        <div className="bg-gradient-to-br from-[#0f172a] to-black border border-luxury-gold/30 p-5 rounded-sm shadow-2xl">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                                <div className="text-center sm:text-left flex-1">
+                                    <p className="text-[10px] uppercase tracking-widest text-luxury-gold font-bold flex items-center justify-center sm:justify-start gap-2">
+                                        <Crown size={12}/> Pro Studio
+                                    </p>
+                                    <h3 className="text-white text-lg font-serif mt-1">
+                                        {isSubscribed || isUnlocked 
+                                            ? "Unlimited Session Active" 
+                                            : studio.isSessionActive 
+                                                ? `Project Unlocked (${studio.sessionAiGens} AI Gens Included)` 
+                                                : `${credits ?? 0} Credits Available`}
+                                    </h3>
+                                </div>
+                                {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
+                                    <button 
+                                        onClick={() => (credits && credits > 0) ? studio.activateSession() : setShowPaywall(true)}
+                                        className="w-full sm:w-auto px-6 py-3 bg-luxury-teal hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-[10px] rounded-sm transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)] flex items-center justify-center gap-2"
+                                    >
+                                        <Lock size={12} /> Unlock Project (1 Credit)
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        <button onClick={handleDownloadClick} className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black uppercase tracking-[0.2em] text-[12px] rounded-sm hover:brightness-110 shadow-xl transition-all flex flex-col items-center justify-center border border-emerald-400/20">
+                            <span className="flex items-center gap-2"><Download size={18}/> Export Advertisement</span>
+                            <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">{isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked)"}</span>
+                        </button>
+
+                        <div className="text-center"><span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1"><Move size={10} /> Drag Elements to Position</span></div>
+                    </div>
+                )}
             </div>
         </div>
     );
