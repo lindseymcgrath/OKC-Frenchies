@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     Briefcase, Loader2, Scissors, Wand2, Grid3X3, RectangleVertical, Smartphone, 
-    Edit3, Sparkles, Type, ToggleRight, ToggleLeft, AlignCenter, X, 
-    RotateCw, Scaling, ChevronDown, CheckCircle2, Layers, Sticker as StickerIcon, Crown, Flame, Dna, PawPrint, Trash2
+    ToggleRight, ToggleLeft, AlignCenter, X, 
+    RotateCw, Scaling, ChevronDown, CheckCircle2, Layers, Trash2, Sparkles, 
+    Search, ImagePlus, Sticker as StickerIcon
 } from 'lucide-react';
 import { PROMPTS } from '../utils/calculatorHelpers';
 
@@ -45,6 +46,10 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     setShowPaywall,
     userEmail 
 }) => {
+    // Local state for Giphy Search
+    const [giphyQuery, setGiphyQuery] = useState('');
+    const [giphyResults, setGiphyResults] = useState<string[]>([]);
+    const [loadingGiphy, setLoadingGiphy] = useState(false);
 
     const handleProtectedAction = (action: () => void) => {
         if (studio.isSessionActive || freeGenerations > 0) {
@@ -58,6 +63,28 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
         action();
     };
 
+    // 🔥 GIPHY SEARCH LOGIC
+    const searchGiphy = async () => {
+        if (!giphyQuery.trim()) return;
+        setLoadingGiphy(true);
+        try {
+            // 🔥 SECURE: Calls your internal Vercel API, not Giphy directly
+            const res = await fetch(`/api/giphy?q=${encodeURIComponent(giphyQuery)}`);
+            const data = await res.json();
+            
+            if (data.data && data.data.length > 0) {
+                setGiphyResults(data.data.map((item: any) => item.images.fixed_height.url));
+            } else {
+                alert("No stickers found.");
+            }
+        } catch (e) {
+            console.error("Giphy Error", e);
+            alert("Could not fetch stickers.");
+        } finally {
+            setLoadingGiphy(false);
+        }
+    };
+
     const isPro = isSubscribed || isUnlocked;
     const dailyRemaining = isPro ? Math.max(0, studio.DAILY_LIMIT - studio.dailyProCount) : 0;
     let statusText = `${freeGenerations} Free Tokens`;
@@ -69,16 +96,6 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
     const currentStyle = studio.selectedLayer && studio.textStyles[studio.selectedLayer] 
         ? studio.textStyles[studio.selectedLayer] 
         : null;
-
-    // Sticker definitions
-    const stickers = [
-        { type: 'crown', icon: Crown, label: 'Crown' },
-        { type: 'verified', icon: CheckCircle2, label: 'Verified' },
-        { type: 'fire', icon: Flame, label: 'Lit' },
-        { type: 'dna', icon: Dna, label: 'DNA' },
-        { type: 'paw', icon: PawPrint, label: 'Paw' },
-        { type: 'cross', icon: X, label: 'X (Mix)' },
-    ];
 
     return (
         <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-2 order-1 lg:order-2">
@@ -104,9 +121,10 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 )}
             </div>
 
-            {/* 1. ASSETS */}
+            {/* 1. ASSETS (PHOTOS & LOGOS) */}
             <div className="order-1">
                 <Accordion id="assets" title="Project Assets" icon={Briefcase} studio={studio}>
+                    {/* Row 1: Photos */}
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         <div className="flex flex-col gap-1">
                             <label className={`h-16 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer ${studio.sireImage ? 'border-indigo-500 bg-indigo-900/20' : 'border-slate-700 hover:border-white'}`}>
@@ -127,6 +145,32 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                             {studio.damImage && (
                                 <button onClick={() => handleProtectedAction(() => studio.handleBgRemoval('dam'))} disabled={studio.isProcessingImage} className="w-full py-1 text-[8px] bg-slate-800 hover:bg-slate-700 text-white uppercase font-bold rounded-sm border border-slate-700 flex items-center justify-center gap-1">
                                     {studio.isProcessingImage && studio.processingType === 'dam' ? <Loader2 size={8} className="animate-spin"/> : <Scissors size={8}/>} Remove BG
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 🔥 RESTORED ROW 2: LOGOS */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="flex flex-col gap-1">
+                            <label className={`h-12 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer ${studio.sireLogo ? 'border-indigo-500 bg-indigo-900/20' : 'border-slate-700 hover:border-white'}`}>
+                                {studio.sireLogo ? <span className="text-[8px] text-indigo-400 font-bold">Logo Uploaded</span> : <span className="text-[9px] uppercase text-slate-500 font-bold flex items-center gap-1"><ImagePlus size={10}/> Sire Logo</span>}
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => studio.handleImageUpload(e, 'sireLogo')} />
+                            </label>
+                            {studio.sireLogo && (
+                                <button onClick={() => handleProtectedAction(() => studio.handleBgRemoval('sireLogo'))} disabled={studio.isProcessingImage} className="w-full py-1 text-[7px] bg-slate-800 hover:bg-slate-700 text-white uppercase font-bold rounded-sm border border-slate-700 flex items-center justify-center gap-1">
+                                    {studio.isProcessingImage && studio.processingType === 'sireLogo' ? <Loader2 size={8} className="animate-spin"/> : <Scissors size={8}/>} Clean
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <label className={`h-12 border border-dashed rounded-sm flex flex-col items-center justify-center cursor-pointer ${studio.damLogo ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 hover:border-white'}`}>
+                                {studio.damLogo ? <span className="text-[8px] text-purple-400 font-bold">Logo Uploaded</span> : <span className="text-[9px] uppercase text-slate-500 font-bold flex items-center gap-1"><ImagePlus size={10}/> Dam Logo</span>}
+                                <input type="file" className="hidden" accept="image/*" onChange={(e) => studio.handleImageUpload(e, 'damLogo')} />
+                            </label>
+                            {studio.damLogo && (
+                                <button onClick={() => handleProtectedAction(() => studio.handleBgRemoval('damLogo'))} disabled={studio.isProcessingImage} className="w-full py-1 text-[7px] bg-slate-800 hover:bg-slate-700 text-white uppercase font-bold rounded-sm border border-slate-700 flex items-center justify-center gap-1">
+                                    {studio.isProcessingImage && studio.processingType === 'damLogo' ? <Loader2 size={8} className="animate-spin"/> : <Scissors size={8}/>} Clean
                                 </button>
                             )}
                         </div>
@@ -164,19 +208,18 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </Accordion>
             </div>
 
-            {/* 3. LAYER EDITOR - Now Context Aware */}
+            {/* 3. LAYER EDITOR */}
             <div className="order-3">
                 <Accordion id="layers" title="Layer Editor" icon={Layers} studio={studio}>
                     <div className="space-y-4">
                         
-                        {/* Layer Selection Hint */}
                         {!currentStyle && !studio.selectedLayer?.startsWith('sticker') && (
                             <div className="p-3 bg-blue-900/20 border border-blue-500/30 rounded text-center">
                                 <p className="text-[10px] text-blue-300">Select a text element on the canvas to customize its font, color, and effects.</p>
                             </div>
                         )}
 
-                        {/* STYLING CONTROLS (Only visible if a text layer is selected) */}
+                        {/* STYLING CONTROLS */}
                         {currentStyle && (
                             <div className="bg-indigo-900/10 border border-indigo-500/30 p-2 rounded-sm space-y-3 animate-in fade-in">
                                 <div className="flex items-center justify-between mb-1 border-b border-white/5 pb-2">
@@ -217,6 +260,13 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                                             title="Title Case"
                                         >
                                             Aa
+                                        </button>
+                                        <button 
+                                            onClick={() => studio.updateSelectedStyle('casing', 'sentence')}
+                                            className={`w-6 h-5 flex items-center justify-center text-[10px] font-bold rounded-sm ${currentStyle.casing === 'sentence' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-white'}`}
+                                            title="Sentence Case"
+                                        >
+                                            Ab
                                         </button>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -300,20 +350,45 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </Accordion>
             </div>
 
-            {/* 4. STICKERS */}
+            {/* 4. 🔥 NEW: GIPHY SEARCH */}
             <div className="order-4">
-                <Accordion id="stickers" title="Stickers & Badges" icon={StickerIcon} studio={studio}>
-                    <div className="grid grid-cols-5 gap-2">
-                        {stickers.map(s => (
+                <Accordion id="stickers" title="Giphy Stickers" icon={StickerIcon} studio={studio}>
+                    <div className="space-y-3">
+                        <div className="flex gap-2">
+                            <input 
+                                value={giphyQuery} 
+                                onChange={(e) => setGiphyQuery(e.target.value)} 
+                                onKeyDown={(e) => e.key === 'Enter' && searchGiphy()}
+                                placeholder="Search Giphy (e.g., Fire, Frenchie)" 
+                                className="flex-1 bg-black/40 border border-slate-700 p-2 text-[10px] text-white outline-none focus:border-indigo-500 rounded-sm"
+                            />
                             <button 
-                                key={s.type}
-                                onClick={() => studio.addSticker(s.type)}
-                                className="flex flex-col items-center justify-center p-2 bg-black/40 hover:bg-indigo-900/30 border border-slate-800 hover:border-indigo-500 rounded-sm transition-all group"
+                                onClick={searchGiphy} 
+                                disabled={loadingGiphy}
+                                className="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-sm border border-slate-700"
                             >
-                                <s.icon size={16} className="text-slate-400 group-hover:text-indigo-400 mb-1"/>
-                                <span className="text-[7px] uppercase text-slate-500 group-hover:text-indigo-300">{s.label}</span>
+                                {loadingGiphy ? <Loader2 size={14} className="animate-spin"/> : <Search size={14}/>}
                             </button>
-                        ))}
+                        </div>
+                        
+                        {/* Results Grid */}
+                        {giphyResults.length > 0 ? (
+                            <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                {giphyResults.map((url, idx) => (
+                                    <button 
+                                        key={idx}
+                                        onClick={() => studio.addSticker(url)}
+                                        className="aspect-square bg-black/20 border border-slate-800 hover:border-indigo-500 rounded-sm overflow-hidden flex items-center justify-center p-1 group transition-all"
+                                    >
+                                        <img src={url} alt="sticker" className="w-full h-full object-contain pointer-events-none"/>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-4 text-[9px] text-slate-600">
+                                Search for animated stickers to add to your design.
+                            </div>
+                        )}
                     </div>
                 </Accordion>
             </div>
@@ -325,8 +400,11 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                         <span className="text-[9px] font-bold uppercase text-indigo-400">Position: {studio.selectedLayer}</span>
                         <div className="flex gap-2">
                             <button onClick={studio.snapToCenter} className="text-indigo-400 hover:text-white" title="Snap to Center"><AlignCenter size={12}/></button>
+                            {/* 🔥 RESTORED DELETE BUTTON FOR STICKERS */}
                             {studio.selectedLayer.startsWith('sticker-') && (
-                                <button onClick={() => studio.removeSticker(studio.selectedLayer)} className="text-red-400 hover:text-red-300"><X size={12}/></button>
+                                <button onClick={() => studio.removeSticker(studio.selectedLayer)} className="text-red-400 hover:text-red-300 bg-red-900/20 px-2 py-0.5 rounded text-[8px] border border-red-900/50 flex items-center gap-1">
+                                    <X size={10}/> Delete
+                                </button>
                             )}
                         </div>
                     </div>
@@ -353,7 +431,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                 </button>
             </div>
 
-            {/* ✅ ATMOSPHERE BROWSE MODAL */}
+            {/* ATMOSPHERE BROWSE MODAL */}
             {studio.showPromptModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
                     <div className="bg-slate-900 border border-white/10 p-6 rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl">

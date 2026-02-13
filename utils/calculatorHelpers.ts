@@ -133,39 +133,66 @@ export const getPhenotype = (dna: any) => {
     } else {
         layers.push(path(`base-${slug}${suffix}`)); 
     }
+
     
     // --- PATTERNS ---
     const isMerle = get('M') !== 'n/n';
-    const isHusky = get('Panda') === 'Yes' || get('Koi') === 'Yes';
-    const isKoi = isMerle && isHusky; 
+    const isHusky = get('Panda') === 'Yes' || get('Husky') === 'Yes';
+    // Koi is the logical combination of both
+    const isKoi = get('Koi') === 'Yes' || (isMerle && isHusky); 
+    
     const isBrindle = kVal.includes('KB');
     const isTanPoints = aVal.includes('at') && !isBrindle;
 
     if (!showCreamBase) {
         if (isBrindle) layers.push(path('overlay-brindle.png'));
-        
-        // Tan Points (Corrected asset name from your structure)
-        if (isTanPoints) layers.push(path('overlay-tan' + suffix));
-
+        if (isTanPoints) layers.push(path('overlay-tan-point' + suffix));
         if (hasAncientRed) layers.push(path('overlay-ea.png'));
 
-        // Merle (Drawn additive so it stays under white markings)
-        if (isMerle) {
+        // 🔥 MERLE LAYER: Triggers if M-Locus is active OR if Koi is selected
+        if (isMerle || isKoi) {
             let mKey = (['blue', 'lilac'].includes(slug)) ? 'gray' : (slug.includes('rojo') ? slug : 'black');
             layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
         }
     }
 
-    // White-Space Overlays (Koi/Husky show on top of everything)
+    // 🔥 WHITE-SPACE OVERLAYS: Husky/Koi sit on top of everything
+    // If it's Koi, we push the Koi-specific white mask
     if (isKoi) {
         layers.push(path('overlay-koi.png'));
-    } else if (isHusky) {
+    } 
+    // Otherwise, if it's just a Husky, we push the standard Husky mask
+    else if (isHusky) {
         layers.push(path('overlay-husky.png'));
     }
 
-    // Structural Overlays (Restored missing push commands)
-    if (isFurnished) layers.push(path('overlay-furnishings.png'));
+    // Structural Overlays
+// Structural Overlays
+    if (isFurnished) {
+        let furnishingFile = 'overlay-furnishing.png'; // Default (Black)
+
+        // 1. Cream & Pink -> Use Cream Asset
+        if (slug === 'cream' || isPink) {
+            furnishingFile = 'overlay-cream-furnishing.png';
+        }
+        // 2. Blue & Lilac -> Use Gray Asset
+        else if (['blue', 'lilac'].includes(slug)) {
+            furnishingFile = 'overlay-gray-furnishing.png';
+        }
+        // 3. Browns (Cocoa, Rojo, Isabella, New Shades) -> Use Cocoa Asset
+        else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella', 'new-shade-rojo'].includes(slug)) {
+            furnishingFile = 'overlay-cocoa-furnishing.png';
+        }
+        // 4. Black (Default) -> Use Standard Asset
+        else {
+            furnishingFile = 'overlay-furnishing.png';
+        }
+
+        layers.push(path(furnishingFile));
+    }
+    
     if (isCurly) layers.push(path('overlay-curly.png'));
+
 
     // Pied Logic (Final top layer)
     if (isFullPied) layers.push(path('overlay-pied.png'));
