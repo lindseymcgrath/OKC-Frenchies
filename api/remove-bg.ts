@@ -2,9 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import { Buffer } from 'buffer';
 
 // 1. Initialize Supabase inside the API
-// Use placeholders to prevent "supabaseUrl is required" error if env vars are missing during build
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://phesicyzrddvediskbop.supabase.co';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h';
+// Check both standard and VITE_ prefixed variables for maximum compatibility
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://phesicyzrddvediskbop.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -19,7 +19,9 @@ export default async function handler(req, res) {
 
   // 2. Identify the User (passed from your frontend header)
   const userEmail = req.headers['x-user-email'];
-  const API_KEY = "sk_pr_default_26c40acfb6c6c60c9c7dea41f57253103e7dc3eb";
+  
+  // 🔥 ROBUST KEY CHECK: Check standard name AND VITE_ name
+  const API_KEY = process.env.PHOTOROOM_API_KEY || process.env.VITE_PHOTOROOM_API_KEY || "sk_pr_default_26c40acfb6c6c60c9c7dea41f57253103e7dc3eb";
 
   if (!userEmail) {
     return res.status(401).json({ error: 'User email is required to verify credits.' });
@@ -27,8 +29,8 @@ export default async function handler(req, res) {
 
   // Double check that we have a valid Supabase connection before proceeding
   // Only if NOT guest
-  if (userEmail !== 'guest' && !process.env.VITE_SUPABASE_URL) {
-     console.error("Missing VITE_SUPABASE_URL environment variable");
+  if (userEmail !== 'guest' && !supabaseUrl) {
+     console.error("Missing Supabase Configuration");
      return res.status(500).json({ error: 'Server configuration error' });
   }
 
@@ -43,8 +45,7 @@ export default async function handler(req, res) {
           .single();
 
         if (fetchError || !profile) {
-          // Handle case where user might not exist yet - optional: auto-create? 
-          // For now, return error
+          // Handle case where user might not exist yet
           return res.status(404).json({ error: 'User profile not found.' });
         }
 
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
         }
     }
 
-    // 5. PROCEED TO PHOTOROOM (Your existing logic)
+    // 5. PROCEED TO PHOTOROOM
     const chunks = [];
     for await (const chunk of req) {
       chunks.push(chunk);
@@ -87,6 +88,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
         const errorText = await response.text();
+        console.error("PhotoRoom API Error:", errorText);
         return res.status(response.status).json({ error: `PhotoRoom: ${errorText}` });
     }
 
