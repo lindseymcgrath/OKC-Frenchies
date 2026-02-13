@@ -4,12 +4,15 @@ import { DogVisualizer } from './DogVisualizer';
 import { Grid, List, Search, FileDown, X, Share2, Save } from 'lucide-react';
 
 export const LitterPredictor = (props: any) => {
-    const { sire, setSire, dam, setDam, onSaveDog, setShowKennel, setActiveLoadSlot, studio } = props;
+    const { sire, setSire, dam, setDam, onSaveDog, setShowKennel, setActiveLoadSlot, studio, isMobile } = props;
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [sireName, setSireName] = useState('');
     const [damName, setDamName] = useState('');
+    
+    // Mobile Tabs State
+    const [activeTab, setActiveTab] = useState<'sire' | 'dam' | 'litter'>('sire');
     
     // 🔥 RESTORED: The "Pop Open" State
     const [selectedPuppy, setSelectedPuppy] = useState<any | null>(null);
@@ -79,12 +82,27 @@ export const LitterPredictor = (props: any) => {
 
     return (
         <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden">
-                {renderControls(sire, (v:any)=>setSire((p:any)=>({...p,...v})), 'SIRE', sireName, setSireName)}
-                {renderControls(dam, (v:any)=>setDam((p:any)=>({...p,...v})), 'DAM', damName, setDamName)}
+            {/* 🔥 MOBILE TABS (Only visible on mobile) */}
+            {isMobile && (
+                <div className="flex bg-slate-900 p-1 rounded-sm border border-slate-800 sticky top-[80px] z-30 shadow-lg">
+                    <button onClick={() => setActiveTab('sire')} className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-all ${activeTab === 'sire' ? 'bg-luxury-teal text-black shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>Sire</button>
+                    <button onClick={() => setActiveTab('dam')} className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-all ${activeTab === 'dam' ? 'bg-luxury-magenta text-black shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>Dam</button>
+                    <button onClick={() => setActiveTab('litter')} className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest rounded-sm transition-all ${activeTab === 'litter' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>Results</button>
+                </div>
+            )}
+
+            {/* PARENT CONTROLS CONTAINER */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 print:hidden ${isMobile && activeTab === 'litter' ? 'hidden md:grid' : ''}`}>
+                <div className={isMobile && activeTab !== 'sire' ? 'hidden md:block' : ''}>
+                    {renderControls(sire, (v:any)=>setSire((p:any)=>({...p,...v})), 'SIRE', sireName, setSireName)}
+                </div>
+                <div className={isMobile && activeTab !== 'dam' ? 'hidden md:block' : ''}>
+                    {renderControls(dam, (v:any)=>setDam((p:any)=>({...p,...v})), 'DAM', damName, setDamName)}
+                </div>
             </div>
 
-            <div className="bg-[#020617] border border-slate-800 p-4 md:p-8 rounded-sm max-w-6xl mx-auto shadow-2xl">
+            {/* PREDICTION RESULTS CONTAINER */}
+            <div className={`${isMobile && activeTab !== 'litter' ? 'hidden md:block' : ''} bg-[#020617] border border-slate-800 p-4 md:p-8 rounded-sm max-w-6xl mx-auto shadow-2xl`}>
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
                     <div className="text-left">
@@ -177,17 +195,19 @@ export const LitterPredictor = (props: any) => {
                                 <button 
                                     onClick={() => {
                                         onSaveDog(selectedPuppy.phenotypeName, 'Male', selectedPuppy.dna);
-                                            alert("Puppy saved to kennel!");
-                                        }}
-                                        className="w-full py-3 bg-luxury-teal text-black font-bold uppercase tracking-widest rounded-sm flex items-center justify-center gap-2 mt-4 hover:bg-white transition-colors"
-                                    >
-                                        <Save size={16} /> Save Puppy to Kennel
-                                    </button>
-                                </div>
+                                        alert("Puppy saved to kennel!");
+                                    }}
+                                    className="w-full py-3 bg-luxury-teal text-black font-bold uppercase tracking-widest rounded-sm flex items-center justify-center gap-2 mt-4 hover:bg-white transition-colors"
+                                >
+                                    <Save size={16} /> Save Puppy to Kennel
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
+            
+            {/* Modal Closer for PDF logic */}
             </div>
         </div>
     );

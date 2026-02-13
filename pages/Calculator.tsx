@@ -218,6 +218,7 @@ export default function Calculator() {
                             setShowKennel={setShowKennel}
                             setActiveLoadSlot={setActiveLoadSlot}
                             studio={studio}
+                            isMobile={isMobile}
                         />
                      )}
                 </div>
@@ -226,8 +227,9 @@ export default function Calculator() {
             {mode === 'marketing' && (
                 <Suspense fallback={<div className="flex justify-center py-20 text-luxury-teal"><Loader2 className="animate-spin" /></div>}>
                     <div className="flex flex-col lg:flex-row justify-center gap-6 items-start relative animate-in fade-in duration-500">
+                        {/* ✅ PASS IS_MOBILE PROP */}
                         <LazyStudioCanvas studio={studio} isMobile={isMobile} isSubscribed={user.isSubscribed} isUnlocked={user.isUnlocked} credits={user.credits} userEmail={user.userEmail} setShowPaywall={setShowPaywall}/>
-                        <LazyMarketingSidebar studio={studio} isSubscribed={user.isSubscribed} isUnlocked={user.isUnlocked} credits={user.credits} freeGenerations={freeGenerations} setShowPaywall={setShowPaywall} userEmail={user.userEmail}/>
+                        <LazyMarketingSidebar studio={studio} isMobile={isMobile} isSubscribed={user.isSubscribed} isUnlocked={user.isUnlocked} credits={user.credits} freeGenerations={freeGenerations} setShowPaywall={setShowPaywall} userEmail={user.userEmail}/>
                     </div>
                 </Suspense>
             )}

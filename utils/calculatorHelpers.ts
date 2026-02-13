@@ -29,6 +29,22 @@ export const supabase = createClient(
 export const FREEBIE_CODE = "OKCFREE";
 const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/";
 
+export interface VisualTraits {
+    baseColorName: string;
+    phenotypeName: string;
+    layers: string[];
+    compactDnaString: string;
+    carriersString: string;
+}
+
+export interface SavedDog {
+    id: string;
+    name: string;
+    gender: 'Male' | 'Female';
+    dna: any;
+    date: string;
+}
+
 export const getStripeLinks = (email: string) => {
     const encodedEmail = encodeURIComponent(email || '');
     const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
@@ -78,7 +94,7 @@ export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc
 // GPS 3: GET GENOTYPE 
 // =============================================================
 
-export const getPhenotype = (dna: any) => {
+export const getPhenotype = (dna: any): VisualTraits => {
     if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
     
     const get = (key: string) => dna[key] || (LOCI as any)[key]?.options[0] || 'n/n';
@@ -294,7 +310,7 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
         locusProbabilities[key] = outcomes;
     });
 
-    let combinations = [{ dna: {}, prob: 1.0 }];
+    let combinations: { dna: Record<string, any>, prob: number }[] = [{ dna: {}, prob: 1.0 }];
     Object.keys(locusProbabilities).forEach(key => {
         const next: any = [];
         combinations.forEach(combo => {
@@ -339,13 +355,13 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
     }));
 };
 
-export const saveDogToDB = async (userId: string, dog: any) => {
+export const saveDogToDB = async (userId: string, dog: any): Promise<SavedDog | null> => {
     if (!userId) return null;
     const { data, error } = await supabase.from('dogs').insert([{ owner_id: userId, dog_name: dog.name, sex: dog.gender, dna: dog.dna }]).select().single();
     if (error) return null;
     return { ...dog, id: String(data.id) }; 
 };
-export const fetchDogsFromDB = async (userId: string) => {
+export const fetchDogsFromDB = async (userId: string): Promise<SavedDog[]> => {
     if (!userId) return [];
     const { data, error } = await supabase.from('dogs').select('*').eq('owner_id', userId).order('created_at', { ascending: false });
     if (error) return [];

@@ -170,26 +170,22 @@ export const useStudioLogic = (
     const [selectedLayer, setSelectedLayer] = useState<LayerId | null>(null);
     
     // ✅ FIXED: Coordinates squeezed closer to center (0,0) to prevent off-screen spawning
+    // Adjusted to be safe for mobile 1:1 view (approx 350px height, so safe range is approx +/- 150)
     const defaultTransforms = {
-        // Top Elements (Moved down from -280/-240 to ensure visibility)
-        watermark: { rotate: 0, scale: 1, x: 0, y: -160 }, 
-        header: { rotate: 0, scale: 1, x: 0, y: -120 },
+        watermark: { rotate: 0, scale: 1, x: 0, y: -140 }, 
+        header: { rotate: 0, scale: 1, x: 0, y: -110 },
         
-        // Names (Moved closer to dog)
-        studName: { rotate: 0, scale: 1, x: 0, y: -80 },
-        damName: { rotate: 0, scale: 1, x: 0, y: -40 },
+        studName: { rotate: 0, scale: 1, x: 0, y: -70 },
+        damName: { rotate: 0, scale: 1, x: 0, y: -30 },
         
-        // Images (Center)
         sire: { rotate: 0, scale: 1, x: 0, y: 0 },
         dam: { rotate: 0, scale: 1, x: 0, y: 0 },
         
-        // Logos (Offset slightly so they don't spawn hidden behind the dog)
-        sireLogo: { rotate: 0, scale: 1, x: -100, y: 100 },
-        damLogo: { rotate: 0, scale: 1, x: 100, y: 100 },
+        sireLogo: { rotate: 0, scale: 1, x: -80, y: 80 },
+        damLogo: { rotate: 0, scale: 1, x: 80, y: 80 },
         
-        // Bottom Elements (Moved up from 220/260 to ensure visibility)
-        studPheno: { rotate: 0, scale: 1, x: 0, y: 140 },
-        studGeno: { rotate: 0, scale: 1, x: 0, y: 180 },
+        studPheno: { rotate: 0, scale: 1, x: 0, y: 80 },
+        studGeno: { rotate: 0, scale: 1, x: 0, y: 110 },
     };
 
     const [layerTransforms, setLayerTransforms] = useStickyState<Record<string, { rotate: number, scale: number, x: number, y: number }>>(defaultTransforms, 'okc_studio_transforms');
@@ -265,17 +261,58 @@ export const useStudioLogic = (
             const base = prev.replace(/^(1:1 Square|1:1|4:5|9:16)\. /, '');
             return `${ratio}. ${base}`;
         });
-        const isTall = ratio === '9:16';
+        
+        // Define safe vertical zones based on aspect ratio
+        // Values are conservative to ensure visibility on mobile (width ~350px)
+        let config;
+        
+        switch (ratio) {
+            case '9:16': // Tall (Story) -> Half height approx 311px
+                config = {
+                    watermark: -260,
+                    header: -220,
+                    studName: -140,
+                    damName: -80,
+                    pheno: 180,
+                    geno: 220,
+                    logo: -200 // Logo Y
+                };
+                break;
+            case '4:5': // Portrait -> Half height approx 218px
+                config = {
+                    watermark: -180,
+                    header: -150,
+                    studName: -90,
+                    damName: -40,
+                    pheno: 120,
+                    geno: 150,
+                    logo: -140 // Logo Y
+                };
+                break;
+            case '1:1': // Square -> Half height approx 175px
+            default:
+                config = {
+                    watermark: -140,
+                    header: -110,
+                    studName: -70,
+                    damName: -30,
+                    pheno: 80,
+                    geno: 110,
+                    logo: -100 // Logo Y
+                };
+                break;
+        }
+
         setLayerTransforms(prev => ({
             ...prev,
-            watermark: { ...prev.watermark, y: isTall ? -380 : -280, x: 0 },
-            header: { ...prev.header, y: isTall ? -340 : -240, x: 0 },
-            studName: { ...prev.studName, y: isTall ? -200 : -150, x: 0 },
-            damName: { ...prev.damName, y: isTall ? -150 : -100, x: 0 },
-            studPheno: { ...prev.studPheno, y: isTall ? 300 : 200, x: 0 },
-            studGeno: { ...prev.studGeno, y: isTall ? 350 : 240, x: 0 },
-            sireLogo: { ...prev.sireLogo, x: 0, y: isTall ? -400 : -250 },
-            damLogo: { ...prev.damLogo, x: 0, y: isTall ? -400 : -250 },
+            watermark: { ...prev.watermark, y: config.watermark, x: 0 },
+            header: { ...prev.header, y: config.header, x: 0 },
+            studName: { ...prev.studName, y: config.studName, x: 0 },
+            damName: { ...prev.damName, y: config.damName, x: 0 },
+            studPheno: { ...prev.studPheno, y: config.pheno, x: 0 },
+            studGeno: { ...prev.studGeno, y: config.geno, x: 0 },
+            sireLogo: { ...prev.sireLogo, x: -80, y: config.logo },
+            damLogo: { ...prev.damLogo, x: 80, y: config.logo },
         }));
     };
 
@@ -340,7 +377,7 @@ export const useStudioLogic = (
         }
 
         // --- 2. GENERATION LOGIC (NO PACKAGES - PURE FETCH) ---
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY || '';
+        const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || process.env.API_KEY || '';
         
         if (!apiKey) {
             alert("System Error: API Key is missing. Check .env file.");
