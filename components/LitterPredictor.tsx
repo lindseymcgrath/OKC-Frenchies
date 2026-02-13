@@ -155,13 +155,14 @@ export const LitterPredictor = (props: any) => {
           {/* 🔥 POP-UP MODAL FIXES */}
             {selectedPuppy && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm" onClick={() => setSelectedPuppy(null)}>
-                    <div className="bg-[#0f172a] border border-slate-700 w-full max-w-2xl rounded-sm p-6 relative shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => setSelectedPuppy(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={24} /></button>
+                    {/* Added max-h and overflow for mobile safety */}
+                    <div className="bg-[#0f172a] border border-slate-700 w-full max-w-2xl rounded-sm p-6 relative shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setSelectedPuppy(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-black/50 rounded-full p-1 z-10"><X size={20} /></button>
                         
                         <div className="flex flex-col md:flex-row gap-8">
                             {/* 1. VISIBILITY FIX: Changed background to lighter slate so black dogs show up */}
                             {/* 2. CENTERING FIX: Removed padding (p-8) and used flex-center */}
-                            <div className="w-full md:w-1/2 flex items-center justify-center bg-slate-800/50 rounded-sm border border-slate-700 aspect-square overflow-hidden">
+                            <div className="w-full md:w-1/2 flex items-center justify-center bg-slate-800/50 rounded-sm border border-slate-700 aspect-square overflow-hidden shrink-0">
                                 <div className="relative w-full h-full flex items-center justify-center">
                                      <DogVisualizer traits={getPhenotype(selectedPuppy.dna)} scale={1.1} showLabel={false} />
                                 </div>
@@ -170,7 +171,7 @@ export const LitterPredictor = (props: any) => {
                             <div className="w-full md:w-1/2 space-y-4">
                                 <div>
                                     {/* 3. TEXT FIX: Only showing name here (removed from under image) */}
-                                    <h2 className="text-2xl font-serif text-white uppercase leading-none mb-1">{selectedPuppy.phenotypeName}</h2>
+                                    <h2 className="text-2xl font-serif text-white uppercase leading-none mb-1 pr-8">{selectedPuppy.phenotypeName}</h2>
                                     <p className="text-luxury-teal font-mono text-lg font-bold">{selectedPuppy.probability}</p>
                                 </div>
                                 <div className="space-y-4">
@@ -184,13 +185,13 @@ export const LitterPredictor = (props: any) => {
                                         />
                                     </div>
                                     {getPhenotype(selectedPuppy.dna).carriersString && (
-    <div className="bg-black/20 p-3 rounded-sm border border-slate-800">
-        <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Carries</p>
-        <p className="font-mono text-xs text-emerald-400">
-            {getPhenotype(selectedPuppy.dna).carriersString}
-        </p>
-    </div>
-)}
+                                        <div className="bg-black/20 p-3 rounded-sm border border-slate-800">
+                                            <p className="text-[10px] text-slate-500 uppercase font-bold mb-1">Carries</p>
+                                            <p className="font-mono text-xs text-emerald-400">
+                                                {getPhenotype(selectedPuppy.dna).carriersString}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                                 <button 
                                     onClick={() => {
