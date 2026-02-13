@@ -1,7 +1,6 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import Draggable from 'react-draggable';
-import { Move, Download, Crown, CheckCircle2, Flame, Dna, PawPrint, Lock, X } from 'lucide-react';
-import { Sticker as StickerType } from '../hooks/useStudioLogic';
+import { Move, Download, Crown, Lock } from 'lucide-react';
 
 interface StudioCanvasProps {
     studio: any;
@@ -12,48 +11,6 @@ interface StudioCanvasProps {
     userEmail: string;
     setShowPaywall: (show: boolean) => void;
 }
-
-const getStickerIcon = (type: string) => {
-    switch(type) {
-        case 'crown': return <Crown size="100%" className="text-yellow-400 drop-shadow-lg" fill="currentColor" />;
-        case 'verified': return <CheckCircle2 size="100%" className="text-blue-400 drop-shadow-lg" fill="currentColor" />;
-        case 'fire': return <Flame size="100%" className="text-orange-500 drop-shadow-lg" fill="currentColor" />;
-        case 'dna': return <Dna size="100%" className="text-purple-400 drop-shadow-lg" />;
-        case 'paw': return <PawPrint size="100%" className="text-slate-200 drop-shadow-lg" fill="currentColor" />;
-        case 'cross': return <X size="100%" className="text-white drop-shadow-lg font-bold" strokeWidth={4} />;
-        default: return null;
-    }
-};
-
-const DraggableSticker = ({ sticker, studio }: { sticker: StickerType, studio: any }) => {
-    const nodeRef = useRef<HTMLDivElement>(null);
-    const isSelected = studio.selectedLayer === sticker.id;
-
-    return (
-        <Draggable 
-            nodeRef={nodeRef}
-            position={{x: sticker.x, y: sticker.y}}
-            onStop={(e, data) => studio.updatePosition(sticker.id, data.x, data.y)}
-            bounds="parent"
-        >
-            <div 
-                ref={nodeRef}
-                className="absolute z-40 cursor-move pointer-events-auto" 
-                onClick={(e) => {
-                    e.stopPropagation();
-                    studio.setSelectedLayer(sticker.id);
-                }}
-            >
-                <div 
-                    className={`w-12 h-12 transition-all flex items-center justify-center ${isSelected ? 'ring-1 ring-indigo-500 rounded-sm' : ''}`}
-                    style={{ transform: `rotate(${sticker.rotate}deg) scale(${sticker.scale})` }}
-                >
-                    {getStickerIcon(sticker.url)}
-                </div>
-            </div>
-        </Draggable>
-    );
-};
 
 export const StudioCanvas: React.FC<StudioCanvasProps> = ({ 
     studio, isMobile, isSubscribed, isUnlocked, credits, userEmail, setShowPaywall 
@@ -79,6 +36,10 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         const style = studio.textStyles[layerKey];
         if (!style) return {};
 
+        // 🔥 FIX: CSS does not recognize "sentence", so we map it to "none" 
+        // to stop the browser from forcing uppercase.
+        const cssCasing = style.casing === 'sentence' ? 'none' : style.casing;
+
         let shadow = style.shadow ? '0px 4px 8px rgba(0,0,0,0.8)' : 'none';
         
         if (style.outline) {
@@ -97,7 +58,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
             backgroundColor: style.bg ? hexToRgba(style.bgColor, style.bgOpacity) : 'transparent',
             padding: style.bg ? '0.2em 0.5em' : '0',
             borderRadius: '0.1em',
-            textTransform: style.casing as any, 
+            textTransform: cssCasing as any, // Use our mapped value
             whiteSpace: 'normal',
             maxWidth: '100%',
             lineHeight: '1.2',
@@ -109,7 +70,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
         <div className="w-full lg:w-auto lg:flex-shrink-0 order-2 lg:order-1 lg:sticky lg:top-24 z-20 flex flex-col items-center">
             <div className="w-screen ml-[calc(50%-50vw)] lg:w-auto lg:ml-0 bg-[#020617]/90 backdrop-blur-xl lg:bg-transparent pb-4 lg:p-0 lg:border-none flex flex-col items-center">
                 
-                {/* The Container */}
                 <div className="bg-[#0a0a0a] border-y lg:border border-slate-800 lg:rounded-sm relative shadow-2xl w-full lg:w-fit mx-auto overflow-hidden">
                     <div 
                         ref={studio.marketingRef}
@@ -127,7 +87,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                         
                         <div className="absolute inset-0 z-10 w-full h-full overflow-hidden flex items-center justify-center">
                             
-                            {/* Watermark - Ensure Z-Index is high */}
+                            {/* Watermark */}
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <Draggable 
                                     nodeRef={studio.watermarkRef} 
@@ -151,9 +111,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                             {studio.sireLogo && <Draggable nodeRef={studio.sireLogoRef} bounds="parent" position={{x: studio.layerTransforms.sireLogo.x, y: studio.layerTransforms.sireLogo.y}} onStop={(e, data) => studio.updatePosition('sireLogo', data.x, data.y)}><div ref={studio.sireLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('sireLogo')}><img src={studio.sireLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.sireLogo.rotate}deg) scale(${studio.layerTransforms.sireLogo.scale})`}}/></div></Draggable>}
                             {studio.damLogo && <Draggable nodeRef={studio.damLogoRef} bounds="parent" position={{x: studio.layerTransforms.damLogo.x, y: studio.layerTransforms.damLogo.y}} onStop={(e, data) => studio.updatePosition('damLogo', data.x, data.y)}><div ref={studio.damLogoRef} className="absolute z-30 w-1/4 h-1/4 cursor-move pointer-events-auto" onClick={() => studio.setSelectedLayer('damLogo')}><img src={studio.damLogo} className="w-full h-full object-contain pointer-events-none" style={{transform: `rotate(${studio.layerTransforms.damLogo.rotate}deg) scale(${studio.layerTransforms.damLogo.scale})`}}/></div></Draggable>}
                             
-                            {/* TEXT LAYERS - FIXED: Replaced w-[600px] with w-full to prevent off-canvas rendering */}
-                            
-                            {/* Header */}
+                            {/* Text Layers (Header, Stud Name, Dam Name, Phenotype, Genotype) */}
                             {studio.showHeader && (
                                 <Draggable nodeRef={studio.headerRef} bounds="parent" position={{x: studio.layerTransforms.header.x, y: studio.layerTransforms.header.y}} onStop={(e, data) => studio.updatePosition('header', data.x, data.y)}>
                                     <div ref={studio.headerRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 pt-4 flex justify-center" onClick={() => studio.setSelectedLayer('header')}>
@@ -169,7 +127,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
                             
-                            {/* Stud Name */}
                             {studio.showStudName && (
                                 <Draggable nodeRef={studio.studNameRef} bounds="parent" position={{x: studio.layerTransforms.studName.x, y: studio.layerTransforms.studName.y}} onStop={(e, data) => studio.updatePosition('studName', data.x, data.y)}>
                                     <div ref={studio.studNameRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studName')}>
@@ -185,7 +142,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* Dam Name */}
                             {studio.showDamName && (
                                 <Draggable nodeRef={studio.damNameRef} bounds="parent" position={{x: studio.layerTransforms.damName.x, y: studio.layerTransforms.damName.y}} onStop={(e, data) => studio.updatePosition('damName', data.x, data.y)}>
                                     <div ref={studio.damNameRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('damName')}>
@@ -201,7 +157,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* Phenotype */}
                             {studio.showPhenotype && (
                                 <Draggable nodeRef={studio.studPhenoRef} bounds="parent" position={{x: studio.layerTransforms.studPheno.x, y: studio.layerTransforms.studPheno.y}} onStop={(e, data) => studio.updatePosition('studPheno', data.x, data.y)}>
                                     <div ref={studio.studPhenoRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studPheno')}>
@@ -217,7 +172,6 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* Genotype */}
                             {studio.showGenotype && (
                                 <Draggable nodeRef={studio.studGenoRef} bounds="parent" position={{x: studio.layerTransforms.studGeno.x, y: studio.layerTransforms.studGeno.y}} onStop={(e, data) => studio.updatePosition('studGeno', data.x, data.y)}>
                                     <div ref={studio.studGenoRef} className="absolute z-30 cursor-move pointer-events-auto w-full px-4 flex justify-center" onClick={() => studio.setSelectedLayer('studGeno')}>
@@ -233,20 +187,11 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                 </Draggable>
                             )}
 
-                            {/* Stickers */}
-                            {studio.stickers.map((sticker: StickerType) => (
-                                <DraggableSticker 
-                                    key={sticker.id}
-                                    sticker={sticker}
-                                    studio={studio}
-                                />
-                            ))}
-
                         </div>
                     </div>
                 </div>
 
-                {/* UI SECTION UNDER IMAGE */}
+                {/* UI Section */}
                 <div className="w-full max-w-[600px] mt-4 px-4 lg:px-0 space-y-3">
                     <div className="bg-gradient-to-br from-[#0f172a] to-black border border-luxury-gold/30 p-5 rounded-sm shadow-2xl">
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -261,21 +206,10 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
                                             ? `Project Unlocked (${studio.sessionAiGens} AI Gens Included)` 
                                             : `${credits ?? 0} Credits Available`}
                                 </h3>
-                                {!isSubscribed && !isUnlocked && (
-                                    <div className="mt-2 text-[8px] text-slate-500 uppercase font-bold">
-                                        Use 1 Credit to unlock 5 AI Gens + Clean Downloads
-                                    </div>
-                                )}
                             </div>
                             {(!isSubscribed && !isUnlocked && !studio.isSessionActive) && (
                                 <button 
-                                    onClick={() => {
-                                        if (credits && credits > 0) {
-                                            studio.activateSession();
-                                        } else {
-                                            setShowPaywall(true);
-                                        }
-                                    }}
+                                    onClick={() => (credits && credits > 0) ? studio.activateSession() : setShowPaywall(true)}
                                     className="w-full sm:w-auto px-6 py-3 bg-luxury-teal hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-[10px] rounded-sm transition-all shadow-[0_0_15px_rgba(45,212,191,0.2)] flex items-center justify-center gap-2"
                                 >
                                     <Lock size={12} /> Unlock Project (1 Credit)
@@ -286,7 +220,7 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
 
                     <button onClick={handleDownloadClick} className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black uppercase tracking-[0.2em] text-[12px] rounded-sm hover:brightness-110 shadow-xl transition-all flex flex-col items-center justify-center border border-emerald-400/20">
                         <span className="flex items-center gap-2"><Download size={18}/> Export Advertisement</span>
-                        <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">{isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked) - Costs 1 Token"}</span>
+                        <span className="text-[8px] opacity-70 font-normal mt-1 tracking-normal lowercase">{isSubscribed || isUnlocked || studio.isSessionActive ? "Unwatermarked High-Res" : "Standard Res (Watermarked)"}</span>
                     </button>
 
                     <div className="text-center"><span className="text-[9px] text-slate-500 uppercase tracking-widest flex items-center justify-center gap-1"><Move size={10} /> Drag Elements to Position</span></div>
