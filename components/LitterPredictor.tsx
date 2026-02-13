@@ -177,14 +177,18 @@ export const LitterPredictor = (props: any) => {
                                 <button 
                                     onClick={() => {
                                         onSaveDog(selectedPuppy.phenotypeName, 'Male', selectedPuppy.dna);
-                                        alert("Puppy saved to kennel!");
-                                    }}
-                                    className="w-full py-3 bg-luxury-teal text-black font-bold uppercase tracking-widest rounded-sm flex items-center justify-center gap-2 mt-4 hover:bg-white transition-colors"
-                                >
-                                    <Save size={16} /> Save Puppy to Kennel
-                                </button>
+                                            alert("Puppy saved to kennel!");
+                                        }}
+                                        className="w-full py-3 bg-luxury-teal text-black font-bold uppercase tracking-widest rounded-sm flex items-center justify-center gap-2 mt-4 hover:bg-white transition-colors"
+                                    >
+                                        <Save size={16} /> Save Puppy to Kennel
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+        </div>
+    );
+};
