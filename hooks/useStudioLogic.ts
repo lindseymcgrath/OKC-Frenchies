@@ -540,23 +540,25 @@ export const useStudioLogic = (
         const isPro = isSubscribed || isUnlocked;
         let startSessionWithCredit = false;
         
-        // Downloads: Pro > Bundle > Credit (No Free Token for Pro DL)
+        // Downloads: Pro > Bundle > Credit > Free Watermarked
         if (isPro) {
-            // Pass
+            // Pass - Clean
         } else if (isSessionActive && sessionDownloads > 0) {
-            // Pass
+            // Pass - Clean
         } else if (credits && credits > 0) {
+            // User has credits. Use one to give them the High Res Clean version.
             const success = await unlockBundle();
             if (success) {
                 startSessionWithCredit = true;
+                // Important: Wait a tick for React to re-render the removal of watermark
+                await new Promise(resolve => setTimeout(resolve, 100));
             } else {
-                setShowPaywall(true);
-                return;
+                // If deduction fails, fallback to watermarked download (allow it).
+                console.warn("Credit deduction failed, proceeding with watermarked download.");
             }
-        } else {
-            setShowPaywall(true);
-            return;
-        }
+        } 
+        // Note: We removed the 'else { setShowPaywall }' block.
+        // If they have NO credits/Pro, we just fall through and let them download with the watermark visible.
 
         if ((window as any).html2canvas) {
              try {
@@ -570,6 +572,7 @@ export const useStudioLogic = (
                 link.href = canvas.toDataURL();
                 link.click();
                 
+                // Only decrement if we actually gave them a "paid" feature (unwatermarked)
                 if (!isPro) {
                     if (startSessionWithCredit) {
                         setSessionDownloads(prev => prev - 1);

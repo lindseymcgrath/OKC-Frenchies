@@ -210,6 +210,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                                 <div className="space-y-3 mb-6">
                                     <a href={stripe.BASE_SUB} target="_blank" rel="noreferrer" className="block w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm flex items-center justify-center gap-2"><Infinity size={14}/> 3 Months Unlimited ($9.99)</a>
                                     <a href={stripe.BASE_5} target="_blank" rel="noreferrer" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2"><CreditCard size={14}/> 5 Download Passes ($3.99)</a>
+                                    <a href={stripe.BASE_1} target="_blank" rel="noreferrer" className="block w-full py-3 bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest rounded-sm border border-slate-700 hover:border-luxury-gold flex items-center justify-center gap-2"><Ticket size={14}/> 1 Single Use Credit ($0.99)</a>
                                 </div>
                                 <div className="pt-6 border-t border-slate-800">
                                     <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider">Have a promo code?</p>
