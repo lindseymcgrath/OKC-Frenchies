@@ -1,324 +1,261 @@
-import { createClient } from '@supabase/supabase-js';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { Loader2, LogIn, LogOut, User } from 'lucide-react';
 
-// =============================================================
-// GPS 1: CONFIGURATION & UTILITIES
-// =============================================================
-const SUPABASE_URL = "https://phesicyzrddvediskbop.supabase.co"; 
-const SUPABASE_ANON_KEY = "sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h";
+import { 
+    DEFAULT_DNA, 
+    SavedDog,
+    saveDogToDB, fetchDogsFromDB, deleteDogFromDB
+} from '../utils/calculatorHelpers';
+import { useStudioLogic } from '../hooks/useStudioLogic';
+import { useUserCredits } from '../hooks/useUserCredits';
+import { DnaTranslator } from '../components/DnaTranslator';
+import { LitterPredictor } from '../components/LitterPredictor';
+import { CalculatorModals } from '../components/CalculatorModals';
 
-const getEnv = (key: string) => {
-    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.[key]) return (import.meta as any).env[key];
-    if (typeof process !== 'undefined' && process.env?.[key]) return process.env[key];
-    return '';
-};
+const LazyStudioCanvas = lazy(() => import('../components/StudioCanvas').then(m => ({ default: m.StudioCanvas })));
+const LazyMarketingSidebar = lazy(() => import('../components/MarketingSidebar').then(m => ({ default: m.MarketingSidebar })));
 
-export const supabase = createClient(
-    getEnv('VITE_SUPABASE_URL') || SUPABASE_URL, 
-    getEnv('VITE_SUPABASE_ANON_KEY') || SUPABASE_ANON_KEY
-);
+export default function Calculator() {
+  const [mode, setMode] = useState<'single' | 'pair' | 'marketing'>('single');
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  const user = useUserCredits();
+  
+  const [freeGenerations, setFreeGenerations] = useState(() => {
+      try {
+          if (typeof window === 'undefined') return 3;
+          const saved = window.localStorage.getItem('okc_studio_tokens_v4');
+          return saved ? parseInt(saved, 10) : 3;
+      } catch (e) { return 3; }
+  });
 
-export const FREEBIE_CODE = "OKCFREE";
-const REMOTE_BASE_URL = "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/";
+  useEffect(() => {
+      if (typeof window !== 'undefined') window.localStorage.setItem('okc_studio_tokens_v4', freeGenerations.toString());
+  }, [freeGenerations]);
 
-export const getStripeLinks = (email: string) => {
-    const encodedEmail = encodeURIComponent(email || '');
-    const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
-    return {
-        BASE_1: `https://buy.stripe.com/3cI8wI9EL8r34bJcpX3sI00${suffix}`,
-        BASE_5: `https://buy.stripe.com/00wcMYeZ5azbeQn4Xv3sI01${suffix}`,
-        BASE_SUB: `https://buy.stripe.com/7sY00cbMT5eRfUrblT3sI02${suffix}`
-    };
-};
+  const [savedDogs, setSavedDogs] = useState<SavedDog[]>([]);
+  const [showKennel, setShowKennel] = useState(false);
+  const [activeLoadSlot, setActiveLoadSlot] = useState<'translator' | 'sire' | 'dam' | null>(null);
 
-export const PROMPTS = [
-    { name: "Cream Shag Nursery", text: "Empty indoor nursery scene with a thick, high-pile cream shag carpet in the foreground, soft warm morning light filtering through a window, ultra-realistic textures, 8k resolution, cozy and high-end aesthetic.", suggestion: "Puppies / Litter" },
-    { name: "Cloud Nursery", text: "Dreamy soft cloudscape nursery, pastel tones, fluffy white floor resembling clouds, ethereal lighting, magical and soft atmosphere, dreamlike quality.", suggestion: "Puppies / Soft" },
-    { name: "Velvet Luxury", text: "Deep royal blue velvet tufted background, gold accents, professional studio lighting, luxury aesthetic, rich textures, sophisticated mood.", suggestion: "Puppies / Royal" },
-    { name: "Grey Wool Knit", text: "Empty scene, giant chunky-knit grey wool surface, cozy home atmosphere, soft focus background, warm and inviting textures.", suggestion: "Puppies / Cozy" },
-    { name: "Marble Sunbeam", text: "Minimalist room, reflective white marble floor, a single dramatic sunbeam hitting the center of the floor, high contrast, clean architectural lines.", suggestion: "Dams" },
-    { name: "Luxury Vault", text: "Professional luxury vault interior, metallic textures, dramatic spotlights, high-end security aesthetic, industrial yet expensive look.", suggestion: "Dams" },
-    { name: "OKC Midnight Tactical", text: "Aggressive urban cyberpunk setting, wet pavement, neon blue and orange reflections, tactical gear aesthetic, gritty midnight atmosphere.", suggestion: "Studs" },
-    { name: "Urban Cyberpunk", text: "Hyper-realistic cinematic urban alleyway at midnight, neon signs, rainy atmosphere, industrial textures, steam rising from vents.", suggestion: "Studs" },
-    { name: "Private Hangar", text: "Interior of a private luxury aircraft hangar, polished concrete floor, soft overhead industrial lighting, spacious and exclusive atmosphere.", suggestion: "Couples" },
-];
-export const DEFAULT_SCENE_PROMPT = PROMPTS[0].text;
+  // ✅ LOAD KENNEL (Fixed: Forces all IDs to Strings immediately)
+  useEffect(() => {
+      async function loadKennel() {
+          if (user.userId) {
+              const dbDogs = await fetchDogsFromDB(user.userId);
+              // Standardize IDs to strings to prevent Type Mismatch errors
+              const safeDogs = dbDogs.map((d: any) => ({...d, id: String(d.id)}));
+              setSavedDogs(safeDogs);
+          } else {
+              const stored = localStorage.getItem('okc_kennel');
+              if (stored) {
+                  const parsed = JSON.parse(stored);
+                  const safeDogs = parsed.map((d: any) => ({...d, id: String(d.id)}));
+                  setSavedDogs(safeDogs);
+              }
+          }
+      }
+      loadKennel();
+  }, [user.userId]);
 
-// =============================================================
-// GPS 2: LOCI DEFINITIONS
-// =============================================================
-export const LOCI = {
-    Pink: { label: 'Pink', options: ['n/n', 'n/A', 'A/A'] },
-    A: { label: 'Agouti (A-Locus)', options: ['Ay/Ay', 'Ay/aw', 'Ay/at', 'Ay/a', 'aw/aw', 'aw/at', 'aw/a', 'at/at', 'at/a', 'a/a'] },
-    B: { label: 'Rojo (B-Locus)', options: ['N/N', 'N/b', 'b/b'] },
-    Co: { label: 'Cocoa (co-Locus)', options: ['n/n', 'N/co', 'co/co'] },
-    D: { label: 'Blue (D-Locus)', options: ['N/N', 'N/d', 'd/d'] },
-    E: { label: 'Red/Cream (E-Locus)', options: ['E/E', 'Em/Em', 'Em/E', 'Em/e', 'Em/eA', 'E/e', 'E/eA', 'e/e', 'eA/eA', 'eA/e'] },
-    Int: { label: 'Intensity (I-Locus)', options: ['n/n', 'n/Int', 'Int/Int'] },
-    K: { label: 'Brindle (K-Locus)', options: ['n/n', 'n/KB', 'KB/KB'] },
-    M: { label: 'Merle (M-Locus)', options: ['n/n', 'n/M', 'M/M'] },
-    Koi: { label: 'Koi Pattern', options: ['No', 'Yes'] },
-    Panda: { label: 'Panda Pattern', options: ['No', 'Yes'] },
-    S: { label: 'Pied (S-Locus)', options: ['n/n', 'n/S', 'S/S'] },
-    L: { label: 'Fluffy (L-Locus)', options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'] },
-    C: { label: 'Curly (Cu-Locus)', options: ['n/n', 'n/C1', 'n/C2', 'C1/C1', 'C1/C2', 'C2/C2'] },
-    F: { label: 'Furnishing (F-Locus)', options: ['n/n', 'n/F', 'F/F'] }
-};
-export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: (LOCI as any)[key].options[0] }), {});
+  const [singleGender, setSingleGender] = useState<'Male' | 'Female'>('Male');
+  const [sire, setSire] = useState({ ...DEFAULT_DNA }); 
+  const [dam, setDam] = useState({ ...DEFAULT_DNA });
+  const currentDna = singleGender === 'Male' ? sire : dam;
 
-// =============================================================
-// GPS 3: GET GENOTYPE 
-// =============================================================
+  const studio = useStudioLogic(user.isSubscribed, user.isUnlocked, user.credits, freeGenerations, user.deductCredit, setFreeGenerations, setShowPaywall, user.userEmail);
 
-export const getPhenotype = (dna: any) => {
-    if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
-    
-    const get = (key: string) => dna[key] || (LOCI as any)[key]?.options[0] || 'n/n';
-    const path = (name: string) => REMOTE_BASE_URL + name.trim();
-    
-    // 1. Allele Parsing
-    const b = get('B') === 'b/b', co = get('Co') === 'co/co', d = get('D') === 'd/d';
-    const pinkVal = get('Pink'), isPink = pinkVal.includes('A/A') || pinkVal === 'Pink';
-    
-    const eVal = get('E');
-    const isGeneticCream = eVal === 'e/e'; 
-    const hasAncientRed = eVal.includes('eA');
-    const sVal = get('S');
-    const isFullPied = sVal === 'S/S';
-    const isCarrierPied = sVal === 'n/S' || sVal === 'S/n';
-    const isDoubleIntensity = get('Int') === 'Int/Int';
+  const handleSingleModeChange = (key: string, value: string) => {
+      if (singleGender === 'Male') setSire(prev => ({ ...prev, [key]: value }));
+      else setDam(prev => ({ ...prev, [key]: value }));
+  };
 
-    // eA + Intensity + Pied Override logic
-    const isVisualCreamOverride = hasAncientRed && (isDoubleIntensity || ((isFullPied || isCarrierPied) && get('Int') !== 'n/n'));
-    const showCreamBase = isGeneticCream || isVisualCreamOverride;
+  useEffect(() => {
+      const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+      return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
-    const aVal = get('A'), kVal = get('K');
-    const lVal = get('L'), fVal = get('F'), cVal = get('C');
-    
-    const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
-    const isFurnished = fVal.includes('F');
-    const isCurly = cVal.includes('C'); 
-    const isFloodle = isFluffy && isFurnished; 
+  const handleSaveToKennel = async (name: string, genderOverride?: 'Male' | 'Female', dnaOverride?: any) => {
+      return new Promise<boolean>(async (resolve) => {
+        try {
+            const gender = genderOverride || singleGender;
+            const dna = JSON.parse(JSON.stringify(dnaOverride || (gender === 'Male' ? sire : dam)));
+            // Ensure ID is saved as a string from the start
+            const tempDog: SavedDog = { id: String(Date.now()), name: name, gender: gender, dna: dna, date: new Date().toLocaleDateString() };
 
-    // 2. Base Color Determination
-    let colorName = "Black", slug = "black";
-    if (showCreamBase) { colorName = "Cream"; slug = "cream"; }
-    else if (b && co && d) { colorName = "New Shade Isabella"; slug = "new-shade-isabella"; }
-    else if (b && co) { colorName = "New Shade Rojo"; slug = "rojo"; } 
-    else if (b && d)  { colorName = "Isabella"; slug = "isabella"; }
-    else if (co && d) { colorName = "Lilac"; slug = "lilac"; }
-    else if (b)       { colorName = "Rojo"; slug = "rojo"; }
-    else if (co)      { colorName = "Cocoa"; slug = "cocoa"; }
-    else if (d)       { colorName = "Blue"; slug = "blue"; }
+            if (user.userId) {
+                const savedRecord = await saveDogToDB(user.userId, tempDog);
+                if (savedRecord) {
+                    // Optimistic update with string ID
+                    setSavedDogs(prev => [{...savedRecord, id: String(savedRecord.id)}, ...prev]);
+                    resolve(true);
+                    return;
+                }
+            } 
+            
+            const updated = [tempDog, ...savedDogs].slice(0, 20); 
+            setSavedDogs(updated);
+            localStorage.setItem('okc_kennel', JSON.stringify(updated));
+            resolve(true); 
 
-    // 3. Layer Assembly
-    let layers: string[] = [];
-    const suffix = (isFluffy || isFloodle) ? '-fluffy.png' : '.png';
-
-    // --- BASE LAYER ---
-    if (showCreamBase) {
-        layers.push(path('base-cream.png'));
-    } else if (isPink) {
-        layers.push(path((isFluffy || isFloodle) ? 'base-pink-fluffy.png' : 'base-pink.png'));
-    } else if (aVal.includes('Ay') && !kVal.includes('KB')) {
-        layers.push(path('base-fawn' + suffix));
-    } else {
-        layers.push(path(`base-${slug}${suffix}`)); 
-    }
-    
-    
-    // --- PATTERNS ---
-    const isMerle = get('M') !== 'n/n';
-    const isHusky = get('Panda') === 'Yes' || get('Husky') === 'Yes';
-    // Koi is the logical combination of both
-    const isKoi = get('Koi') === 'Yes' || (isMerle && isHusky); 
-    
-    const isBrindle = kVal.includes('KB');
-    const isTanPoints = aVal.includes('at') && !isBrindle;
-
-    if (!showCreamBase) {
-        if (isBrindle) layers.push(path('overlay-brindle.png'));
-        if (isTanPoints) layers.push(path('overlay-tan-point' + suffix));
-        if (hasAncientRed) layers.push(path('overlay-ea.png'));
-
-        // 🔥 MERLE LAYER: Triggers if M-Locus is active OR if Koi is selected
-        if (isMerle || isKoi) {
-            let mKey = (['blue', 'lilac'].includes(slug)) ? 'gray' : (slug.includes('rojo') ? slug : 'black');
-            layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
+        } catch (e) { 
+            console.error("Save failed", e); 
+            alert("❌ Save failed. Check connection.");
+            resolve(false); 
         }
-    }
+      });
+  };
 
-    // 🔥 WHITE-SPACE OVERLAYS: Husky/Koi sit on top of everything
-    // If it's Koi, we push the Koi-specific white mask
-    if (isKoi) {
-        layers.push(path('overlay-koi.png'));
-    } 
-    // Otherwise, if it's just a Husky, we push the standard Husky mask
-    else if (isHusky) {
-        layers.push(path('overlay-husky.png'));
-    }
+  // ✅ DELETE DOG (Fixed: Handles Type Mismatch Robustly)
+  const removeDog = async (id: string) => {
+      const targetId = String(id); // Force string for comparison
+      const originalList = [...savedDogs];
+      
+      // Optimistically remove from UI
+      setSavedDogs(prev => prev.filter(dog => String(dog.id) !== targetId));
 
-    // Structural Overlays (Restored missing push commands)
-    if (isFurnished) layers.push(path('overlay-furnishings.png'));
-    if (isCurly) layers.push(path('overlay-curly.png'));
+      try {
+          if (user.userId) {
+              const success = await deleteDogFromDB(targetId); 
+              if (!success) {
+                  throw new Error("Database deletion failed");
+              }
+          } else {
+              const stored = localStorage.getItem('okc_kennel');
+              if (stored) {
+                  const updated = JSON.parse(stored).filter((d: any) => String(d.id) !== targetId);
+                  localStorage.setItem('okc_kennel', JSON.stringify(updated));
+              }
+          }
+      } catch (error) {
+          console.error("Delete failed:", error);
+          alert("Could not delete dog. Reverting...");
+          setSavedDogs(originalList);
+      }
+  };
 
-    // Pied Logic (Final top layer)
-    if (isFullPied) layers.push(path('overlay-pied.png'));
-    else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
+  const handleAssignToMatrix = (role: 'Dam' | 'Sire', dna: any) => {
+      const dnaCopy = JSON.parse(JSON.stringify(dna));
+      if (role === 'Sire') setSire(dnaCopy); else setDam(dnaCopy);
+      alert(`${role} set! Switch to Pairing tab.`);
+  };
 
-    // 4. Final Name Construction
-    let names = [];
-    if (isPink) names.push("PINK");
-    if (isFloodle) names.push("FLOODLE");
-    else {
-        if (isFluffy) names.push("FLUFFY");
-        if (isFurnished) names.push("FURNISHED");
-    }
-    
-    names.push(colorName.toUpperCase());
+  const loadDogSmart = (dog: SavedDog) => {
+      const dnaCopy = JSON.parse(JSON.stringify(dog.dna));
+      if (activeLoadSlot === 'sire') { setSire({ ...dnaCopy, name: dog.name }); }
+      else if (activeLoadSlot === 'dam') { setDam({ ...dnaCopy, name: dog.name }); }
+      else if (activeLoadSlot === 'translator' || mode === 'single') {
+          setSingleGender(dog.gender);
+          if (dog.gender === 'Male') setSire({ ...dnaCopy, name: dog.name }); 
+          else setDam({ ...dnaCopy, name: dog.name });
+      }
+      setShowKennel(false);
+      setActiveLoadSlot(null);
+  };
 
-    if (isKoi) {
-        names.push("KOI");
-    } else {
-        if (hasAncientRed && !showCreamBase) {
-            if (isMerle) names.push("eA MERLE");
-            else if (isHusky) names.push("eA HUSKY");
-            else names.push("eA");
-        } else {
-            if (isMerle) names.push("MERLE");
-            if (isHusky) names.push("HUSKY");
-        }
-    }
+  return (
+    <div className="min-h-screen bg-[#020617] text-slate-200 pt-16 md:pt-24 pb-20 px-4 md:px-6 font-sans relative overflow-x-hidden">
+       <div className="absolute inset-0 bg-noise opacity-10 mix-blend-overlay pointer-events-none"></div>
+       <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-luxury-teal/5 rounded-full blur-[80px] pointer-events-none"></div>
 
-    if (isBrindle && aVal.includes('at')) names.push("TRINDLE");
-    else if (isBrindle) names.push("BRINDLE");
-    if (isFullPied) names.push("PIED");
-    if (isCurly && !isFloodle) names.push("CURLY");
+       <div className="max-w-7xl mx-auto text-center mb-6 relative z-10">
+            <h1 className="font-serif text-3xl md:text-6xl mb-4 bg-clip-text text-transparent bg-gradient-to-r from-luxury-teal via-white to-luxury-magenta animate-shine">DNA MATRIX</h1>
+            
+            <div className="flex items-center justify-center gap-1.5 mt-2 mb-6">
+                <button onClick={() => setMode('single')} className={`flex-1 py-3 rounded-sm text-[9px] uppercase font-bold tracking-widest border transition-all ${mode==='single' ? 'bg-luxury-teal text-black border-luxury-teal' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>Translator</button>
+                <button onClick={() => setMode('pair')} className={`flex-1 py-3 rounded-sm text-[9px] uppercase font-bold tracking-widest border transition-all ${mode==='pair' ? 'bg-luxury-magenta text-black border-luxury-magenta' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>Pairing</button>
+                <button onClick={() => setMode('marketing')} className={`flex-1 py-3 rounded-sm text-[9px] uppercase font-bold tracking-widest border transition-all ${mode==='marketing' ? 'bg-indigo-600 text-white border-indigo-500' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>Studio</button>
+            </div>
 
-    // 5. DNA & Carrier Detection (Restored L, F, and C visibility)
-    const dnaParts = [];
-    const carriers = [];
+            {/* ✅ RESTORED KENNEL LOGIN BUTTON */}
+            <div className="flex justify-center mb-10">
+               {user.userId ? (
+                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-black/40 backdrop-blur-md px-6 py-2 rounded-full border border-luxury-teal/30 shadow-lg">
+                       <div className="flex flex-col text-right">
+                           <span className="text-[10px] text-luxury-teal font-bold tracking-wider uppercase flex items-center gap-1"><User size={10} /> Kennel Active</span>
+                           <span className="text-[9px] text-slate-400 font-mono">{user.userEmail}</span>
+                       </div>
+                       <div className="hidden sm:block h-6 w-px bg-slate-700"></div>
+                       <button onClick={user.handleLogout} className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1">
+                           <LogOut size={12} /> Disconnect
+                       </button>
+                   </div>
+               ) : (
+                   <button 
+                       onClick={() => user.setShowLogin(true)} 
+                       className="group flex items-center gap-2 px-8 py-3 bg-slate-900 border border-luxury-teal/30 hover:border-luxury-teal text-luxury-teal hover:text-black hover:bg-luxury-teal rounded-full font-bold uppercase text-[10px] tracking-[0.2em] shadow-[0_0_20px_rgba(45,212,191,0.1)] transition-all duration-300"
+                   >
+                       <LogIn size={14} className="group-hover:translate-x-1 transition-transform" /> Connect Kennel
+                   </button>
+               )}
+            </div>
+       </div>
 
-    if (get('A') !== 'Ay/Ay') dnaParts.push(get('A'));
-    if (b) dnaParts.push('b/b');
-    if (co) dnaParts.push('co/co');
-    if (d) dnaParts.push('d/d');
-    dnaParts.push(get('E'));
-    if (isBrindle) dnaParts.push(get('K'));
-    if (isMerle) dnaParts.push('M');
-    if (isHusky) dnaParts.push('Panda');
-    if (lVal !== 'L/L') dnaParts.push(get('L'));
-    if (fVal !== 'n/n') dnaParts.push(get('F'));
-    if (cVal !== 'n/n') dnaParts.push(get('C'));
-    if (isFullPied || isCarrierPied) dnaParts.push(sVal);
+       <div className="max-w-7xl mx-auto relative z-10 px-1 md:px-0">
+            {mode !== 'marketing' && (
+                <div className="mb-8">
+                     {mode === 'single' ? (
+                        <DnaTranslator 
+                            singleGender={singleGender}
+                            setSingleGender={setSingleGender}
+                            currentDna={currentDna}
+                            handleChange={handleSingleModeChange}
+                            onSave={handleSaveToKennel}
+                            onAssignToMatrix={handleAssignToMatrix}
+                            onLoad={() => { setActiveLoadSlot('translator'); setShowKennel(true); }}
+                        />
+                     ) : (
+                        <LitterPredictor 
+                            sire={sire}
+                            setSire={setSire}
+                            dam={dam}
+                            setDam={setDam}
+                            dogNameInput={''} 
+                            setDogNameInput={() => {}} 
+                            onSaveDog={handleSaveToKennel} 
+                            setShowKennel={setShowKennel}
+                            setActiveLoadSlot={setActiveLoadSlot}
+                            studio={studio}
+                            isMobile={isMobile}
+                        />
+                     )}
+                </div>
+            )}
+            
+            {mode === 'marketing' && (
+                <Suspense fallback={<div className="flex justify-center py-20 text-luxury-teal"><Loader2 className="animate-spin" /></div>}>
+                    <div className="flex flex-col lg:flex-row justify-center gap-6 items-start relative animate-in fade-in duration-500">
+                        {/* ✅ PASS IS_MOBILE PROP */}
+                        <LazyStudioCanvas studio={studio} isMobile={isMobile} isSubscribed={user.isSubscribed} isUnlocked={user.isUnlocked} credits={user.credits} userEmail={user.userEmail} setShowPaywall={setShowPaywall}/>
+                        <LazyMarketingSidebar studio={studio} isMobile={isMobile} isSubscribed={user.isSubscribed} isUnlocked={user.isUnlocked} credits={user.credits} freeGenerations={freeGenerations} setShowPaywall={setShowPaywall} userEmail={user.userEmail}/>
+                    </div>
+                </Suspense>
+            )}
+       </div>
 
-    if (get('D').includes('d') && !d) carriers.push('Blue');
-    if (get('B').includes('b') && !b) carriers.push('Rojo');
-    if (get('Co').includes('co') && !co) carriers.push('Cocoa');
-    if (get('E').includes('e') && !isGeneticCream) carriers.push('Cream');
-    if (get('L').includes('l') && !isFluffy) carriers.push('Fluffy');
-    if (isCarrierPied) carriers.push('Pied');
-
-    return { 
-        baseColorName: colorName, 
-        phenotypeName: names.filter(Boolean).join(" "), 
-        layers,
-        compactDnaString: dnaParts.join(' ') || 'Standard', 
-        carriersString: carriers.length > 0 ? carriers.join(', ') : ''
-    };
-};
-
-// =============================================================
-// GPS 4: LITTER PREDICTOR (KOI GENOTYPE EXPANSION)
-// =============================================================
-export const calculateLitterPrediction = (sire: any, dam: any) => {
-    if (!sire || !dam) return [];
-
-    // 🔥 VITAL FIX: Expand parent DNA *before* combinations
-    // If a parent is "Koi", they MUST pass 'M' alleles AND 'Panda' alleles
-    const getAlleles = (dna: any, key: string) => {
-        let val = dna[key] || 'n/n';
-        
-        // INTERVENTION: The "Koi" toggle overrides the M and Panda selectors
-        if (dna['Koi'] === 'Yes') {
-            if (key === 'M') return ['n', 'M'];     // Koi acts as Merle carrier
-            if (key === 'Panda') return ['No', 'Yes']; // Koi acts as Panda carrier
-        }
-
-        if (key === 'Panda' || key === 'Koi') return val === 'Yes' ? ['Yes', 'No'] : ['No', 'No'];
-        if (!val || val === 'n/n') return ['n', 'n'];
-        return val.includes('/') ? val.split('/') : [val, val];
-    };
-
-    const locusProbabilities: any = {};
-    Object.keys(LOCI).forEach(key => {
-        const sA = getAlleles(sire, key);
-        const dA = getAlleles(dam, key);
-        const outcomes: any = {};
-        sA.forEach(s => dA.forEach(d => {
-            let g = [s, d].sort().join('/');
-            outcomes[g] = (outcomes[g] || 0) + 0.25; 
-        }));
-        locusProbabilities[key] = outcomes;
-    });
-
-    let combinations = [{ dna: {}, prob: 1.0 }];
-    Object.keys(locusProbabilities).forEach(key => {
-        const next: any = [];
-        combinations.forEach(combo => {
-            Object.entries(locusProbabilities[key]).forEach(([g, chance]) => {
-                next.push({ dna: { ...combo.dna, [key]: g }, prob: combo.prob * (chance as number) });
-            });
-        });
-        combinations = next;
-    });
-
-    const stats: any = {};
-    combinations.forEach(c => {
-        // Resolve the puppy's traits from the new allele combinations
-        const isMerle = c.dna.M !== 'n/n';
-        const isHusky = c.dna.Panda?.includes('Yes'); 
-        
-        // Force the phenotypic output to match the genes
-        const modifiedDna = { 
-            ...c.dna, 
-            M: isMerle ? (c.dna.M === 'n/n' ? 'n/M' : c.dna.M) : 'n/n',
-            Panda: isHusky ? 'Yes' : 'No',
-            Koi: (isMerle && isHusky) ? 'Yes' : 'No' 
-        };
-
-        const traits = getPhenotype(modifiedDna);
-        
-        // Unique Key includes Pattern Name to enforce the 4-way split in the UI
-        const visualKey = `${traits.baseColorName} ${traits.phenotypeName}`.toUpperCase();
-        
-        if (!stats[visualKey]) {
-            stats[visualKey] = { dna: modifiedDna, prob: 0, traits };
-        }
-        stats[visualKey].prob += c.prob;
-    });
-
-    return Object.values(stats).sort((a:any, b:any) => b.prob - a.prob).map((item:any) => ({
-        dna: item.dna, 
-        phenotypeName: item.traits.phenotypeName, 
-        baseColor: item.traits.baseColorName.toUpperCase(),
-        probability: `${(item.prob * 100).toFixed(2)}%`,
-        probPrecision: `${(item.prob * 100).toFixed(4)}%`
-    }));
-};
-
-export const saveDogToDB = async (userId: string, dog: any) => {
-    if (!userId) return null;
-    const { data, error } = await supabase.from('dogs').insert([{ owner_id: userId, dog_name: dog.name, sex: dog.gender, dna: dog.dna }]).select().single();
-    if (error) return null;
-    return { ...dog, id: String(data.id) }; 
-};
-export const fetchDogsFromDB = async (userId: string) => {
-    if (!userId) return [];
-    const { data, error } = await supabase.from('dogs').select('*').eq('owner_id', userId).order('created_at', { ascending: false });
-    if (error) return [];
-    return data.map((row: any) => ({ id: String(row.id), name: row.dog_name, gender: row.sex, dna: row.dna, date: new Date(row.created_at).toLocaleDateString() }));
-};
-export const deleteDogFromDB = async (dogId: string) => {
-    const { error } = await supabase.from('dogs').delete().eq('id', dogId);
-    return !error;
-};
+       <CalculatorModals 
+            showKennel={showKennel}
+            setShowKennel={setShowKennel}
+            savedDogs={savedDogs}
+            loadDogSmart={loadDogSmart}
+            removeDog={removeDog}
+            showPaywall={showPaywall}
+            setShowPaywall={setShowPaywall}
+            userId={user.userId}
+            promoCodeInput={user.promoCodeInput}
+            setPromoCodeInput={user.setPromoCodeInput}
+            handlePromoSubmit={() => user.handlePromoSubmit(() => setShowPaywall(false))}
+            showLogin={user.showLogin}
+            setShowLogin={user.setShowLogin}
+            userEmail={user.userEmail}
+            setUserEmail={user.setUserEmail}
+            handleLoginSubmit={user.handleLoginSubmit} 
+            credits={user.credits}
+            isSubscribed={user.isSubscribed}
+            isUnlocked={user.isUnlocked}
+       />
+    </div>
+  );
+}
