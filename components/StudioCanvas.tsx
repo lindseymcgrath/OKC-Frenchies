@@ -16,14 +16,9 @@ export const StudioCanvas: React.FC<StudioCanvasProps> = ({
     studio, isMobile, isSubscribed, isUnlocked, credits, userEmail, setShowPaywall 
 }) => {
 
+    // ✅ FIXED: Simplified logic. Just call handleDownloadAll. 
+    // The logic inside useStudioLogic now decides whether to use a credit (clean) or just download watermarked.
     const handleDownloadClick = () => {
-        const isPro = isSubscribed || isUnlocked;
-        const canDownload = isPro || studio.isSessionActive || (credits && credits > 0) || studio.freeGenerations > 0;
-
-        if (!canDownload) {
-            setShowPaywall(true);
-            return;
-        }
         studio.handleDownloadAll();
     };
 

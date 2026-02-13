@@ -3,7 +3,7 @@ import {
     Briefcase, Loader2, Scissors, Wand2, Grid3X3, RectangleVertical, Smartphone, 
     ToggleRight, ToggleLeft, AlignCenter, X, 
     RotateCw, Scaling, ChevronDown, CheckCircle2, Layers, Trash2, Sparkles, 
-    Search, ImagePlus, Sticker as StickerIcon, Minimize2, Check
+    Search, ImagePlus, Sticker as StickerIcon, Minimize2, Check, Download
 } from 'lucide-react';
 import { PROMPTS } from '../utils/calculatorHelpers';
 
@@ -400,6 +400,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({
                     <div className="flex items-center justify-between px-4 py-2 bg-black border-b border-slate-800">
                         <span className="text-[9px] text-luxury-gold font-bold uppercase">{statusText}</span>
                         <div className="flex gap-2">
+                             <button onClick={studio.handleDownloadAll} className="text-emerald-400 text-[9px] uppercase font-bold flex items-center gap-1"><Download size={10}/> Save</button>
                             <button onClick={studio.resetCanvas} className="text-red-400 text-[9px] uppercase font-bold flex items-center gap-1"><Trash2 size={10}/> Reset</button>
                             {(!isPro) && <button onClick={() => setShowPaywall(true)} className="text-luxury-teal text-[9px] uppercase font-bold flex items-center gap-1"><CheckCircle2 size={10}/> Unlock</button>}
                         </div>
