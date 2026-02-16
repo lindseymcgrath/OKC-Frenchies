@@ -23,7 +23,7 @@ const getDirectDriveLink = (url: string) => {
   const match = cleanUrl.match(idRegex);
   if (match && match[0]) {
       const fileId = match[0];
-      return `https://lh3.googleusercontent.com/d/${fileId}=s1000`; 
+      return \https://www.google.com/search?q=https://lh3.googleusercontent.com/d/${fileId}=s1000`;`
   }
   return cleanUrl;
 };
@@ -357,7 +357,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                     ) : (
                         <img 
                             src={dog.image} 
-                            alt={dog.altText || dog.name}
+                            alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog Stud Service OKC`}
                             className="w-full h-full object-cover opacity-90 group-hover:opacity-40 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0"
                             crossOrigin="anonymous"
                             onError={() => handleImageError(dog.id)}
@@ -466,7 +466,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                                 key={`${currentMedia.url}-${refreshKey}`}
                                                 src={`${currentMedia.url}`} 
                                                 className="w-full h-full object-contain" 
-                                                alt={selectedDog.altText || selectedDog.name}
+                                                alt={selectedDog.altText || `${selectedDog.name} French Bulldog Stud genetics`}
                                                 crossOrigin="anonymous"
                                                 onError={() => setModalImageError(true)}
                                             />
