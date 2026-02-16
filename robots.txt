@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Prioritize high-value conversion pages
+Allow: /french-bulldog-puppies-for-sale
+Allow: /french-bulldog-stud-service
+
+# Block search engines from crawling sensitive or empty folders (if any)
+Disallow: /private/
+Disallow: /admin/
+
+# Link to your sitemap so bots find it immediately
+Sitemap: https://yourdomain.com/sitemap.xml
