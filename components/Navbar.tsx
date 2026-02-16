@@ -15,11 +15,18 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const isActive = (path: string) => location.pathname === path;
+  // Helper to check if current path matches primary or legacy SEO paths
+  const isActive = (paths: string[]) => paths.includes(location.pathname);
 
   // Helper to render links with specific glow logic
-  const NavLink = ({ to, label, activeColorClass, glowColorClass }: { to: string, label: string, activeColorClass: string, glowColorClass: string }) => {
-    const active = isActive(to);
+  const NavLink = ({ to, label, activeColorClass, glowColorClass, aliases = [] }: { 
+    to: string, 
+    label: string, 
+    activeColorClass: string, 
+    glowColorClass: string,
+    aliases?: string[]
+  }) => {
+    const active = isActive([to, ...aliases]);
     
     return (
       <Link 
@@ -56,53 +63,60 @@ const Navbar: React.FC = () => {
           </span>
         </Link>
 
-        {/* Desktop Links */}
+        {/* Desktop Links (Updated with SEO Slugs) */}
         <div className="hidden md:flex items-center gap-10 font-sans text-xs font-medium relative z-50">
           
           <NavLink 
-            to="/puppies" 
+            to="/french-bulldog-puppies-for-sale" 
+            aliases={["/puppies"]}
             label="Puppies" 
             activeColorClass="text-fuchsia-400" 
             glowColorClass="bg-fuchsia-500" 
           />
           
           <NavLink 
-            to="/studs" 
+            to="/french-bulldog-stud-service" 
+            aliases={["/studs"]}
             label="Studs" 
             activeColorClass="text-luxury-teal" 
             glowColorClass="bg-luxury-teal" 
           />
           
           <NavLink 
-            to="/calculator" 
+            to="/french-bulldog-color-calculator" 
+            aliases={["/calculator"]}
             label="DNA Matrix" 
             activeColorClass="text-luxury-magenta" 
             glowColorClass="bg-luxury-magenta" 
           />
 
           <NavLink 
-            to="/blog" 
+            to="/french-bulldog-breeding-blog" 
+            aliases={["/blog", "/journal"]}
             label="Journal" 
             activeColorClass="text-luxury-teal" 
             glowColorClass="bg-luxury-teal" 
           />
 
           <NavLink 
-            to="/genetics" 
+            to="/french-bulldog-coat-color-genetics" 
+            aliases={["/genetics"]}
             label="Genetics" 
             activeColorClass="text-fuchsia-400" 
             glowColorClass="bg-fuchsia-500" 
           />
           
           <NavLink 
-            to="/protocol" 
+            to="/french-bulldog-breeding-protocol" 
+            aliases={["/protocol"]}
             label="Protocol" 
             activeColorClass="text-luxury-teal" 
             glowColorClass="bg-luxury-teal" 
           />
           
           <NavLink 
-            to="/inquiry" 
+            to="/puppy-inquiry-form" 
+            aliases={["/inquiry"]}
             label="Contact" 
             activeColorClass="text-amber-400" 
             glowColorClass="bg-amber-400" 
@@ -122,13 +136,13 @@ const Navbar: React.FC = () => {
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-luxury-black/95 backdrop-blur-xl border-b border-luxury-slate p-8 flex flex-col gap-8 md:hidden animate-in fade-in slide-in-from-top-5">
-           <Link to="/puppies" className="text-sm tracking-widest uppercase text-fuchsia-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Puppies</Link>
-           <Link to="/studs" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Studs</Link>
-           <Link to="/calculator" className="text-sm tracking-widest uppercase text-luxury-magenta hover:text-white" onClick={() => setIsMenuOpen(false)}>DNA Matrix</Link>
-           <Link to="/blog" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Journal</Link>
-           <Link to="/genetics" className="text-sm tracking-widest uppercase text-fuchsia-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>Genetics</Link>
-           <Link to="/protocol" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Protocol</Link>
-           <Link to="/inquiry" className="text-sm tracking-widest uppercase text-amber-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+           <Link to="/french-bulldog-puppies-for-sale" className="text-sm tracking-widest uppercase text-fuchsia-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Puppies</Link>
+           <Link to="/french-bulldog-stud-service" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Studs</Link>
+           <Link to="/french-bulldog-color-calculator" className="text-sm tracking-widest uppercase text-luxury-magenta hover:text-white" onClick={() => setIsMenuOpen(false)}>DNA Matrix</Link>
+           <Link to="/french-bulldog-breeding-blog" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Journal</Link>
+           <Link to="/french-bulldog-coat-color-genetics" className="text-sm tracking-widest uppercase text-fuchsia-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>Genetics</Link>
+           <Link to="/french-bulldog-breeding-protocol" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Protocol</Link>
+           <Link to="/puppy-inquiry-form" className="text-sm tracking-widest uppercase text-amber-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Contact</Link>
         </div>
       )}
     </nav>
