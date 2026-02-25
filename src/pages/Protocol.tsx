@@ -1,5 +1,5 @@
 import React from 'react';
-import ProtocolComponent from '../src/components/Protocol';
+import ProtocolComponent from '../components/Protocol';
 
 const Protocol: React.FC = () => {
   return (
