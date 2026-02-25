@@ -1,7 +1,7 @@
 import React from 'react';
-import Hero from '../components/Hero';
-import TraitMatrix from '../components/TraitMatrix';
-import Protocol from '../components/Protocol';
+import Hero from '../src/components/Hero';
+import TraitMatrix from '../src/components/TraitMatrix';
+import Protocol from '../src/components/Protocol';
 
 const Home: React.FC = () => {
   return (

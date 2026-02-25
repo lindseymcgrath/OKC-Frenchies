@@ -1,5 +1,5 @@
 import React from 'react';
-import GeneticsComponent from '../components/Genetics';
+import GeneticsComponent from '../src/components/Genetics';
 
 const Genetics: React.FC = () => {
   return (

@@ -18,12 +18,12 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
+    "baseUrl": ".", // 🔥 Required for path mapping
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["src/*"] // 🔥 Points the shortcut to your new src folder
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": ["src", "src/vite-env.d.ts"] // 🔥 Tells TS where your code lives
 }
