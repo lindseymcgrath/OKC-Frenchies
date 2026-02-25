@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+// These remain './' because the folders moved WITH App.tsx into /src
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Puppies from './pages/Puppies';
@@ -14,6 +15,7 @@ import Footer from './components/Footer';
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      {/* 🖨️ Print Styles Preserved */}
       <style>{`
         @media print {
           nav, footer, button, input, .print\\:hidden, .no-scrollbar { display: none !important; }
@@ -33,7 +35,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Home />} />
             
-            {/* 🎯 SEO Long-Tail Slugs */}
+            {/* 🎯 SEO Long-Tail Slugs - Keep these for Vercel/Google indexing */}
             <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
             <Route path="/french-bulldog-stud-service" element={<Studs />} />
             <Route path="/french-bulldog-coat-color-genetics" element={<Genetics />} />
@@ -42,7 +44,7 @@ const App: React.FC = () => {
             <Route path="/french-bulldog-breeding-protocol" element={<Protocol />} />
             <Route path="/puppy-inquiry-form" element={<Inquiry />} />
 
-            {/* 🔗 Legacy Redirects (Prevents 404s for old users/links) */}
+            {/* 🔗 Legacy Redirects */}
             <Route path="/puppies" element={<Puppies />} />
             <Route path="/studs" element={<Studs />} />
             <Route path="/blog" element={<Blog />} />

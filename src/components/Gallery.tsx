@@ -18,14 +18,22 @@ const renderDescription = (text: string) => {
 
 const getDirectDriveLink = (url: string) => {
   if (!url) return '';
-  const cleanUrl = getString(url);
+  
+  // Extract ID using a robust regex (matches alphanumeric, hyphens, and underscores)
   const idRegex = /[-\w]{25,}/;
-  const match = cleanUrl.match(idRegex);
+  const match = url.match(idRegex);
+
   if (match && match[0]) {
       const fileId = match[0];
-      return \https://www.google.com/search?q=https://lh3.googleusercontent.com/d/${fileId}=s1000`;`
+      
+      // OPTION A: High-quality Thumbnail (Fastest loading for galleries)
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+      
+      // OPTION B: Original Direct Link (Use if sz=w1000 isn't enough)
+      // return `https://drive.google.com/uc?export=view&id=${fileId}`;
   }
-  return cleanUrl;
+  
+  return url;
 };
 
 const getVideoEmbedLink = (url: string) => {

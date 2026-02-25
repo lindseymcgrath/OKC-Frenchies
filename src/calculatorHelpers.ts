@@ -5,15 +5,15 @@ import {
     DEFAULT_DNA, 
     SavedDog,
     saveDogToDB, fetchDogsFromDB, deleteDogFromDB
-} from '../utils/calculatorHelpers';
-import { useStudioLogic } from '../hooks/useStudioLogic';
-import { useUserCredits } from '../hooks/useUserCredits';
-import { DnaTranslator } from '../components/DnaTranslator';
-import { LitterPredictor } from '../components/LitterPredictor';
-import { CalculatorModals } from '../components/CalculatorModals';
+} from './utils/calculatorHelpers';
+import { useStudioLogic } from './hooks/useStudioLogic';
+import { useUserCredits } from './hooks/useUserCredits';
+import { DnaTranslator } from './components/DnaTranslator';
+import { LitterPredictor } from './components/LitterPredictor';
+import { CalculatorModals } from './components/CalculatorModals';
 
-const LazyStudioCanvas = lazy(() => import('../components/StudioCanvas').then(m => ({ default: m.StudioCanvas })));
-const LazyMarketingSidebar = lazy(() => import('../components/MarketingSidebar').then(m => ({ default: m.MarketingSidebar })));
+const LazyStudioCanvas = lazy(() => import('./components/StudioCanvas').then(m => ({ default: m.StudioCanvas })));
+const LazyMarketingSidebar = lazy(() => import('./components/MarketingSidebar').then(m => ({ default: m.MarketingSidebar })));
 
 export default function Calculator() {
   const [mode, setMode] = useState<'single' | 'pair' | 'marketing'>('single');
