@@ -225,5 +225,6 @@ export const useStudioLogic = (
     };
 
     const snapToCenter = () => {
-        if (!selectedLayer) return;
-        updatePosition(selectedLayer, 0
+    if (!selectedLayer) return;
+    updatePosition(selectedLayer, 0, 0);
+};

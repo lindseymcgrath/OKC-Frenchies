@@ -1,9 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+    // ... rest of your code remains the same
+}
 
     const { q } = req.query;
     
