@@ -228,3 +228,4 @@ export const useStudioLogic = (
     if (!selectedLayer) return;
     updatePosition(selectedLayer, 0, 0);
 };
+}
