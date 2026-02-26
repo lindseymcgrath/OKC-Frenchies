@@ -1,16 +1,16 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // These remain './' because the folders moved WITH App.tsx into /src
-import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Puppies from './pages/Puppies';
-import Studs from './pages/Studs';
-import Blog from './pages/Blog';
-import Inquiry from './pages/Inquiry';
-import Protocol from './pages/Protocol';
-import Genetics from './pages/Genetics';
-import Calculator from './pages/Calculator';
-import Footer from './components/Footer';
+import Navbar from '@/components/Navbar';
+import Home from '@/pages/Home';
+import Puppies from '@/pages/Puppies';
+import Studs from '@/pages/Studs';
+import Blog from '@/pages/Blog';
+import Inquiry from '@/pages/Inquiry';
+import Protocol from '@/pages/Protocol';
+import Genetics from '@/pages/Genetics';
+import Calculator from '@/pages/Calculator';
+import Footer from '@/components/Footer';
 
 const App: React.FC = () => {
   return (
