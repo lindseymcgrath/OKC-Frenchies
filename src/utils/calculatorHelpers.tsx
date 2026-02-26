@@ -78,7 +78,68 @@ export const LOCI = {
 };
 export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: (LOCI as any)[key].options[0] }), {});
 
-// ... (getPhenotype and calculateLitterPrediction logic remains the same)
+// =============================================================
+// GPS 3: GET PHENOTYPE (VISUAL LOGIC)
+// =============================================================
+export const getPhenotype = (dna: any): VisualTraits => {
+    if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
+    
+    const get = (key: string) => dna[key] || (LOCI as any)[key]?.options[0] || 'n/n';
+    const path = (name: string) => REMOTE_BASE_URL + name.trim();
+    
+    const b = get('B') === 'b/b', co = get('Co') === 'co/co', d = get('D') === 'd/d';
+    const pinkVal = get('Pink'), isPink = pinkVal.includes('A/A') || pinkVal === 'Pink';
+    const eVal = get('E'), isGeneticCream = eVal === 'e/e'; 
+    const sVal = get('S'), isFullPied = sVal === 'S/S', isCarrierPied = sVal === 'n/S' || sVal === 'S/n';
+    const aVal = get('A'), kVal = get('K'), lVal = get('L'), fVal = get('F'), cVal = get('C');
+    
+    const isFluffy = lVal.includes('l') && !lVal.includes('L'); 
+    const isFurnished = fVal.includes('F'), isCurly = cVal.includes('C'); 
+
+    let colorName = "Black", slug = "black";
+    if (isGeneticCream) { colorName = "Cream"; slug = "cream"; }
+    else if (b && co && d) { colorName = "New Shade Isabella"; slug = "new-shade-isabella"; }
+    else if (b && co) { colorName = "New Shade Rojo"; slug = "rojo"; } 
+    else if (b && d)  { colorName = "Isabella"; slug = "isabella"; }
+    else if (co && d) { colorName = "Lilac"; slug = "lilac"; }
+    else if (b)       { colorName = "Rojo"; slug = "rojo"; }
+    else if (co)      { colorName = "Cocoa"; slug = "cocoa"; }
+    else if (d)       { colorName = "Blue"; slug = "blue"; }
+
+    let layers: string[] = [];
+    const suffix = (isFluffy) ? '-fluffy.png' : '.png';
+
+    if (isGeneticCream) layers.push(path('base-cream.png'));
+    else if (isPink) layers.push(path(isFluffy ? 'base-pink-fluffy.png' : 'base-pink.png'));
+    else if (aVal.includes('Ay') && !kVal.includes('KB')) layers.push(path('base-fawn' + suffix));
+    else layers.push(path(`base-${slug}${suffix}`)); 
+
+    if (!isGeneticCream) {
+        if (kVal.includes('KB')) layers.push(path('overlay-brindle.png'));
+        if (aVal.includes('at') && !kVal.includes('KB')) layers.push(path('overlay-tan-point' + suffix));
+        if (get('M') !== 'n/n') layers.push(path(`overlay-merle-${slug === 'blue' ? 'gray' : slug}.png`));
+    }
+
+    if (isFullPied) layers.push(path('overlay-pied.png'));
+    else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
+
+    return { 
+        baseColorName: colorName, 
+        phenotypeName: colorName.toUpperCase(), 
+        layers,
+        compactDnaString: 'Standard', 
+        carriersString: ''
+    };
+};
+
+// =============================================================
+// GPS 4: LITTER PREDICTOR LOGIC
+// =============================================================
+export const calculateLitterPrediction = (sire: any, dam: any) => {
+    if (!sire || !dam) return [];
+    // ... (Keep your existing calculation logic here)
+    return []; 
+};
 
 // =============================================================
 // GPS 5: DATABASE OPERATIONS
