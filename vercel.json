@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
+  "trailingSlash": true,
   "rewrites": [
     {
       "source": "/images/visuals/:path*",
@@ -10,7 +11,7 @@
       "destination": "/api/:path*"
     },
     {
-      "source": "/((?!api/|images/visuals/).*)",
+      "source": "/((?!api/|images/visuals/|assets/|static/).*)",
       "destination": "/index.html"
     }
   ]
