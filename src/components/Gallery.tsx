@@ -18,22 +18,16 @@ const renderDescription = (text: string) => {
 
 const getDirectDriveLink = (url: string) => {
   if (!url) return '';
-  
-  // Extract ID using a robust regex (matches alphanumeric, hyphens, and underscores)
+  const cleanUrl = url.trim();
   const idRegex = /[-\w]{25,}/;
-  const match = url.match(idRegex);
+  const match = cleanUrl.match(idRegex);
 
   if (match && match[0]) {
-      const fileId = match[0];
-      
-      // OPTION A: High-quality Thumbnail (Fastest loading for galleries)
-      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-      
-      // OPTION B: Original Direct Link (Use if sz=w1000 isn't enough)
-      // return `https://drive.google.com/uc?export=view&id=${fileId}`;
+      // Use lh3.googleusercontent.com for reliable high-res hotlinking
+      return `https://lh3.googleusercontent.com/d/${match[0]}=s1000`;
   }
   
-  return url;
+  return cleanUrl;
 };
 
 const getVideoEmbedLink = (url: string) => {
@@ -201,28 +195,55 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
         
         if ((window as any).Papa) {
           (window as any).Papa.parse(csvText, {
-            header: true,
+            header: false, // Manual mapping for maximum robustness
             skipEmptyLines: true,
             complete: (results: any) => {
-              if (results.data && results.data.length > 0) {
-                  const fetchedDogs = results.data
-                    .map((row: any, index: number) => {
-                      const name = getString(row['Name']);
+              const rows = results.data;
+              if (rows && rows.length > 1) {
+                  // Clean and map headers
+                  const headers = rows[0].map((h: any) => 
+                    getString(h).toLowerCase().replace(/[^a-z0-0]/g, '_')
+                  );
+
+                  const findIdx = (possibleNames: string[]) => {
+                      return headers.findIndex(h => possibleNames.includes(h));
+                  };
+
+                  const idx = {
+                      name: findIdx(['name']),
+                      status: findIdx(['status']),
+                      visual: findIdx(['visual_description', 'dna_summary', 'phenotype']),
+                      technical: findIdx(['dna_technical', 'technical_dna']),
+                      investment: findIdx(['investment', 'stud_fee', 'price']),
+                      image: findIdx(['image_url', 'main_image']),
+                      bio: findIdx(['bio', 'description', 'profile']),
+                      alt: findIdx(['alt_text', 'accessibility']),
+                      video: findIdx(['video_url', 'video']),
+                      breed: findIdx(['breed']),
+                      pedigree: findIdx(['pedigree_link', 'pedigree']),
+                      gender: findIdx(['gender', 'sex']),
+                      id: findIdx(['id'])
+                  };
+
+                  const fetchedDogs = rows.slice(1)
+                    .map((row: any[], index: number) => {
+                      const getVal = (i: number) => i !== -1 ? getString(row[i]) : '';
+
+                      const name = getVal(idx.name);
                       if (!name) return null;
 
-                      const status = getString(row['Status']) || (sheetName === 'Studs' ? 'Stud' : 'Available');
-                      const visualDesc = getString(row['Visual_Description']) || getString(row['DNA_Summary']);
-                      const techDNA = getString(row['DNA_Technical']);
-                      const investment = getString(row['Investment']) || getString(row['Stud_Fee']) || 'Inquire';
-                      const mainImageUrl = getString(row['Image_URL']);
-                      const rawBio = row['Bio'] ? row['Bio'] : visualDesc;
-                      const bio = getString(rawBio) || 'No description provided.';
-                      const altText = getString(row['Alt_Text']); 
-                      const videoUrl = getString(row['Video_URL']);
-                      const breed = getString(row['Breed']) || 'French Bulldog';
-                      const pedigreeLink = getString(row['Pedigree_Link']);
+                      const status = getVal(idx.status) || (sheetName === 'Studs' ? 'Stud' : 'Available');
+                      const visualDesc = getVal(idx.visual);
+                      const techDNA = getVal(idx.technical);
+                      const investment = getVal(idx.investment) || 'Inquire';
+                      const mainImageUrl = getVal(idx.image);
+                      const bio = getVal(idx.bio) || visualDesc || 'No description provided.';
+                      const altText = getVal(idx.alt); 
+                      const videoUrl = getVal(idx.video);
+                      const breed = getVal(idx.breed) || 'French Bulldog';
+                      const pedigreeLink = getVal(idx.pedigree);
                       
-                      const rawGender = getString(row['Gender']);
+                      const rawGender = getVal(idx.gender);
                       let gender = '';
                       if (sheetName === 'Studs') {
                           gender = 'Male';
@@ -241,10 +262,12 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                       const processedMainImage = getDirectDriveLink(mainImageUrl);
                       if (processedMainImage) media.push({ type: 'image', url: processedMainImage });
                       
+                      // Check for additional images (Image_URL_1 to 4)
                       for (let i = 1; i <= 4; i++) {
-                          const raw = row[`Image_URL_${i}`];
-                          if (raw) {
-                              const url = getDirectDriveLink(getString(raw));
+                          const colName = `image_url_${i}`;
+                          const cIdx = headers.indexOf(colName);
+                          if (cIdx !== -1 && row[cIdx]) {
+                              const url = getDirectDriveLink(getString(row[cIdx]));
                               if (url) media.push({ type: 'image', url });
                           }
                       }
@@ -257,7 +280,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                       const type = (sheetName === 'Studs' || status.toLowerCase().includes('stud')) ? 'Stud' : 'Puppy';
 
                       return {
-                        id: row['ID'] ? getString(row['ID']) : `sheet-${index}`,
+                        id: getVal(idx.id) || `sheet-${index}`,
                         name: name,
                         breed: breed,
                         gender: gender,
@@ -274,7 +297,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         pedigreeLink: pedigreeLink
                       };
                     })
-                    .filter((dog: DogData | null) => dog !== null)
+                    .filter((dog: any) => dog !== null)
                     .filter((dog: DogData) => {
                       if (filterType === 'Stud') return dog.type === 'Stud';
                       return dog.type !== 'Stud'; 

@@ -3,10 +3,10 @@ import Gallery from '../components/Gallery';
 
 const Puppies: React.FC = () => {
   return (
-    <Gallery 
-      filterType="Puppy" 
+    <Gallery
+      filterType="Puppy"
       sheetName="Puppies"
-      title="Puppy Gallery" 
+      title="Puppy Gallery"
       subtitle="The Next Generation"
     />
   );
