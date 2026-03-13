@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Send, CheckCircle2, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
-import { supabase } from '../utils/calculatorHelpers'; 
+import { supabase } from '../utils/calculatorHelpers';
 
 interface DogOption {
     name: string;
@@ -77,7 +77,7 @@ const Inquiry: React.FC = () => {
         e.preventDefault();
         setSubmitting(true);
         setSubmissionError(null);
-        
+
         try {
             const { error } = await supabase
                 .from('inquiries')
@@ -105,7 +105,7 @@ const Inquiry: React.FC = () => {
 
     return (
         <section className="min-h-screen bg-[#020617] pt-32 pb-20 relative font-sans">
-             {/* ... Background ambience and header remain exactly as you have them ... */}
+            {/* ... Background ambience and header remain exactly as you have them ... */}
 
             <div className="max-w-3xl mx-auto px-6 relative z-10">
                 <div className="text-center mb-16">

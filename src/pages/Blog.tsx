@@ -24,6 +24,7 @@ const renderContent = (content: string) => {
 const getDirectDriveLink = (url: string) => {
   if (!url) return '';
   const cleanUrl = getString(url);
+  // Robust ID extraction for various Google Drive link formats
   const idRegex = /[-\w]{25,}/;
   const match = cleanUrl.match(idRegex);
   if (match && match[0]) {
@@ -75,18 +76,26 @@ const Blog: React.FC = () => {
                 complete: (results: any) => {
                     const fetchedPosts = results.data
                         .map((row: any, idx: number) => {
-                            const rawTitle = getString(row['Title']);
+                            // Robust column mapping
+                            const getVal = (possibleNames: string[]) => {
+                                for (const name of possibleNames) {
+                                    if (row[name] !== undefined) return getString(row[name]);
+                                }
+                                return '';
+                            };
+
+                            const rawTitle = getVal(['Title', 'name', 'Post Title']);
                             if (!rawTitle) return null;
 
                             return {
-                                id: row['Slug'] ? getString(row['Slug']) : `post-${idx}`,
+                                id: getVal(['Slug', 'slug', 'id']) || `post-${idx}`,
                                 title: rawTitle,
-                                summary: getString(row['Summary']),
-                                content: getString(row['Content']),
-                                category: row['Category'] ? getString(row['Category']) : 'Journal',
-                                image: getDirectDriveLink(getString(row['Featured_Image'])),
-                                date: row['Date'] ? getString(row['Date']) : new Date().toLocaleDateString(),
-                                tags: row['Tags'] ? getString(row['Tags']).split(',').map((t: string) => t.trim()) : []
+                                summary: getVal(['Summary', 'summary', 'Excerpt', 'excerpt']),
+                                content: getVal(['Content', 'content', 'Body', 'body']),
+                                category: getVal(['Category', 'category']) || 'Journal',
+                                image: getDirectDriveLink(getVal(['Featured_Image', 'image_url', 'Image_URL', 'Image', 'image', 'main_image'])),
+                                date: getVal(['Date', 'date']) || new Date().toLocaleDateString(),
+                                tags: getVal(['Tags', 'tags']).split(',').map((t: string) => t.trim()).filter(Boolean)
                             };
                         })
                         .filter((post: BlogPost | null) => post !== null);
@@ -229,7 +238,7 @@ const Blog: React.FC = () => {
           {selectedPost && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-6">
                 <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setSelectedPost(null)} />
-                <div className="relative w-full h-full md:max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl overflow-y-auto z-[10000] animate-in fade-in zoom-in-95 duration-300">
+                <div className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl overflow-y-auto z-[10000] animate-in fade-in zoom-in-95 duration-300 md:rounded-lg">
                      <button 
                         className="fixed top-6 right-6 z-50 p-3 bg-black/80 text-white hover:text-luxury-teal hover:bg-white/10 transition-all rounded-full backdrop-blur-md border border-white/10"
                         onClick={() => setSelectedPost(null)}
