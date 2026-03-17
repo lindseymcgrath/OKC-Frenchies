@@ -48,45 +48,71 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
         return Object.keys(LOCI).map(key => {
             const locus = (LOCI as any)[key];
             const isToggle = locus.options.length === 2 && locus.options.includes('No') && locus.options.includes('Yes');
+            
+            // Extract the descriptive name (e.g. "Agouti") and the technical name (e.g. "A Locus:")
+            // We assume the label is formatted like "A Locus (Agouti)" or similar.
+            let technical = '';
+            let descriptive = locus.label;
+            
+            if (locus.label.includes('Locus')) {
+                const parts = locus.label.split('(');
+                technical = parts[0].trim();
+                if (parts[1]) descriptive = parts[1].replace(')', '').trim();
+                else { descriptive = technical; technical = ''; }
+            }
 
             if (isToggle) {
                  const isOn = currentDna[key] === 'Yes';
                  return (
-                    <div key={key} className="flex justify-between items-center bg-black/40 px-3 py-2 border border-slate-800 rounded-sm hover:border-luxury-teal/30 transition-colors group">
-                        <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold group-hover:text-slate-300 transition-colors" title={locus.description}>{locus.label}</label>
+                    <div key={key} className="flex justify-between items-center bg-[#0f172a] px-4 py-3 border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors group">
+                        <div className="flex flex-col">
+                            <label className="text-sm text-slate-200 font-bold">{descriptive}</label>
+                            {technical && <label className="text-[10px] text-slate-500 uppercase tracking-widest">{technical}</label>}
+                        </div>
                         <button 
                             onClick={() => handleChange(key, isOn ? 'No' : 'Yes')}
-                            className={`flex items-center gap-2 text-[10px] font-bold uppercase transition-colors ${isOn ? 'text-luxury-teal' : 'text-slate-600'}`}
+                            className={`px-4 py-2 rounded-full font-mono text-sm font-bold min-w-[80px] text-center transition-all ${isOn ? 'bg-luxury-teal text-black shadow-md shadow-luxury-teal/20' : 'bg-slate-800 text-slate-400'}`}
                         >
-                            {isOn ? 'Active' : 'Off'}
-                            {isOn ? <ToggleRight size={16}/> : <ToggleLeft size={16}/>}
+                            {isOn ? 'ON' : 'OFF'}
                         </button>
                     </div>
                  );
             }
 
             return (
-                <div key={key} className="flex justify-between items-center bg-black/40 px-3 py-2 border border-slate-800 rounded-sm hover:border-luxury-teal/30 transition-colors group">
-                    <label className="text-[10px] text-slate-500 uppercase tracking-wider font-bold truncate pr-2 group-hover:text-slate-300 transition-colors" title={locus.description}>{locus.label.split('(')[0]}</label>
-                    <select 
-                        value={currentDna[key]} 
-                        onChange={(e) => handleChange(key, e.target.value)} 
-                        className="bg-transparent text-[10px] text-white outline-none font-mono text-right w-fit cursor-pointer hover:text-luxury-teal transition-colors appearance-none"
-                    >
-                        {locus.options.map((o: string) => <option key={o} value={o} className="bg-slate-900 text-slate-300">{o}</option>)}
-                    </select>
+                <div key={key} className="flex justify-between items-center bg-[#0f172a] px-4 py-3 border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors group relative">
+                    <div className="flex flex-col pointer-events-none">
+                        <label className="text-sm text-slate-200 font-bold">{descriptive}</label>
+                        {technical && <label className="text-[10px] text-slate-500 uppercase tracking-widest">{technical}</label>}
+                    </div>
+                    
+                    <div className="relative">
+                        {/* THE PILL UI */}
+                        <div className={`px-4 py-2 rounded-full font-mono text-sm font-bold min-w-[80px] text-center transition-all ${currentDna[key] && currentDna[key] !== 'N N' && currentDna[key] !== 'ky ky' && currentDna[key] !== '-' ? 'bg-luxury-teal text-black shadow-md shadow-luxury-teal/20' : 'bg-slate-800 text-slate-300'}`}>
+                            {currentDna[key] || '-'}
+                        </div>
+                        
+                        {/* INVISIBLE NATIVE SELECT INTERCEPTOR */}
+                        <select 
+                            value={currentDna[key]} 
+                            onChange={(e) => handleChange(key, e.target.value)} 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-[16px] /* 16px prevents iOS zoom */"
+                        >
+                            {locus.options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                    </div>
                 </div>
             );
         });
     };
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 relative">
+        <div className="flex flex-col relative w-full h-full">
             
             {/* SUCCESS MODAL */}
             {showRoleModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-slate-900 border border-luxury-teal/40 p-8 rounded-sm max-w-sm w-full shadow-[0_0_50px_rgba(45,212,191,0.2)] text-center animate-in fade-in zoom-in duration-300">
+                    <div className="bg-slate-900 border border-luxury-teal/40 p-8 rounded-sm max-w-sm w-full shadow-2xl text-center animate-in fade-in zoom-in duration-300">
                         <div className="w-16 h-16 bg-luxury-teal/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-luxury-teal/30">
                             <Save className="text-luxury-teal" size={32} />
                         </div>
@@ -101,80 +127,54 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
                 </div>
             )}
 
-            {/* VISUALIZER COLUMN */}
-            <div className="md:col-span-5 flex flex-col">
-                <div className="bg-slate-900/30 border border-slate-800 p-6 rounded-sm relative group hover:border-luxury-teal/20 transition-all">
-                    
-                    {/* GENDER TOGGLES */}
-                    <div className="absolute top-4 left-4 z-20 flex gap-2">
-                         <button onClick={() => setSingleGender('Male')} className={`px-3 py-1 text-[9px] uppercase font-bold border rounded-sm transition-all ${singleGender === 'Male' ? 'bg-blue-900/40 text-blue-300 border-blue-500/50' : 'bg-black/40 text-slate-600 border-slate-800 hover:text-slate-400'}`}>Male</button>
-                         <button onClick={() => setSingleGender('Female')} className={`px-3 py-1 text-[9px] uppercase font-bold border rounded-sm transition-all ${singleGender === 'Female' ? 'bg-pink-900/40 text-pink-300 border-pink-500/50' : 'bg-black/40 text-slate-600 border-slate-800 hover:text-slate-400'}`}>Female</button>
-                    </div>
-                    
-                    {/* VISUALIZER LAYER */}
-                    <div className="flex justify-center items-center min-h-[300px] mb-4 relative z-0">
-                        <div className="absolute inset-0 bg-luxury-teal/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        <DogVisualizer traits={getPhenotype(currentDna)} showLabel={false} scale={1.2} />
-                    </div>
+            {/* TOP HEADER: VISUALIZER & DOG INFO */}
+            <div className="bg-[#020617] border-b border-slate-800 p-6 flex flex-col items-center relative overflow-hidden">
+                {/* GENDER TOGGLES */}
+                <div className="absolute top-4 left-4 z-20 flex gap-2">
+                     <button onClick={() => setSingleGender('Male')} className={`px-4 py-1.5 text-[10px] uppercase font-bold border rounded-full transition-all ${singleGender === 'Male' ? 'bg-blue-600/20 text-blue-400 border-blue-500/50' : 'bg-transparent text-slate-600 border-slate-800'}`}>Male</button>
+                     <button onClick={() => setSingleGender('Female')} className={`px-4 py-1.5 text-[10px] uppercase font-bold border rounded-full transition-all ${singleGender === 'Female' ? 'bg-pink-600/20 text-pink-400 border-pink-500/50' : 'bg-transparent text-slate-600 border-slate-800'}`}>Female</button>
+                </div>
+                
+                {/* VISUALIZER */}
+                <div className="h-48 w-full flex justify-center items-end pb-2 relative z-0 mt-6">
+                    <DogVisualizer traits={getPhenotype(currentDna)} showLabel={false} scale={0.9} />
+                </div>
 
-                    {/* CONTROLS LAYER */}
-                    <div className="relative z-20">
-                        {/* Name & Genotype Pill */}
-                        <div className="text-center mb-6">
-                            <input 
-                                type="text" 
-                                placeholder="ENTER DOG NAME" 
-                                value={dogName} 
-                                onChange={(e) => setDogName(e.target.value.toUpperCase())} 
-                                className="w-full bg-transparent border-b border-slate-700 focus:border-luxury-teal outline-none text-center font-serif text-2xl text-white mb-2 tracking-wide transition-colors placeholder:text-slate-700"
-                            />
-                            
-                            {/* REMOVED GPS BUTTON */}
-                            <div className="flex justify-center mt-2">
-                                <div className="inline-block px-3 py-1 bg-black/40 rounded-full border border-slate-800">
-                                    <p className="font-mono text-[10px] text-luxury-teal tracking-wider">{getPhenotype(currentDna).compactDnaString}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2">
-                            <button 
-                                onClick={onLoad}
-                                className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-sm font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2 transition-all"
-                            >
-                                <Upload size={16} /> Load
-                            </button>
-                            <button 
-                                onClick={handleSaveClick}
-                                className="flex-[2] py-4 bg-gradient-to-r from-luxury-teal/10 to-luxury-teal/20 hover:from-luxury-teal hover:to-emerald-400 text-luxury-teal hover:text-black border border-luxury-teal/30 hover:border-luxury-teal rounded-sm font-bold uppercase text-xs tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-[0_0_20px_rgba(45,212,191,0.3)]"
-                            >
-                                <Save size={16} /> Save to Kennel
-                            </button>
-                        </div>
-                    </div>
-
+                <div className="w-full mt-4 flex flex-col items-center relative z-20">
+                     <input 
+                         type="text" 
+                         placeholder="ENTER DOG NAME" 
+                         value={dogName} 
+                         onChange={(e) => setDogName(e.target.value.toUpperCase())} 
+                         className="w-full bg-transparent border-none focus:ring-0 outline-none text-center font-serif text-3xl text-white mb-1 tracking-wide placeholder:text-slate-700"
+                     />
+                     <div className="bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-800">
+                         <p className="font-mono text-[10px] text-luxury-teal tracking-wider">{getPhenotype(currentDna).compactDnaString}</p>
+                     </div>
                 </div>
             </div>
 
-            {/* CONFIGURATION COLUMN */}
-            <div className="md:col-span-7">
-                <div className="bg-[#0f172a] border border-slate-800 p-6 rounded-sm h-full flex flex-col">
-                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
-                        <div className="p-2 bg-luxury-teal/10 rounded-full">
-                            <ToggleRight size={20} className="text-luxury-teal"/>
-                        </div>
-                        <div>
-                            <h3 className="font-serif text-xl text-white">Genetic Configuration</h3>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest">Adjust Loci Alleles</p>
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 overflow-y-auto pr-2 custom-scrollbar flex-grow content-start">
-                        {renderLociRows()}
-                    </div>
-                </div>
+            {/* BOTTOM LIST: LOCI ROWS */}
+            <div className="flex-1 overflow-y-auto bg-[#020617] pb-24">
+                 {renderLociRows()}
             </div>
+
+            {/* FIXED BOTTOM ACTION BAR */}
+            <div className="fixed bottom-0 md:absolute md:bottom-0 left-0 right-0 bg-[#0a0a0a]/95 backdrop-blur-md border-t border-slate-800 p-4 flex gap-2 z-30">
+                <button 
+                    onClick={onLoad}
+                    className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-sm font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition-all"
+                >
+                    <Upload size={16} /> Load
+                </button>
+                <button 
+                    onClick={handleSaveClick}
+                    className="flex-[2] py-3 bg-luxury-teal hover:bg-emerald-400 text-black rounded-sm font-bold uppercase text-xs tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg"
+                >
+                    <Save size={16} /> Save Puppy
+                </button>
+            </div>
+            
         </div>
     );
 };
