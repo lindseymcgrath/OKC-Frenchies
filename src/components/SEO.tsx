@@ -11,7 +11,7 @@ interface SEOProps {
 const SEO: React.FC<SEOProps> = ({ 
   title = "OKC Frenchies | Elite DNA", 
   description = "A luxury breeding program specializing in rare loci, structural excellence, and advanced nutrition for French Bulldogs.", 
-  image = "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&q=80&w=1200&h=630",
+  image = "https://okcfrenchies.com/IMG_3894.png",
   url = "https://okcfrenchies.com"
 }) => {
   return (
