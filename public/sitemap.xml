@@ -2,34 +2,77 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://okcfrenchies.com/</loc>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/french-bulldog-puppies-for-sale</loc>
-    <priority>0.9</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/french-bulldog-stud-service</loc>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://okcfrenchies.com/french-bulldog-color-calculator</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/french-bulldog-coat-color-genetics</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-color-calculator</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/french-bulldog-breeding-blog</loc>
-    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/french-bulldog-breeding-protocol</loc>
-    <priority>0.6</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://okcfrenchies.com/puppy-inquiry-form</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=%24ix%20figure%24</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=scrappy</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=scooby</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=polar</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-stud-service?dog=ghost</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-stud-service?dog=everest</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://okcfrenchies.com/french-bulldog-stud-service?dog=pierre</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 </urlset>
