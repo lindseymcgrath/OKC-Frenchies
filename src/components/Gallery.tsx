@@ -122,25 +122,31 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
         setRefreshKey(0);
         setSelectedDog(dog);
         if (updateUrl) {
-            searchParams.set('dog', encodeURIComponent(dog.name.toLowerCase()));
-            setSearchParams(searchParams, { replace: true });
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('dog', dog.name.toLowerCase());
+            setSearchParams(newParams); // Pushes to history instead of replace
         }
     };
 
     const closeModal = () => {
         setSelectedDog(null);
-        searchParams.delete('dog');
-        setSearchParams(searchParams, { replace: true });
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('dog');
+        setSearchParams(newParams, { replace: true });
     };
 
     useEffect(() => {
         const dogParam = searchParams.get('dog');
+        // searchParams.get automatically decodes URI components
         if (dogs.length > 0 && dogParam) {
-            const dogName = decodeURIComponent(dogParam).toLowerCase();
+            const dogName = dogParam.toLowerCase();
             const foundDog = dogs.find(d => d.name.toLowerCase() === dogName || d.id.toLowerCase() === dogName);
             if (foundDog && (!selectedDog || selectedDog.id !== foundDog.id)) {
                 openModal(foundDog, false);
             }
+        } else if (!dogParam && selectedDog) {
+            // Re-sync if URL was cleared (e.g., via back button)
+            setSelectedDog(null);
         }
     }, [dogs, searchParams]);
 

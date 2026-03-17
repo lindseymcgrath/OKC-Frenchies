@@ -25,15 +25,17 @@ const Genetics: React.FC = () => {
   const openTerm = (term: GlossaryTerm, updateUrl = true) => {
       setSelectedTerm(term);
       if (updateUrl) {
-          searchParams.set('term', encodeURIComponent(term.term.toLowerCase()));
-          setSearchParams(searchParams, { replace: true });
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set('term', term.term.toLowerCase());
+          setSearchParams(newParams);
       }
   };
 
   const closeTerm = () => {
       setSelectedTerm(null);
-      searchParams.delete('term');
-      setSearchParams(searchParams, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('term');
+      setSearchParams(newParams, { replace: true });
   };
 
   // Lock body scroll when modal is open
@@ -127,7 +129,7 @@ const Genetics: React.FC = () => {
   // Deep Link Logic: Auto-open modal if ?term=... matches
   useEffect(() => {
     const requestedTerm = searchParams.get('term');
-    if (!loading && terms.length > 0 && requestedTerm && !initialDeepLinkDone) {
+    if (!loading && terms.length > 0 && requestedTerm) {
         const target = requestedTerm.toLowerCase();
         
         // Find best match (Exact -> Contains Term -> Contains Locus)
@@ -135,12 +137,14 @@ const Genetics: React.FC = () => {
                       terms.find(t => t.term.toLowerCase().includes(target)) ||
                       terms.find(t => t.locus.toLowerCase().includes(target));
 
-        if (match) {
+        if (match && (!selectedTerm || match.id !== selectedTerm.id)) {
             openTerm(match, false);
         }
         setInitialDeepLinkDone(true);
+    } else if (!requestedTerm && selectedTerm) {
+        setSelectedTerm(null);
     }
-  }, [loading, terms, searchParams, initialDeepLinkDone]);
+  }, [loading, terms, searchParams]);
 
   // Helper: Visual Logic based on Category
   const getCardStyles = (category: string) => {

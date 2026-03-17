@@ -69,28 +69,36 @@ const Protocol: React.FC = () => {
      }
   }, [searchParams]);
 
-  const openStack = (type: string, title: string, items: StackItem[]) => {
+  const openStack = (type: string, title: string, items: StackItem[], updateUrl = true) => {
       setSelectedStack({ title, items });
-      searchParams.set('stack', type);
-      setSearchParams(searchParams, { replace: true });
+      if (updateUrl) {
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set('stack', type);
+          setSearchParams(newParams);
+      }
   };
 
   const closeStack = () => {
       setSelectedStack(null);
-      searchParams.delete('stack');
-      setSearchParams(searchParams, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('stack');
+      setSearchParams(newParams, { replace: true });
   };
 
-  const openProduct = (product: Product) => {
+  const openProduct = (product: Product, updateUrl = true) => {
       setSelectedProduct(product);
-      searchParams.set('product', product.id);
-      setSearchParams(searchParams, { replace: true });
+      if (updateUrl) {
+          const newParams = new URLSearchParams(searchParams);
+          newParams.set('product', product.id);
+          setSearchParams(newParams);
+      }
   };
 
   const closeProduct = () => {
       setSelectedProduct(null);
-      searchParams.delete('product');
-      setSearchParams(searchParams, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('product');
+      setSearchParams(newParams, { replace: true });
   };
   
   // Calculator State

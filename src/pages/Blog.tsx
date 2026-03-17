@@ -55,27 +55,31 @@ const Blog: React.FC = () => {
   useEffect(() => {
     const postParam = searchParams.get('post');
     if (posts.length > 0 && postParam) {
-      const postIdOrName = decodeURIComponent(postParam).toLowerCase();
+      const postIdOrName = postParam.toLowerCase();
       const foundPost = posts.find(p => p.id.toLowerCase() === postIdOrName || p.title.toLowerCase() === postIdOrName);
       if (foundPost && (!selectedPost || foundPost.id !== selectedPost.id)) {
         openPost(foundPost, false);
       }
+    } else if (!postParam && selectedPost) {
+      setSelectedPost(null);
     }
   }, [posts, searchParams]);
 
   const openPost = (post: BlogPost, updateUrl = true) => {
     setSelectedPost(post);
     if (updateUrl) {
-      searchParams.set('post', encodeURIComponent(post.id.toLowerCase()));
-      setSearchParams(searchParams, { replace: true });
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('post', post.id.toLowerCase());
+      setSearchParams(newParams);
     }
   };
 
   const closePost = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setSelectedPost(null);
-    searchParams.delete('post');
-    setSearchParams(searchParams, { replace: true });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('post');
+    setSearchParams(newParams, { replace: true });
   };
 
   useEffect(() => {
