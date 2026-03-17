@@ -274,20 +274,20 @@ const Blog: React.FC = () => {
 
           {/* Reader Modal */}
           {selectedPost && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-6">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-6 pb-20 md:pb-6">
                 <SEO 
                     title={`${selectedPost.title} | OKC Frenchies Journal`}
                     description={selectedPost.summary || `Read ${selectedPost.title} on the OKC Frenchies Journal.`}
                     image={selectedPost.image}
                 />
                 <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={closePost} />
+                <button 
+                    className="fixed top-8 right-4 md:top-6 md:right-6 z-[10001] p-3 bg-black/80 text-white hover:text-luxury-teal hover:bg-white/10 transition-all rounded-full backdrop-blur-md border border-white/10 shadow-2xl"
+                    onClick={closePost}
+                >
+                    <X size={24} />
+                </button>
                 <div className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl overflow-y-auto z-[10000] animate-in fade-in zoom-in-95 duration-300 md:rounded-lg">
-                     <button 
-                        className="fixed top-6 right-6 z-50 p-3 bg-black/80 text-white hover:text-luxury-teal hover:bg-white/10 transition-all rounded-full backdrop-blur-md border border-white/10"
-                        onClick={closePost}
-                    >
-                        <X size={24} />
-                    </button>
                     {selectedPost.image && (
                          <div className="w-full h-64 md:h-[50vh] relative">
                              <img src={selectedPost.image} className="w-full h-full object-cover" crossOrigin="anonymous" alt={selectedPost.title} />
