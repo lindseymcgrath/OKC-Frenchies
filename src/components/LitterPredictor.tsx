@@ -35,29 +35,29 @@ export const LitterPredictor = (props: any) => {
         const traits = getPhenotype(dna);
 
         return (
-            <div className="flex flex-col relative w-full h-full bg-[#020617]">
-                {/* TOP HEADER: VISUALIZER */}
-                <div className="border-b border-slate-800 p-6 flex flex-col items-center relative overflow-hidden bg-[#0a0a0a]/40">
-                    <div className="h-40 w-full flex justify-center items-end pb-2 relative z-0 mt-2">
-                        <DogVisualizer traits={traits} scale={0.8} showLabel={false} />
+            <div className="flex flex-col md:flex-row relative w-full h-full bg-[#020617] pb-20 md:pb-0">
+                {/* LEFT: VISUALIZER */}
+                <div className="md:w-1/2 border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col relative overflow-hidden bg-[#0a0a0a]/40">
+                    <div className="h-40 md:h-[400px] w-full flex justify-center md:justify-start items-center relative z-0 pt-10 pb-4 mt-2">
+                        <DogVisualizer traits={traits} scale={1.05} showLabel={false} />
                     </div>
 
-                    <div className="w-full mt-4 flex flex-col items-center relative z-20">
+                    <div className="w-full mt-4 flex flex-col items-center md:items-start relative z-20">
                          <input 
                              type="text" 
                              placeholder={`${label} NAME`} 
                              value={name} 
                              onChange={(e) => setName(e.target.value.toUpperCase())} 
-                             className="w-full bg-transparent border-none focus:ring-0 outline-none text-center font-serif text-3xl text-white mb-1 tracking-wide placeholder:text-slate-700"
+                             className="w-full bg-transparent border-none focus:ring-0 outline-none text-center md:text-left font-serif text-3xl text-white mb-2 tracking-wide placeholder:text-slate-700 p-0"
                          />
-                         <div className="bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-800">
-                             <p className="font-mono text-[10px] text-luxury-teal tracking-wider">{traits.compactDnaString}</p>
+                         <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 inline-block">
+                             <p className="font-mono text-[10px] text-luxury-teal tracking-wider text-center md:text-left">{traits.compactDnaString}</p>
                          </div>
                     </div>
                 </div>
 
-                {/* LOCI LIST */}
-                <div className="flex-1 overflow-y-auto bg-[#020617] pb-4">
+                {/* RIGHT: LOCI LIST */}
+                <div className="md:w-1/2 flex-1 overflow-y-auto bg-[#020617] pb-24 md:pb-24">
                     {Object.keys(LOCI).map(key => {
                         const locus = (LOCI as any)[key];
                         const isToggle = locus.options.length === 2 && locus.options.includes('No');
@@ -135,7 +135,7 @@ export const LitterPredictor = (props: any) => {
             </div>
 
             {/* PREDICTION RESULTS CONTAINER */}
-            <div className={`${activeTab !== 'litter' ? 'hidden' : 'flex'} flex-1 bg-[#020617] flex-col max-w-md mx-auto w-full shadow-2xl overflow-hidden`}>
+            <div className={`${activeTab !== 'litter' ? 'hidden' : 'flex'} flex-1 bg-[#020617] flex-col max-w-full lg:max-w-[1200px] mx-auto w-full shadow-2xl overflow-hidden`}>
                 
                 {/* Search & Tabs */}
                 <div className="bg-[#0a0a0a]/80 border-b border-slate-800 p-4 sticky top-0 z-20 backdrop-blur-md">

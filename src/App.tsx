@@ -1,5 +1,17 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import ReactGA from 'react-ga4';
+
+const TRACKING_ID = "G-16ZND7ECLT";
+ReactGA.initialize(TRACKING_ID);
+
+const AnalyticsTracker = () => {
+  const location = useLocation();
+  useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
+  }, [location]);
+  return null;
+};
 // These remain './' because the folders moved WITH App.tsx into /src
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -15,6 +27,7 @@ import Footer from './components/Footer';
 const App: React.FC = () => {
   return (
     <BrowserRouter>
+      <AnalyticsTracker />
       {/* 🖨️ Print Styles Preserved */}
       <style>{`
         @media print {
