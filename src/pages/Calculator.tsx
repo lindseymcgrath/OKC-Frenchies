@@ -167,7 +167,7 @@ export default function Calculator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 md:pt-24 pb-20 font-sans relative flex flex-col items-center">
+    <div className="min-h-screen bg-[#020617] text-slate-200 pt-24 md:pt-28 pb-20 font-sans relative flex flex-col items-center">
        <SEO 
          title="French Bulldog Color Calculator | OKC Frenchies"
          description="Predict your French Bulldog litter's colors, DNA, and phenotypes using the OKC Frenchies Genetic Configurator."
