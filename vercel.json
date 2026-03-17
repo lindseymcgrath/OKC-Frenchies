@@ -1,17 +1,11 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": true,
   "rewrites": [
     {
-      "source": "/images/visuals/:path*",
-      "destination": "/images/visuals/:path*"
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/((?!api|images|assets|favicon.ico|robots.txt|sitemap.xml).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
