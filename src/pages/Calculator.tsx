@@ -27,12 +27,14 @@ export default function Calculator() {
   const [activeLoadSlot, setActiveLoadSlot] = useState<'translator' | 'sire' | 'dam' | null>(null);
 
   const updateModalUrl = (modalName: string | null) => {
+      const newParams = new URLSearchParams(searchParams);
       if (modalName) {
-         searchParams.set('modal', modalName);
+         newParams.set('modal', modalName);
+         setSearchParams(newParams);
       } else {
-         searchParams.delete('modal');
+         newParams.delete('modal');
+         setSearchParams(newParams, { replace: true });
       }
-      setSearchParams(searchParams, { replace: true });
   };
 
   const handleSetShowKennel = (v: boolean) => {
