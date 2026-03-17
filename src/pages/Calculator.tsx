@@ -167,34 +167,52 @@ export default function Calculator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 pt-16 md:pt-24 pb-20 px-4 md:px-6 font-sans relative">
+    <div className="min-h-screen bg-[#020617] text-slate-200 md:pt-24 pb-20 font-sans relative flex flex-col items-center">
        <SEO 
          title="French Bulldog Color Calculator | OKC Frenchies"
          description="Predict your French Bulldog litter's colors, DNA, and phenotypes using the OKC Frenchies Genetic Configurator."
          url="https://okcfrenchies.com/french-bulldog-color-calculator"
        />
-       <div className="max-w-7xl mx-auto text-center mb-6 relative z-10">
-            <h1 className="font-serif text-3xl md:text-6xl mb-4 bg-clip-text text-transparent bg-gradient-to-r from-luxury-teal via-white to-luxury-magenta">DNA MATRIX</h1>
-            
-            <div className="flex items-center justify-center gap-1.5 mt-2 mb-6 max-w-md mx-auto">
-                <button onClick={() => setMode('single')} className={`flex-1 py-3 rounded-sm text-[9px] uppercase font-bold tracking-widest border transition-all ${mode==='single' ? 'bg-luxury-teal text-black border-luxury-teal' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>Translator</button>
-                <button onClick={() => setMode('pair')} className={`flex-1 py-3 rounded-sm text-[9px] uppercase font-bold tracking-widest border transition-all ${mode==='pair' ? 'bg-luxury-magenta text-black border-luxury-magenta' : 'border-slate-800 text-slate-500 bg-slate-900/50'}`}>Pairing</button>
-            </div>
 
-            <div className="flex justify-center mb-10">
-               {user.userId ? (
-                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-black/40 px-6 py-2 rounded-full border border-luxury-teal/30">
-                       <span className="text-[10px] text-luxury-teal font-bold uppercase tracking-wider flex items-center gap-1"><User size={10} /> Kennel Active</span>
-                       <button onClick={user.handleLogout} className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors">Disconnect</button>
-                   </div>
-               ) : (
-                   <button onClick={() => handleSetShowLogin(true)} className="px-8 py-3 bg-slate-900 border border-luxury-teal/30 hover:border-luxury-teal text-luxury-teal hover:text-black hover:bg-luxury-teal rounded-full font-bold uppercase text-[10px] tracking-[0.2em] transition-all">Connect Kennel</button>
-               )}
+       {/* Top Header / App Bar */}
+       <div className="w-full bg-[#0a0a0a] border-b border-slate-800 sticky top-0 z-40 md:static md:max-w-md shadow-xl">
+            <div className="p-4 text-center pb-2">
+                <h1 className="font-serif text-2xl md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-luxury-teal via-white to-luxury-magenta uppercase tracking-widest">DNA Matrix</h1>
+            </div>
+            
+            {/* Top Navigation Tabs */}
+            <div className="flex px-4 gap-2 mb-2">
+                <button 
+                    onClick={() => setMode('single')} 
+                    className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest rounded-t-sm transition-all border-b-2 ${mode==='single' ? 'text-luxury-teal border-luxury-teal bg-luxury-teal/5' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                >
+                    Translator
+                </button>
+                <button 
+                    onClick={() => setMode('pair')} 
+                    className={`flex-1 py-3 text-[10px] uppercase font-bold tracking-widest rounded-t-sm transition-all border-b-2 ${mode==='pair' ? 'text-luxury-magenta border-luxury-magenta bg-luxury-magenta/5' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+                >
+                    Litter Pairing
+                </button>
             </div>
        </div>
 
-       <div className="max-w-7xl mx-auto relative z-10">
-            <div className="mb-8">
+       {/* Connect Kennel Row */}
+       <div className="w-full md:max-w-md bg-[#020617] p-4 flex justify-between items-center border-b border-slate-800/50 relative z-10 shadow-sm">
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">My Account</span>
+           {user.userId ? (
+               <div className="flex items-center gap-4">
+                   <span className="text-[10px] text-luxury-teal font-bold uppercase tracking-wider flex items-center gap-1">Kennel Connected</span>
+                   <button onClick={user.handleLogout} className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors"><LogOut size={14}/></button>
+               </div>
+           ) : (
+               <button onClick={() => handleSetShowLogin(true)} className="flex items-center gap-1 text-[10px] font-bold text-luxury-teal hover:text-white uppercase tracking-widest transition-colors"><LogIn size={14}/> Connect</button>
+           )}
+       </div>
+
+       {/* App Content Area */}
+       <div className="w-full md:max-w-md flex-grow bg-[#0f172a] md:border-x border-slate-800 relative shadow-2xl overflow-hidden pb-10">
+            <div>
                  {mode === 'single' ? (
                     <DnaTranslator 
                         singleGender={singleGender}
