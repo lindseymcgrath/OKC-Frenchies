@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, ShieldCheck, Dna, X, Activity, Loader2, Play, ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle, RefreshCw, FileText } from 'lucide-react';
+import SEO from './SEO';
 
 const getString = (val: any): string => {
     if (val === null || val === undefined) return '';
@@ -81,6 +82,7 @@ interface GalleryProps {
 
 const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetName }) => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [dogs, setDogs] = useState<DogData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -114,12 +116,33 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
         setModalImageError(false);
     };
 
-    const openModal = (dog: DogData) => {
+    const openModal = (dog: DogData, updateUrl = true) => {
         setActiveMediaIndex(0);
         setModalImageError(false);
         setRefreshKey(0);
         setSelectedDog(dog);
+        if (updateUrl) {
+            searchParams.set('dog', encodeURIComponent(dog.name.toLowerCase()));
+            setSearchParams(searchParams, { replace: true });
+        }
     };
+
+    const closeModal = () => {
+        setSelectedDog(null);
+        searchParams.delete('dog');
+        setSearchParams(searchParams, { replace: true });
+    };
+
+    useEffect(() => {
+        const dogParam = searchParams.get('dog');
+        if (dogs.length > 0 && dogParam) {
+            const dogName = decodeURIComponent(dogParam).toLowerCase();
+            const foundDog = dogs.find(d => d.name.toLowerCase() === dogName || d.id.toLowerCase() === dogName);
+            if (foundDog && (!selectedDog || selectedDog.id !== foundDog.id)) {
+                openModal(foundDog, false);
+            }
+        }
+    }, [dogs, searchParams]);
 
     const handleInquiry = () => {
         if (!selectedDog) return;
@@ -442,7 +465,12 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
 
             {selectedDog && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedDog(null)} />
+                    <SEO 
+                        title={`${selectedDog.name} | OKC Frenchies ${selectedDog.type}`}
+                        description={selectedDog.description || `${selectedDog.name} is an elite French Bulldog ${selectedDog.type.toLowerCase()} featuring ${selectedDog.dna}.`}
+                        image={selectedDog.image}
+                    />
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeModal} />
 
                     <div
                         className="relative w-full h-full md:h-[90vh] md:max-w-7xl bg-[#0a0a0a]/95 backdrop-blur-xl border border-luxury-teal/30 shadow-[0_0_30px_rgba(45,212,191,0.3)] flex flex-col md:flex-row overflow-hidden z-[110]"
@@ -450,7 +478,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                     >
                         <button
                             className="absolute top-6 right-6 z-50 p-2 bg-black/50 text-white hover:text-luxury-teal hover:bg-white/10 transition-all rounded-full backdrop-blur-md border border-white/10"
-                            onClick={() => setSelectedDog(null)}
+                            onClick={closeModal}
                         >
                             <X size={24} />
                         </button>

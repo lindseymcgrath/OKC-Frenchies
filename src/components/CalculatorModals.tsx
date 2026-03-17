@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Crown, Infinity, CreditCard, Ticket, CheckCircle, Loader2, Search, Trash2, LogIn, AlertTriangle } from 'lucide-react';
 import { getStripeLinks, SavedDog, getPhenotype } from '../utils/calculatorHelpers';
+import SEO from './SEO';
 
 interface CalculatorModalsProps {
     showKennel: boolean;
@@ -85,6 +86,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
             {/* 1. KENNEL MODAL */}
             {showKennel && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+                    <SEO title="Kennel | OKC Frenchies" description="Manage your saved French Bulldog genetic profiles in the Kennel." />
                     <div className="relative bg-[#0f172a] border border-slate-800 rounded-sm w-full max-w-2xl h-[80vh] flex flex-col shadow-2xl overflow-hidden">
                         
                         <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
@@ -173,6 +175,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
             {/* 2. LOGIN MODAL */}
             {showLogin && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
+                     <SEO title="Sync Kennel | OKC Frenchies" description="Connect to save and load your dogs across devices." />
                      <div className="relative bg-[#0f172a] border border-slate-800 p-8 rounded-sm max-w-md w-full text-center shadow-2xl">
                         <button onClick={() => setShowLogin(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"><X size={20}/></button>
                         <div className="w-16 h-16 bg-luxury-teal/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-luxury-teal/30"><LogIn className="text-luxury-teal" size={32} /></div>
@@ -189,6 +192,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
             {/* 3. PAYWALL MODAL */}
             {showPaywall && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl">
+                    <SEO title="Pro Studio Access | OKC Frenchies" description="Unlock unlimited genetic testing, downloads, and premium features." />
                     <div className="bg-[#0a0a0a] border border-luxury-gold/30 w-full max-w-md p-8 rounded-sm text-center relative shadow-2xl">
                         <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
                         <Crown size={40} className="text-luxury-gold mx-auto mb-4" />

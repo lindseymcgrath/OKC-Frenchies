@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { LogIn, LogOut, User } from 'lucide-react';
 
 import { 
@@ -10,8 +11,10 @@ import { useUserCredits } from '../hooks/useUserCredits';
 import { DnaTranslator } from '../components/DnaTranslator';
 import { LitterPredictor } from '../components/LitterPredictor';
 import { CalculatorModals } from '../components/CalculatorModals';
+import SEO from '../components/SEO';
 
 export default function Calculator() {
+  const [searchParams, setSearchParams] = useSearchParams();
   // ✅ Simplified mode: Only 'single' (Translator) or 'pair' (Litter Predictor)
   const [mode, setMode] = useState<'single' | 'pair'>('single');
   const [showPaywall, setShowPaywall] = useState(false);
@@ -20,8 +23,44 @@ export default function Calculator() {
   const user = useUserCredits();
   
   const [savedDogs, setSavedDogs] = useState<SavedDog[]>([]);
-  const [showKennel, setShowKennel] = useState(false);
+  const [showKennel, setShowKennel] = useState(searchParams.get('modal') === 'kennel');
   const [activeLoadSlot, setActiveLoadSlot] = useState<'translator' | 'sire' | 'dam' | null>(null);
+
+  const updateModalUrl = (modalName: string | null) => {
+      if (modalName) {
+         searchParams.set('modal', modalName);
+      } else {
+         searchParams.delete('modal');
+      }
+      setSearchParams(searchParams, { replace: true });
+  };
+
+  const handleSetShowKennel = (v: boolean) => {
+      setShowKennel(v);
+      updateModalUrl(v ? 'kennel' : null);
+  };
+
+  const handleSetShowPaywall = (v: boolean) => {
+      setShowPaywall(v);
+      updateModalUrl(v ? 'paywall' : null);
+  };
+
+  const handleSetShowLogin = (v: boolean) => {
+      user.setShowLogin(v);
+      updateModalUrl(v ? 'login' : null);
+  };
+
+  useEffect(() => {
+      const modal = searchParams.get('modal');
+      if (modal === 'kennel') setShowKennel(true);
+      else if (modal === 'paywall') setShowPaywall(true);
+      else if (modal === 'login') user.setShowLogin(true);
+      else {
+          setShowKennel(false);
+          setShowPaywall(false);
+          user.setShowLogin(false);
+      }
+  }, [searchParams]);
 
   // Load Kennel Logic
   useEffect(() => {
@@ -127,6 +166,11 @@ export default function Calculator() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pt-16 md:pt-24 pb-20 px-4 md:px-6 font-sans relative">
+       <SEO 
+         title="French Bulldog Color Calculator | OKC Frenchies"
+         description="Predict your French Bulldog litter's colors, DNA, and phenotypes using the OKC Frenchies Genetic Configurator."
+         url="https://okcfrenchies.com/french-bulldog-color-calculator"
+       />
        <div className="max-w-7xl mx-auto text-center mb-6 relative z-10">
             <h1 className="font-serif text-3xl md:text-6xl mb-4 bg-clip-text text-transparent bg-gradient-to-r from-luxury-teal via-white to-luxury-magenta">DNA MATRIX</h1>
             
@@ -142,7 +186,7 @@ export default function Calculator() {
                        <button onClick={user.handleLogout} className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors">Disconnect</button>
                    </div>
                ) : (
-                   <button onClick={() => user.setShowLogin(true)} className="px-8 py-3 bg-slate-900 border border-luxury-teal/30 hover:border-luxury-teal text-luxury-teal hover:text-black hover:bg-luxury-teal rounded-full font-bold uppercase text-[10px] tracking-[0.2em] transition-all">Connect Kennel</button>
+                   <button onClick={() => handleSetShowLogin(true)} className="px-8 py-3 bg-slate-900 border border-luxury-teal/30 hover:border-luxury-teal text-luxury-teal hover:text-black hover:bg-luxury-teal rounded-full font-bold uppercase text-[10px] tracking-[0.2em] transition-all">Connect Kennel</button>
                )}
             </div>
        </div>
@@ -157,7 +201,7 @@ export default function Calculator() {
                         handleChange={handleSingleModeChange}
                         onSave={handleSaveToKennel}
                         onAssignToMatrix={handleAssignToMatrix}
-                        onLoad={() => { setActiveLoadSlot('translator'); setShowKennel(true); }}
+                        onLoad={() => { setActiveLoadSlot('translator'); handleSetShowKennel(true); }}
                     />
                  ) : (
                     <LitterPredictor 
@@ -168,7 +212,7 @@ export default function Calculator() {
                         dogNameInput={''} 
                         setDogNameInput={() => {}} 
                         onSaveDog={handleSaveToKennel} 
-                        setShowKennel={setShowKennel}
+                        setShowKennel={handleSetShowKennel}
                         setActiveLoadSlot={setActiveLoadSlot}
                         studio={null as any} // ✅ Studio safely disabled
                         isMobile={isMobile}
@@ -179,18 +223,18 @@ export default function Calculator() {
 
        <CalculatorModals 
             showKennel={showKennel}
-            setShowKennel={setShowKennel}
+            setShowKennel={handleSetShowKennel}
             savedDogs={savedDogs}
             loadDogSmart={loadDogSmart}
             removeDog={removeDog}
             showPaywall={showPaywall}
-            setShowPaywall={setShowPaywall}
+            setShowPaywall={handleSetShowPaywall}
             userId={user.userId}
             promoCodeInput={user.promoCodeInput}
             setPromoCodeInput={user.setPromoCodeInput}
-            handlePromoSubmit={() => user.handlePromoSubmit(() => setShowPaywall(false))}
+            handlePromoSubmit={() => user.handlePromoSubmit(() => handleSetShowPaywall(false))}
             showLogin={user.showLogin}
-            setShowLogin={user.setShowLogin}
+            setShowLogin={handleSetShowLogin}
             userEmail={user.userEmail}
             setUserEmail={user.setUserEmail}
             handleLoginSubmit={user.handleLoginSubmit} 

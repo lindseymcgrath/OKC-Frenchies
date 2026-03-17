@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
 import { Product } from '../types';
 import { ExternalLink, FlaskConical, ShoppingBag, X, CheckCircle2, Disc, Calculator, Sun, Moon, Utensils, ArrowRight, Activity, ShieldPlus } from 'lucide-react';
+import SEO from './SEO';
 
 interface StackItem {
     name: string;
@@ -49,6 +51,47 @@ const PERFORMANCE_STACK: StackItem[] = [
 const Protocol: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedStack, setSelectedStack] = useState<{ title: string, items: StackItem[] } | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+     const stackParam = searchParams.get('stack');
+     const productParam = searchParams.get('product');
+
+     if (stackParam === 'daily') setSelectedStack({ title: "The Daily Protocol", items: DAILY_STACK });
+     else if (stackParam === 'performance') setSelectedStack({ title: "Performance & Studs", items: PERFORMANCE_STACK });
+     else setSelectedStack(null);
+
+     if (productParam) {
+        const found = PRODUCTS.find(p => p.id === productParam);
+        setSelectedProduct(found || null);
+     } else {
+        setSelectedProduct(null);
+     }
+  }, [searchParams]);
+
+  const openStack = (type: string, title: string, items: StackItem[]) => {
+      setSelectedStack({ title, items });
+      searchParams.set('stack', type);
+      setSearchParams(searchParams, { replace: true });
+  };
+
+  const closeStack = () => {
+      setSelectedStack(null);
+      searchParams.delete('stack');
+      setSearchParams(searchParams, { replace: true });
+  };
+
+  const openProduct = (product: Product) => {
+      setSelectedProduct(product);
+      searchParams.set('product', product.id);
+      setSearchParams(searchParams, { replace: true });
+  };
+
+  const closeProduct = () => {
+      setSelectedProduct(null);
+      searchParams.delete('product');
+      setSearchParams(searchParams, { replace: true });
+  };
   
   // Calculator State
   const [weight, setWeight] = useState<string>('');
@@ -123,7 +166,7 @@ const Protocol: React.FC = () => {
 
                  {/* Daily Protocol Card */}
                  <div 
-                    onClick={() => setSelectedStack({ title: "The Daily Protocol", items: DAILY_STACK })}
+                    onClick={() => openStack('daily', "The Daily Protocol", DAILY_STACK)}
                     className="bg-slate-900/30 border border-slate-800 p-8 md:p-10 backdrop-blur-sm hover:border-luxury-teal/50 hover:bg-slate-900/50 transition-all rounded-sm relative overflow-hidden group cursor-pointer"
                  >
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
@@ -157,7 +200,7 @@ const Protocol: React.FC = () => {
 
                 {/* Performance Stack Card */}
                 <div 
-                    onClick={() => setSelectedStack({ title: "Performance & Studs", items: PERFORMANCE_STACK })}
+                    onClick={() => openStack('performance', "Performance & Studs", PERFORMANCE_STACK)}
                     className="bg-slate-900/30 border border-slate-800 p-8 md:p-10 backdrop-blur-sm hover:border-purple-500/50 hover:bg-slate-900/50 transition-all rounded-sm relative overflow-hidden group cursor-pointer"
                 >
                     <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
@@ -288,7 +331,7 @@ const Protocol: React.FC = () => {
                 {PRODUCTS.map((product) => (
                     <div 
                         key={product.id} 
-                        onClick={() => setSelectedProduct(product)}
+                        onClick={() => openProduct(product)}
                         className="relative bg-[#0f172a]/50 border border-slate-800 group p-6 flex flex-col items-center text-center overflow-hidden hover:border-luxury-teal/30 transition-all duration-500 h-full cursor-pointer"
                     >
                         
@@ -335,7 +378,11 @@ const Protocol: React.FC = () => {
       {/* Stack Detail Modal */}
       {selectedStack && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
-             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setSelectedStack(null)} />
+             <SEO 
+                title={`${selectedStack.title} | Protocol Stack`} 
+                description={`View the ${selectedStack.title} recommended feeding regimen.`} 
+             />
+             <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={closeStack} />
              
              <div className="relative z-10 w-full max-w-5xl bg-[#0a0a0a] border border-slate-800 flex flex-col overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 rounded-sm max-h-[90vh]">
                  <div className="p-8 border-b border-slate-800 flex justify-between items-center bg-[#020617]">
@@ -343,7 +390,7 @@ const Protocol: React.FC = () => {
                         <h2 className="font-serif text-3xl md:text-4xl text-white">{selectedStack.title}</h2>
                         <p className="text-slate-500 text-xs uppercase tracking-widest mt-2">Recommended Feeding Regimen</p>
                      </div>
-                     <button onClick={() => setSelectedStack(null)} className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-full">
+                     <button onClick={closeStack} className="p-2 bg-slate-800 text-slate-400 hover:text-white rounded-full">
                          <X size={20} />
                      </button>
                  </div>
@@ -382,13 +429,18 @@ const Protocol: React.FC = () => {
       {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setSelectedProduct(null)} />
+            <SEO 
+                title={`${selectedProduct.name} | Raw & Paw Protocol`} 
+                description={selectedProduct.description} 
+                image={selectedProduct.image} 
+            />
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={closeProduct} />
             
             <div className="relative z-10 w-full max-w-4xl bg-[#0a0a0a] border border-slate-800 flex flex-col md:flex-row overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-300 rounded-sm">
                 
                 {/* Close Button */}
                 <button 
-                    onClick={() => setSelectedProduct(null)}
+                    onClick={closeProduct}
                     className="absolute top-4 right-4 z-50 p-2 text-slate-500 hover:text-white bg-black/50 rounded-full backdrop-blur-md"
                 >
                     <X size={24} />

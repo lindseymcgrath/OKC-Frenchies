@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, BookOpen, Loader2, X, Calendar, ChevronRight } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const getString = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -45,9 +47,36 @@ interface BlogPost {
 }
 
 const Blog: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+
+  useEffect(() => {
+    const postParam = searchParams.get('post');
+    if (posts.length > 0 && postParam) {
+      const postIdOrName = decodeURIComponent(postParam).toLowerCase();
+      const foundPost = posts.find(p => p.id.toLowerCase() === postIdOrName || p.title.toLowerCase() === postIdOrName);
+      if (foundPost && (!selectedPost || foundPost.id !== selectedPost.id)) {
+        openPost(foundPost, false);
+      }
+    }
+  }, [posts, searchParams]);
+
+  const openPost = (post: BlogPost, updateUrl = true) => {
+    setSelectedPost(post);
+    if (updateUrl) {
+      searchParams.set('post', encodeURIComponent(post.id.toLowerCase()));
+      setSearchParams(searchParams, { replace: true });
+    }
+  };
+
+  const closePost = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setSelectedPost(null);
+    searchParams.delete('post');
+    setSearchParams(searchParams, { replace: true });
+  };
 
   useEffect(() => {
     if (selectedPost) {
@@ -121,6 +150,11 @@ const Blog: React.FC = () => {
 
   return (
     <section className="min-h-screen bg-[#020617] text-slate-200 pt-32 pb-20 relative">
+       <SEO 
+         title="French Bulldog Breeding Blog | OKC Frenchies"
+         description="Follow the OKC Frenchies editorial for expert insights into French Bulldog breeding protocols, DNA analysis, and canine reproduction."
+         url="https://okcfrenchies.com/french-bulldog-breeding-blog"
+       />
        {/* Background Elements */}
        <div className="absolute inset-0 bg-noise opacity-20 mix-blend-overlay pointer-events-none"></div>
        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-luxury-teal/5 rounded-full blur-[120px] pointer-events-none"></div>
@@ -154,7 +188,7 @@ const Blog: React.FC = () => {
           {!loading && featuredPost && (
             <div 
                 className="mb-32 group cursor-pointer grid grid-cols-1 lg:grid-cols-2 gap-12 items-center" 
-                onClick={() => setSelectedPost(featuredPost)}
+                onClick={() => openPost(featuredPost)}
             >
                 <div className="relative aspect-[4/3] overflow-hidden border border-slate-800 bg-slate-900">
                     {featuredPost.image ? (
@@ -183,7 +217,7 @@ const Blog: React.FC = () => {
                     </p>
                     <button 
                         className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-300 group-hover:text-luxury-teal transition-colors"
-                        onClick={(e) => { e.stopPropagation(); setSelectedPost(featuredPost); }}
+                        onClick={(e) => { e.stopPropagation(); openPost(featuredPost); }}
                     >
                         Read Article <ArrowUpRight size={16} />
                     </button>
@@ -198,7 +232,7 @@ const Blog: React.FC = () => {
                     <article 
                         key={`${post.id}-${idx}`} 
                         className="group cursor-pointer flex flex-col h-full" 
-                        onClick={() => setSelectedPost(post)}
+                        onClick={() => openPost(post)}
                     >
                         <div className="aspect-[3/4] overflow-hidden mb-8 border border-slate-800 relative bg-slate-900">
                             {post.image ? (
@@ -237,11 +271,16 @@ const Blog: React.FC = () => {
           {/* Reader Modal */}
           {selectedPost && (
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-0 md:p-6">
-                <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setSelectedPost(null)} />
+                <SEO 
+                    title={`${selectedPost.title} | OKC Frenchies Journal`}
+                    description={selectedPost.summary || `Read ${selectedPost.title} on the OKC Frenchies Journal.`}
+                    image={selectedPost.image}
+                />
+                <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={closePost} />
                 <div className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl overflow-y-auto z-[10000] animate-in fade-in zoom-in-95 duration-300 md:rounded-lg">
                      <button 
                         className="fixed top-6 right-6 z-50 p-3 bg-black/80 text-white hover:text-luxury-teal hover:bg-white/10 transition-all rounded-full backdrop-blur-md border border-white/10"
-                        onClick={() => setSelectedPost(null)}
+                        onClick={closePost}
                     >
                         <X size={24} />
                     </button>
@@ -266,7 +305,7 @@ const Blog: React.FC = () => {
                          </div>
                          <div className="mt-20 pt-10 border-t border-slate-800 text-center">
                               <button 
-                                onClick={() => setSelectedPost(null)}
+                                onClick={closePost}
                                 className="text-luxury-teal hover:text-white transition-colors text-xs uppercase tracking-[0.2em] font-bold border border-luxury-teal px-8 py-3 hover:bg-luxury-teal hover:text-black"
                               >
                                   Back to Journal
