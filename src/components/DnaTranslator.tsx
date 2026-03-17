@@ -107,7 +107,7 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
     };
 
     return (
-        <div className="flex flex-col relative w-full h-full">
+        <div className="flex flex-col md:flex-row relative w-full h-full pb-20 md:pb-0">
             
             {/* SUCCESS MODAL */}
             {showRoleModal && (
@@ -127,35 +127,37 @@ export const DnaTranslator: React.FC<DnaTranslatorProps> = ({
                 </div>
             )}
 
-            {/* TOP HEADER: VISUALIZER & DOG INFO */}
-            <div className="bg-[#020617] border-b border-slate-800 p-6 flex flex-col items-center relative overflow-hidden">
+            {/* LEFT CONTAINER COMPONENT (VISUALIZER & INFO) */}
+            <div className="md:w-1/2 bg-[#020617] border-b md:border-b-0 md:border-r border-slate-800 p-6 flex flex-col relative overflow-hidden">
+                
                 {/* GENDER TOGGLES */}
-                <div className="absolute top-4 left-4 z-20 flex gap-2">
+                <div className="w-full flex justify-center md:justify-start gap-2 z-20 relative mb-4">
                      <button onClick={() => setSingleGender('Male')} className={`px-4 py-1.5 text-[10px] uppercase font-bold border rounded-full transition-all ${singleGender === 'Male' ? 'bg-blue-600/20 text-blue-400 border-blue-500/50' : 'bg-transparent text-slate-600 border-slate-800'}`}>Male</button>
                      <button onClick={() => setSingleGender('Female')} className={`px-4 py-1.5 text-[10px] uppercase font-bold border rounded-full transition-all ${singleGender === 'Female' ? 'bg-pink-600/20 text-pink-400 border-pink-500/50' : 'bg-transparent text-slate-600 border-slate-800'}`}>Female</button>
                 </div>
                 
                 {/* VISUALIZER */}
-                <div className="h-48 w-full flex justify-center items-end pb-2 relative z-0 mt-6">
-                    <DogVisualizer traits={getPhenotype(currentDna)} showLabel={false} scale={0.9} />
+                <div className="h-64 md:h-[400px] w-full flex justify-center md:justify-start items-center relative z-0 pt-10 pb-4">
+                    <DogVisualizer traits={getPhenotype(currentDna)} showLabel={false} scale={1.05} />
                 </div>
 
-                <div className="w-full mt-4 flex flex-col items-center relative z-20">
+                {/* NAME & INFO */}
+                <div className="w-full mt-4 flex flex-col items-center md:items-start relative z-20">
                      <input 
                          type="text" 
                          placeholder="ENTER DOG NAME" 
                          value={dogName} 
                          onChange={(e) => setDogName(e.target.value.toUpperCase())} 
-                         className="w-full bg-transparent border-none focus:ring-0 outline-none text-center font-serif text-3xl text-white mb-1 tracking-wide placeholder:text-slate-700"
+                         className="w-full bg-transparent border-none focus:ring-0 outline-none text-center md:text-left font-serif text-3xl text-white mb-2 tracking-wide placeholder:text-slate-700 p-0"
                      />
-                     <div className="bg-slate-900/80 px-4 py-1.5 rounded-full border border-slate-800">
-                         <p className="font-mono text-[10px] text-luxury-teal tracking-wider">{getPhenotype(currentDna).compactDnaString}</p>
+                     <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 inline-block">
+                         <p className="font-mono text-[10px] text-luxury-teal tracking-wider md:text-left text-center">{getPhenotype(currentDna).compactDnaString}</p>
                      </div>
                 </div>
             </div>
 
-            {/* BOTTOM LIST: LOCI ROWS */}
-            <div className="flex-1 overflow-y-auto bg-[#020617] pb-24">
+            {/* RIGHT CONTAINER: LOCI ROWS */}
+            <div className="md:w-1/2 flex-1 overflow-y-auto bg-[#020617] pb-24 md:pb-24">
                  {renderLociRows()}
             </div>
 

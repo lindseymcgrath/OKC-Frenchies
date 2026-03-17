@@ -175,7 +175,7 @@ export default function Calculator() {
        />
 
        {/* Top Header / App Bar */}
-       <div className="w-full bg-[#0a0a0a] border-b border-slate-800 sticky top-0 z-40 md:static md:max-w-md shadow-xl">
+       <div className="w-full bg-[#0a0a0a] border-b border-slate-800 sticky top-0 z-40 md:static md:max-w-[1200px] shadow-xl">
             <div className="p-4 text-center pb-2">
                 <h1 className="font-serif text-2xl md:text-3xl bg-clip-text text-transparent bg-gradient-to-r from-luxury-teal via-white to-luxury-magenta uppercase tracking-widest">DNA Matrix</h1>
             </div>
@@ -198,7 +198,7 @@ export default function Calculator() {
        </div>
 
        {/* Connect Kennel Row */}
-       <div className="w-full md:max-w-md bg-[#020617] p-4 flex justify-between items-center border-b border-slate-800/50 relative z-10 shadow-sm">
+       <div className="w-full md:max-w-[1200px] bg-[#020617] p-4 flex justify-between items-center border-b border-slate-800/50 relative z-10 shadow-sm">
             <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">My Account</span>
            {user.userId ? (
                <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ export default function Calculator() {
        </div>
 
        {/* App Content Area */}
-       <div className="w-full md:max-w-md flex-grow bg-[#0f172a] md:border-x border-slate-800 relative shadow-2xl overflow-hidden pb-10">
+       <div className="w-full md:max-w-[1200px] flex-grow bg-[#0f172a] md:border-x border-slate-800 relative shadow-2xl overflow-hidden pb-10">
             <div>
                  {mode === 'single' ? (
                     <DnaTranslator 
