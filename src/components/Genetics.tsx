@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dna, Loader2, AlertTriangle, Atom, X, FileText } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import SEO from './SEO';
 
 interface GlossaryTerm {
   id: string;
@@ -18,8 +19,22 @@ const Genetics: React.FC = () => {
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTerm | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [initialDeepLinkDone, setInitialDeepLinkDone] = useState(false);
+
+  const openTerm = (term: GlossaryTerm, updateUrl = true) => {
+      setSelectedTerm(term);
+      if (updateUrl) {
+          searchParams.set('term', encodeURIComponent(term.term.toLowerCase()));
+          setSearchParams(searchParams, { replace: true });
+      }
+  };
+
+  const closeTerm = () => {
+      setSelectedTerm(null);
+      searchParams.delete('term');
+      setSearchParams(searchParams, { replace: true });
+  };
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -121,7 +136,7 @@ const Genetics: React.FC = () => {
                       terms.find(t => t.locus.toLowerCase().includes(target));
 
         if (match) {
-            setSelectedTerm(match);
+            openTerm(match, false);
         }
         setInitialDeepLinkDone(true);
     }
@@ -227,7 +242,7 @@ const Genetics: React.FC = () => {
                     return (
                         <div 
                             key={term.id}
-                            onClick={() => setSelectedTerm(term)}
+                            onClick={() => openTerm(term)}
                             className={`group relative p-8 bg-[#0a0a0a]/80 backdrop-blur-md border rounded-sm transition-all duration-500 transform hover:scale-[1.02] cursor-pointer ${styles.border} ${styles.glow}`}
                         >
                             {/* Top Row: Category */}
@@ -276,11 +291,15 @@ const Genetics: React.FC = () => {
       {/* Expanded Info Modal */}
       {selectedTerm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={() => setSelectedTerm(null)} />
+            <SEO 
+                title={`${selectedTerm.term} | OKC Frenchies Genetic Encyclopedia`}
+                description={selectedTerm.definition.slice(0, 160)}
+            />
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-xl transition-opacity" onClick={closeTerm} />
             
             <div className="relative z-10 w-full max-w-2xl bg-[#0a0a0a] border border-slate-800 p-8 md:p-12 shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in fade-in zoom-in-95 duration-300 rounded-sm overflow-y-auto max-h-[90vh]">
                 <button 
-                    onClick={() => setSelectedTerm(null)}
+                    onClick={closeTerm}
                     className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors border border-transparent hover:border-slate-800 rounded-full"
                 >
                     <X size={24} />
@@ -324,7 +343,7 @@ const Genetics: React.FC = () => {
                 
                 <div className="mt-12 flex justify-end">
                     <button 
-                        onClick={() => setSelectedTerm(null)}
+                        onClick={closeTerm}
                         className={`px-8 py-3 font-sans text-xs font-bold uppercase tracking-[0.2em] transition-colors border bg-transparent hover:text-white ${getCardStyles(selectedTerm.category).text} ${getCardStyles(selectedTerm.category).border}`}
                     >
                         Close Record
