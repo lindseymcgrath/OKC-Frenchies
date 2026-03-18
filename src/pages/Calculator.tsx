@@ -5,7 +5,7 @@ import { LogIn, LogOut, User } from 'lucide-react';
 import { 
     DEFAULT_DNA, 
     SavedDog,
-    saveDogToDB, fetchDogsFromDB, deleteDogFromDB
+    saveDogToDB, fetchDogsFromDB, deleteDogFromDB, updateDogInDB
 } from '../utils/calculatorHelpers';
 import { useUserCredits } from '../hooks/useUserCredits';
 import { DnaTranslator } from '../components/DnaTranslator';
@@ -83,7 +83,30 @@ export default function Calculator() {
       loadKennel();
   }, [user.userId]);
 
-  const [singleGender, setSingleGender] = useState<'Male' | 'Female'>('Male');
+   const handleUpdateDog = async (id: string, updates: Partial<SavedDog>) => {
+      // Update local state immediately
+      setSavedDogs(prev => prev.map(dog => dog.id === id ? { ...dog, ...updates } : dog));
+      
+      // Update DB if user is logged in
+      if (user.userId) {
+          try {
+              await updateDogInDB(id, updates);
+          } catch (error) {
+              console.error("Failed to update dog in DB", error);
+              // Optionally revert local state on error
+          }
+      } else {
+          // Update local storage
+          const stored = localStorage.getItem('okc_kennel');
+          if (stored) {
+              const parsed = JSON.parse(stored);
+              const updated = parsed.map((dog: any) => dog.id === id ? { ...dog, ...updates } : dog);
+              localStorage.setItem('okc_kennel', JSON.stringify(updated));
+          }
+      }
+   };
+
+   const [singleGender, setSingleGender] = useState<'Male' | 'Female'>('Male');
   const [sire, setSire] = useState({ ...DEFAULT_DNA }); 
   const [dam, setDam] = useState({ ...DEFAULT_DNA });
   const currentDna = singleGender === 'Male' ? sire : dam;

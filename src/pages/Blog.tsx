@@ -150,7 +150,7 @@ const Blog: React.FC = () => {
   }, []);
 
   const featuredPost = posts.length > 0 ? posts[0] : null;
-  const gridPosts = posts.length > 1 ? posts.slice(1) : [];
+  const gridPosts = posts;
 
   return (
     <section className="min-h-screen bg-[#020617] text-slate-200 pt-32 pb-20 relative">
