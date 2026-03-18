@@ -42,8 +42,6 @@ export interface SavedDog {
     gender: 'Male' | 'Female';
     dna: any;
     date: string;
-    price?: number;
-    status?: string;
 }
 
 export const getStripeLinks = (email: string) => {
@@ -328,45 +326,20 @@ export const calculateLitterPrediction = (sire: any, dam: any) => {
 
 export const saveDogToDB = async (userId: string, dog: any): Promise<SavedDog | null> => {
     if (!userId) return null;
-    const { data, error } = await supabase.from('dogs').insert([{ 
-        owner_id: userId, 
-        dog_name: dog.name, 
-        sex: dog.gender, 
-        dna: dog.dna,
-        price: dog.price || 0,
-        status: dog.status || 'Available'
-    }]).select().single();
+    const { data, error } = await supabase.from('dogs').insert([{ owner_id: userId, dog_name: dog.name, sex: dog.gender, dna: dog.dna }]).select().single();
     if (error) return null;
-    return { ...dog, id: String(data.id), price: data.price, status: data.status };
+    return { ...dog, id: String(data.id) };
 };
 
 export const fetchDogsFromDB = async (userId: string): Promise<SavedDog[]> => {
     if (!userId) return [];
     const { data, error } = await supabase.from('dogs').select('*').eq('owner_id', userId).order('created_at', { ascending: false });
     if (error) return [];
-    return data.map((row: any) => ({ 
-        id: String(row.id), 
-        name: row.dog_name, 
-        gender: row.sex, 
-        dna: row.dna, 
-        date: new Date(row.created_at).toLocaleDateString(),
-        price: row.price,
-        status: row.status
-    }));
+    return data.map((row: any) => ({ id: String(row.id), name: row.dog_name, gender: row.sex, dna: row.dna, date: new Date(row.created_at).toLocaleDateString() }));
 };
 
 export const deleteDogFromDB = async (dogId: string) => {
     const { error } = await supabase.from('dogs').delete().eq('id', dogId);
-    return !error;
-};
-
-export const updateDogInDB = async (dogId: string, updates: Partial<SavedDog>) => {
-    const payload: any = {};
-    if (updates.name) payload.dog_name = updates.name;
-    if (updates.price !== undefined) payload.price = updates.price;
-    if (updates.status) payload.status = updates.status;
-    
-    const { error } = await supabase.from('dogs').update(payload).eq('id', dogId);
     return !error;
 };
 
