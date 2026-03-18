@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Crown, Infinity, CreditCard, Ticket, CheckCircle, Loader2, Search, Trash2, LogIn, AlertTriangle } from 'lucide-react';
+import { X, Crown, Infinity, CreditCard, Ticket, CheckCircle, Loader2, Search, Trash2, LogIn, AlertTriangle, ExternalLink } from 'lucide-react';
 import { getStripeLinks, SavedDog, getPhenotype } from '../utils/calculatorHelpers';
 import SEO from './SEO';
 
@@ -23,6 +23,7 @@ interface CalculatorModalsProps {
     setPromoCodeInput: (val: string) => void;
     handlePromoSubmit: (callback: () => void) => void;
     userId?: string | null;
+    onUpdateDog?: (id: string, updates: Partial<SavedDog>) => void;
 }
 
 export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
@@ -30,7 +31,7 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
         showKennel, setShowKennel, savedDogs, loadDogSmart, removeDog,
         showLogin, setShowLogin, userEmail, setUserEmail, handleLoginSubmit,
         showPaywall, setShowPaywall, credits, isSubscribed, isUnlocked,
-        promoCodeInput, setPromoCodeInput, handlePromoSubmit
+        promoCodeInput, setPromoCodeInput, handlePromoSubmit, onUpdateDog
     } = props;
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -98,6 +99,22 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                         </div>
                         
                         <div className="p-4 border-b border-slate-800 bg-black/20">
+                            {/* Valuation Summary */}
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="bg-slate-900/80 border border-luxury-teal/20 p-3 rounded-sm">
+                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Net Kennel Worth</p>
+                                    <p className="text-xl font-serif text-white">
+                                        ${(filteredDogs.filter(d => !d.status || d.status.toLowerCase() !== 'sold').reduce((sum, d) => sum + (Number(d.price) || 0), 0)).toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="bg-slate-900/80 border border-luxury-magenta/20 p-3 rounded-sm">
+                                    <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1">Total Puppy Sales</p>
+                                    <p className="text-xl font-serif text-white">
+                                        ${(filteredDogs.filter(d => d.status?.toLowerCase() === 'sold').reduce((sum, d) => sum + (Number(d.price) || 0), 0)).toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+
                             <div className="relative">
                                 <Search className="absolute left-3 top-2.5 text-slate-500" size={16} />
                                 <input 
@@ -118,25 +135,62 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                                     <div key={dog.id} className="flex items-center justify-between bg-black/40 border border-slate-800 p-4 rounded-sm hover:border-luxury-teal/30 group transition-all">
                                         
                                         <div className="flex items-center gap-4 flex-1 cursor-pointer min-w-0" onClick={() => loadDogSmart(dog)}>
-                                            <div className={`w-1.5 h-10 rounded-full shrink-0 ${dog.gender === 'Male' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]' : 'bg-pink-500 shadow-[0_0_8px_rgba(236,72,153,0.4)]'}`}></div>
-                                            <div className="min-w-0">
-                                                <h4 className="font-serif text-lg text-white group-hover:text-luxury-teal transition-colors truncate uppercase tracking-wide">{dog.name}</h4>
+                                            <div className={`w-1.5 h-12 rounded-full shrink-0 ${dog.gender === 'Male' ? 'bg-blue-500' : 'bg-pink-500'}`}></div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-serif text-lg text-white group-hover:text-luxury-teal transition-colors truncate uppercase tracking-wide">{dog.name}</h4>
+                                                    <span className={`text-[8px] px-1.5 py-0.5 rounded-sm font-bold uppercase ${dog.status?.toLowerCase() === 'sold' ? 'bg-red-500/20 text-red-500' : 'bg-emerald-500/20 text-emerald-500'}`}>
+                                                        {dog.status || 'Available'}
+                                                    </span>
+                                                </div>
                                                 <p className="text-[10px] text-slate-500 font-mono truncate uppercase tracking-tight">
                                                     {getPhenotype(dog.dna).compactDnaString}
                                                 </p>
                                             </div>
                                         </div>
 
-                                        <div className="flex items-center gap-2 ml-4">
-                                            <button 
-                                                type="button"
-                                                onClick={(e) => handleDeleteClick(e, dog)}
-                                                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
-                                                title="Delete Dog"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
+                                        <div className="text-right flex flex-col items-end gap-1">
+                                            <p className="text-[9px] text-slate-500 uppercase tracking-tighter">Valuation</p>
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-white font-mono text-sm">$</span>
+                                                <input 
+                                                    type="number" 
+                                                    defaultValue={dog.price || 0}
+                                                    onBlur={(e) => {
+                                                        const newPrice = Number(e.target.value);
+                                                        if (newPrice !== dog.price) {
+                                                            if (onUpdateDog) onUpdateDog(dog.id, { price: newPrice });
+                                                        }
+                                                    }}
+                                                    className="w-16 bg-slate-800 border border-slate-700 text-white font-mono text-sm rounded-sm px-1 text-right outline-none focus:border-luxury-teal"
+                                                />
+                                            </div>
+                                            <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={dog.status?.toLowerCase() === 'sold'}
+                                                    onChange={(e) => {
+                                                        const newStatus = e.target.checked ? 'Sold' : 'Available';
+                                                        if (onUpdateDog) onUpdateDog(dog.id, { status: newStatus });
+                                                    }}
+                                                    className="sr-only peer"
+                                                />
+                                                <div className="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:bg-luxury-magenta relative transition-all">
+                                                    <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full transition-all peer-checked:left-4"></div>
+                                                </div>
+                                                <span className="text-[8px] text-slate-500 uppercase font-bold peer-checked:text-luxury-magenta">
+                                                    {dog.status?.toLowerCase() === 'sold' ? 'Sold' : 'Sell'}
+                                                </span>
+                                            </label>
                                         </div>
+                                        <button 
+                                            type="button"
+                                            onClick={(e) => handleDeleteClick(e, dog)}
+                                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-all"
+                                            title="Delete Dog"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
                                     </div>
                                 ))
                             )}
@@ -168,6 +222,24 @@ export const CalculatorModals: React.FC<CalculatorModalsProps> = (props) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Subscription Management (Pro Only) */}
+                        {isSubscribed && (
+                            <div className="p-4 bg-slate-900/50 border-t border-slate-800 flex justify-between items-center">
+                                <div>
+                                    <p className="text-[9px] text-luxury-teal uppercase font-bold tracking-widest">PRO SUBSCRIPTION ACTIVE</p>
+                                    <p className="text-[10px] text-slate-500">Manage your billing and plan details</p>
+                                </div>
+                                <a 
+                                    href="https://billing.stripe.com/p/login/test_fZe6pU5Ere3F228288" // Replace with real customer portal link
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="px-4 py-2 border border-slate-700 text-slate-300 text-[10px] font-bold uppercase rounded-sm hover:bg-slate-800 transition-all flex items-center gap-2"
+                                >
+                                    Manage Plan <ExternalLink size={12} />
+                                </a>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

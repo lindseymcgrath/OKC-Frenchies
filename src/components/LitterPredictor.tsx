@@ -42,18 +42,29 @@ export const LitterPredictor = (props: any) => {
                         <DogVisualizer traits={traits} scale={1.05} showLabel={false} />
                     </div>
 
-                    <div className="w-full mt-4 flex flex-col items-center md:items-start relative z-20">
-                         <input 
-                             type="text" 
-                             placeholder={`${label} NAME`} 
-                             value={name} 
-                             onChange={(e) => setName(e.target.value.toUpperCase())} 
-                             className="w-full bg-transparent border-none focus:ring-0 outline-none text-center md:text-left font-serif text-3xl text-white mb-2 tracking-wide placeholder:text-slate-700 p-0"
-                         />
-                         <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 inline-block">
-                             <p className="font-mono text-[10px] text-luxury-teal tracking-wider text-center md:text-left">{traits.compactDnaString}</p>
-                         </div>
-                    </div>
+                     <div className="w-full mt-4 flex flex-col items-center md:items-start relative z-20">
+                          <div className="flex items-center w-full gap-2 mb-2">
+                             <input 
+                                 type="text" 
+                                 placeholder={`${label} NAME`} 
+                                 value={name} 
+                                 onChange={(e) => setName(e.target.value.toUpperCase())} 
+                                 className="flex-1 bg-transparent border-none focus:ring-0 outline-none text-center md:text-left font-serif text-3xl text-white tracking-wide placeholder:text-slate-700 p-0"
+                             />
+                             <button 
+                                onClick={() => {
+                                    setActiveLoadSlot(label.toLowerCase());
+                                    setShowKennel(true);
+                                }}
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-luxury-teal hover:text-black text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all border border-slate-700 flex items-center gap-1.5 text-slate-400 group"
+                             >
+                                <Search size={12} className="group-hover:text-black"/> Load
+                             </button>
+                          </div>
+                          <div className="bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 inline-block">
+                              <p className="font-mono text-[10px] text-luxury-teal tracking-wider text-center md:text-left">{traits.compactDnaString}</p>
+                          </div>
+                     </div>
                 </div>
 
                 {/* RIGHT: LOCI LIST */}

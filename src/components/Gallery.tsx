@@ -92,6 +92,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
     const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
     const [modalImageError, setModalImageError] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [showSold, setShowSold] = useState(false);
 
     useEffect(() => {
         if (selectedDog) {
@@ -377,10 +378,23 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                             {subtitle}
                         </p>
                     </div>
-                    <div className="mt-6 md:mt-0">
+                    <div className="mt-6 md:mt-0 flex flex-col items-end gap-2">
                         <span className="font-mono text-xs text-slate-500">
-                            {loading ? 'SYNCING...' : `${dogs.length} AVAILABLE`}
+                            {loading ? 'SYNCING...' : (() => {
+                                const available = dogs.filter(d => d.status.toLowerCase().includes('available') || !d.status || (!d.status.toLowerCase().includes('sold') && !d.status.toLowerCase().includes('stud'))).length;
+                                const sold = dogs.filter(d => d.status.toLowerCase().includes('sold')).length;
+                                if (sold > 0) return `${available} AVAILABLE • ${sold} SOLD`;
+                                return `${dogs.length} AVAILABLE`;
+                            })()}
                         </span>
+                        {!loading && dogs.some(d => d.status.toLowerCase().includes('sold')) && (
+                            <button 
+                                onClick={() => setShowSold(!showSold)}
+                                className={`text-[10px] uppercase tracking-widest px-3 py-1 border transition-all ${showSold ? 'bg-luxury-teal text-black border-luxury-teal' : 'text-slate-400 border-slate-700 hover:border-slate-500'}`}
+                            >
+                                {showSold ? 'Viewing All' : 'Show Sold'}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -401,10 +415,12 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
 
                 {!loading && !error && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {dogs.map((dog) => (
+                        {dogs
+                            .filter(dog => showSold || !dog.status.toLowerCase().includes('sold'))
+                            .map((dog) => (
                             <div
                                 key={dog.id}
-                                className="group relative bg-white/5 backdrop-blur-md border border-luxury-teal/30 hover:border-luxury-teal/60 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm"
+                                className={`group relative bg-white/5 backdrop-blur-md border border-luxury-teal/30 hover:border-luxury-teal/60 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm ${dog.status.toLowerCase().includes('sold') ? 'opacity-70' : ''}`}
                                 onClick={() => openModal(dog)}
                             >
                                 <div className="relative aspect-[4/5] overflow-hidden bg-slate-900 pointer-events-none">

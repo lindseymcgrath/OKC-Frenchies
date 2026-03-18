@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Crown } from 'lucide-react';
+import { useUserCredits } from '../hooks/useUserCredits';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const { isSubscribed } = useUserCredits();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,13 +55,23 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         {/* Logo Area */}
         <Link to="/" className="flex items-center gap-3 group relative z-50">
-          <img 
-            src="https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/okc-frenchies-logo.PNG" 
-            alt="OKC Frenchies Logo" 
-            className="h-12 w-auto object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.2)] transition-transform duration-500 group-hover:scale-110" 
-          />
+          <div className="relative">
+            <img 
+              src={isSubscribed 
+                ? "/kennel-king-pro-logo.png" 
+                : "https://raw.githubusercontent.com/lindseymcgrath/OKC-Frenchies/main/public/images/visuals/okc-frenchies-logo.PNG"
+              } 
+              alt="OKC Frenchies Logo" 
+              className={`h-12 w-auto object-contain transition-all duration-500 group-hover:scale-110 ${isSubscribed ? 'drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'drop-shadow-[0_0_15px_rgba(45,212,191,0.2)]'}`} 
+            />
+            {isSubscribed && (
+              <div className="absolute -top-1 -right-1">
+                <Crown size={12} className="text-luxury-gold animate-bounce" />
+              </div>
+            )}
+          </div>
           <span className="font-serif text-2xl font-bold tracking-widest text-slate-100 group-hover:text-white transition-colors">
-            OKC<span className="text-luxury-teal group-hover:text-luxury-teal/80">FRENCHIES</span>
+            OKC<span className={isSubscribed ? "text-luxury-gold" : "text-luxury-teal"}>FRENCHIES</span>
           </span>
         </Link>
 
