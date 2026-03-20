@@ -23,6 +23,9 @@ import Protocol from './pages/Protocol';
 import Genetics from './pages/Genetics';
 import Calculator from './pages/Calculator';
 import Footer from './components/Footer';
+import KennelKingPrivacy from './pages/KennelKingPrivacy';
+import KennelKingSupport from './pages/KennelKingSupport';
+import KennelKingDataDeletion from './pages/KennelKingDataDeletion';
 
 const App: React.FC = () => {
   return (
@@ -47,6 +50,11 @@ const App: React.FC = () => {
         <main className="min-h-screen">
           <Routes>
             <Route path="/" element={<Home />} />
+            
+            {/* 🍎 App Store Mandatory Pages (Orphan pages) */}
+            <Route path="/kennel-king-privacy" element={<KennelKingPrivacy />} />
+            <Route path="/kennel-king-support" element={<KennelKingSupport />} />
+            <Route path="/kennel-king-data-deletion" element={<KennelKingDataDeletion />} />
             
             {/* 🎯 SEO Long-Tail Slugs - Keep these for Vercel/Google indexing */}
             <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
