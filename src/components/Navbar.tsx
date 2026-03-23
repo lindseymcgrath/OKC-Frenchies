@@ -64,7 +64,7 @@ const Navbar: React.FC = () => {
         </Link>
 
         {/* Desktop Links (Updated with SEO Slugs) */}
-        <div className="hidden md:flex items-center gap-10 font-sans text-xs font-medium relative z-50">
+        <div className="hidden lg:flex items-center gap-6 font-sans text-[11px] font-medium xl:gap-8 relative z-50">
           
           <NavLink 
             to="/french-bulldog-puppies-for-sale" 
@@ -80,14 +80,6 @@ const Navbar: React.FC = () => {
             label="Studs" 
             activeColorClass="text-luxury-teal" 
             glowColorClass="bg-luxury-teal" 
-          />
-          
-          <NavLink 
-            to="/french-bulldog-color-calculator" 
-            aliases={["/calculator"]}
-            label="DNA Matrix" 
-            activeColorClass="text-luxury-magenta" 
-            glowColorClass="bg-luxury-magenta" 
           />
 
           <NavLink 
@@ -115,6 +107,13 @@ const Navbar: React.FC = () => {
           />
           
           <NavLink 
+            to="/buyer-education" 
+            label="Buyer Ed" 
+            activeColorClass="text-amber-400" 
+            glowColorClass="bg-amber-400" 
+          />
+          
+          <NavLink 
             to="/puppy-inquiry-form" 
             aliases={["/inquiry"]}
             label="Contact" 
@@ -138,10 +137,10 @@ const Navbar: React.FC = () => {
         <div className="absolute top-full left-0 w-full bg-luxury-black/95 backdrop-blur-xl border-b border-luxury-slate p-8 flex flex-col gap-8 md:hidden animate-in fade-in slide-in-from-top-5">
            <Link to="/french-bulldog-puppies-for-sale" className="text-sm tracking-widest uppercase text-fuchsia-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Puppies</Link>
            <Link to="/french-bulldog-stud-service" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Studs</Link>
-           <Link to="/french-bulldog-color-calculator" className="text-sm tracking-widest uppercase text-luxury-magenta hover:text-white" onClick={() => setIsMenuOpen(false)}>DNA Matrix</Link>
            <Link to="/french-bulldog-breeding-blog" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Journal</Link>
            <Link to="/french-bulldog-coat-color-genetics" className="text-sm tracking-widest uppercase text-fuchsia-400 hover:text-white" onClick={() => setIsMenuOpen(false)}>Genetics</Link>
            <Link to="/french-bulldog-breeding-protocol" className="text-sm tracking-widest uppercase text-slate-300 hover:text-white" onClick={() => setIsMenuOpen(false)}>Protocol</Link>
+           <Link to="/buyer-education" className="text-sm tracking-widest uppercase text-amber-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Buyer Ed</Link>
            <Link to="/puppy-inquiry-form" className="text-sm tracking-widest uppercase text-amber-200 hover:text-white" onClick={() => setIsMenuOpen(false)}>Contact</Link>
         </div>
       )}

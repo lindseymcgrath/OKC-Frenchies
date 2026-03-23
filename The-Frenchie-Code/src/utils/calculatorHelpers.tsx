@@ -1,0 +1,429 @@
+import { createClient } from '@supabase/supabase-js';
+
+// =============================================================
+// GPS 1: CONFIGURATION & UTILITIES
+// =============================================================
+const SUPABASE_URL = "https://phesicyzrddvediskbop.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_33VtkOkPtZVJTpYxx6N2Kg_agIQ5X4h";
+
+const getEnv = (key: string) => {
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.[key]) return (import.meta as any).env[key];
+    if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) return import.meta.env[key];
+    return '';
+};
+
+export const supabase = createClient(
+    getEnv('VITE_SUPABASE_URL') || SUPABASE_URL,
+    getEnv('VITE_SUPABASE_ANON_KEY') || SUPABASE_ANON_KEY,
+    {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            storage: window.localStorage
+        }
+    }
+);
+
+export const FREEBIE_CODE = "OKCFREE";
+const REMOTE_BASE_URL = "/images/visuals/";
+
+export interface VisualTraits {
+    baseColorName: string;
+    phenotypeName: string;
+    layers: string[];
+    compactDnaString: string;
+    carriersString: string;
+}
+
+export interface SavedDog {
+    id: string;
+    name: string;
+    gender: 'Male' | 'Female';
+    dna: any;
+    date: string;
+}
+
+export const getStripeLinks = (email: string) => {
+    const encodedEmail = encodeURIComponent(email || '');
+    const suffix = `?prefilled_email=${encodedEmail}&client_reference_id=${encodedEmail}`;
+    return {
+        BASE_1: `https://buy.stripe.com/3cI8wI9EL8r34bJcpX3sI00${suffix}`,
+        BASE_5: `https://buy.stripe.com/00wcMYeZ5azbeQn4Xv3sI01${suffix}`,
+        BASE_SUB: `https://buy.stripe.com/7sY00cbMT5eRfUrblT3sI02${suffix}`
+    };
+};
+
+// 🔥 REMOVED: PROMPTS and DEFAULT_SCENE_PROMPT deleted (Studio only)
+
+// =============================================================
+// GPS 2: LOCI DEFINITIONS
+// =============================================================
+export const LOCI = {
+    Pink: { label: 'Pink', options: ['n/n', 'n/A', 'A/A'] },
+    A: { label: 'Agouti (A-Locus)', options: ['Ay/Ay', 'Ay/aw', 'Ay/at', 'Ay/a', 'aw/aw', 'aw/at', 'aw/a', 'at/at', 'at/a', 'a/a'] },
+    B: { label: 'Rojo (B-Locus)', options: ['N/N', 'N/b', 'b/b'] },
+    Co: { label: 'Cocoa (co-Locus)', options: ['n/n', 'N/co', 'co/co'] },
+    D: { label: 'Blue (D-Locus)', options: ['N/N', 'N/d', 'd/d'] },
+    E: { label: 'Red/Cream (E-Locus)', options: ['E/E', 'Em/Em', 'Em/E', 'Em/e', 'Em/eA', 'E/e', 'E/eA', 'e/e', 'eA/eA', 'eA/e'] },
+    Int: { label: 'Intensity (I-Locus)', options: ['n/n', 'n/Int', 'Int/Int'] },
+    K: { label: 'Brindle (K-Locus)', options: ['n/n', 'n/KB', 'KB/KB'] },
+    M: { label: 'Merle (M-Locus)', options: ['n/n', 'n/M', 'M/M'] },
+    Koi: { label: 'Koi Pattern', options: ['No', 'Yes'] },
+    Panda: { label: 'Panda Pattern', options: ['No', 'Yes'] },
+    S: { label: 'Pied (S-Locus)', options: ['n/n', 'n/S', 'S/S'] },
+    L: { label: 'Fluffy (L-Locus)', options: ['L/L', 'L/l1', 'L/l4', 'l1/l1', 'l1/l4', 'l4/l4'] },
+    C: { label: 'Curly (Cu-Locus)', options: ['n/n', 'n/C1', 'n/C2', 'C1/C1', 'C1/C2', 'C2/C2'] },
+    F: { label: 'Furnishing (F-Locus)', options: ['n/n', 'n/F', 'F/F'] }
+};
+export const DEFAULT_DNA = Object.keys(LOCI).reduce((acc: any, key) => ({ ...acc, [key]: (LOCI as any)[key].options[0] }), {});
+
+// =============================================================
+// GPS 3: GET PHENOTYPE (VISUAL LOGIC)
+// =============================================================
+export const getPhenotype = (dna: any): VisualTraits => {
+    if (!dna) return { baseColorName: 'Black', phenotypeName: 'Black', layers: [], compactDnaString: 'Standard', carriersString: '' };
+
+    const get = (key: string) => dna[key] || (LOCI as any)[key]?.options[0] || 'n/n';
+    const path = (name: string) => REMOTE_BASE_URL + name.trim();
+
+    const b = get('B') === 'b/b', co = get('Co') === 'co/co', d = get('D') === 'd/d';
+    const pinkVal = get('Pink'), isPink = pinkVal.includes('A/A') || pinkVal === 'Pink';
+    const eVal = get('E');
+    const isGeneticCream = eVal === 'e/e';
+    const hasAncientRed = eVal.includes('eA');
+    const sVal = get('S');
+    const isFullPied = sVal === 'S/S';
+    const isCarrierPied = sVal === 'n/S' || sVal === 'S/n';
+    const isDoubleIntensity = get('Int') === 'Int/Int';
+
+    // eA + Intensity + Pied Override logic
+    const isVisualCreamOverride = hasAncientRed && (isDoubleIntensity || ((isFullPied || isCarrierPied) && get('Int') !== 'n/n'));
+    const showCreamBase = isGeneticCream || isVisualCreamOverride;
+
+    const aVal = get('A'), kVal = get('K');
+    const lVal = get('L'), fVal = get('F'), cVal = get('C');
+    const mVal = get('M'), isMerle = mVal !== 'n/n';
+    const isBrindle = kVal.includes('KB');
+
+    const isFluffy = lVal.includes('l') && !lVal.includes('L');
+    const isFurnished = fVal.includes('F'), isCurly = cVal.includes('C');
+    const isFloodle = isFurnished && isFluffy;
+
+    // Koi & Husky Logic
+    const isKoi = get('Koi') === 'Yes' || (isMerle && get('Panda').includes('Yes'));
+    const isHusky = get('Panda').includes('Yes') || isKoi;
+
+    let colorName = "Black", slug = "black";
+    if (showCreamBase) { colorName = "Cream"; slug = "cream"; }
+    else if (isPink) { colorName = "Pink"; slug = "pink"; }
+    else if (b && co && d) { colorName = "New Shade Isabella"; slug = "new-shade-isabella"; }
+    else if (b && co) { colorName = "New Shade Rojo"; slug = "rojo"; }
+    else if (b && d) { colorName = "Isabella"; slug = "isabella"; }
+    else if (co && d) { colorName = "Lilac"; slug = "lilac"; }
+    else if (b) { colorName = "Rojo"; slug = "rojo"; }
+    else if (co) { colorName = "Cocoa"; slug = "cocoa"; }
+    else if (d) { colorName = "Blue"; slug = "blue"; }
+
+    let layers: string[] = [];
+    const suffix = (isFluffy) ? '-fluffy.png' : '.png';
+
+    // 1. Base Layer
+    if (showCreamBase) layers.push(path('base-cream.png'));
+    else if (isPink) layers.push(path(isFluffy ? 'base-pink-fluffy.png' : 'base-pink.png'));
+    else if (aVal.includes('Ay') && !kVal.includes('KB')) layers.push(path('base-fawn' + suffix));
+    else layers.push(path(`base-${slug}${suffix}`));
+
+    // 2. Base Overlays (Tan Points, Brindle, Merle)
+    if (!showCreamBase) {
+        if (isBrindle) layers.push(path('overlay-brindle.png'));
+        if (aVal.includes('at') && !isBrindle) layers.push(path('overlay-tan-point' + suffix));
+        if (hasAncientRed) layers.push(path('overlay-ea.png'));
+
+        if (isMerle || isKoi) {
+            let mKey = slug;
+            if (['blue', 'lilac'].includes(slug)) {
+                mKey = 'gray'; // Blue/Lilac bases require the lighter gray Merle mask
+            } else if (slug === 'black') {
+                // If the dog is actually Fawn (Ay and no Brindle), use the fawn Merle mask
+                if (aVal.includes('Ay') && !isBrindle) {
+                    mKey = 'fawn';
+                } else {
+                    // Otherwise, it's a true black (or trindle) dog, so use the black Merle mask
+                    mKey = 'black';
+                }
+            }
+            layers.push(path(`overlay-merle-${isPink ? 'pink' : mKey}.png`));
+        }
+    }
+
+    // 🔥 WHITE-SPACE OVERLAYS: Husky/Koi sit on top of everything
+    if (isKoi) {
+        layers.push(path('overlay-koi.png'));
+    }
+    if (isHusky) {
+        layers.push(path('overlay-husky.png'));
+    }
+
+    // Structural Overlays
+    if (isFurnished) {
+        let furnishingFile = 'overlay-furnishing.png';
+        if (slug === 'cream' || isPink) furnishingFile = 'overlay-cream-furnishing.png';
+        else if (['blue', 'lilac'].includes(slug)) furnishingFile = 'overlay-gray-furnishing.png';
+        else if (['cocoa', 'rojo', 'isabella', 'new-shade-isabella', 'new-shade-rojo'].includes(slug)) furnishingFile = 'overlay-cocoa-furnishing.png';
+        layers.push(path(furnishingFile));
+    }
+
+    if (isCurly) layers.push(path('overlay-curly.png'));
+
+    // Pied Logic (Final top layer)
+    if (isFullPied) layers.push(path('overlay-pied.png'));
+    else if (isCarrierPied) layers.push(path('overlay-pied-carrier.png'));
+
+    // 4. Final Name Construction
+    let names = [];
+    if (isFloodle) names.push("FLOODLE");
+    else {
+        if (isFluffy) names.push("FLUFFY");
+        if (isFurnished) names.push("FURNISHED");
+    }
+
+    names.push(colorName.toUpperCase());
+
+    if (isKoi) {
+        names.push("KOI");
+    } else {
+        if (hasAncientRed && !showCreamBase) {
+            if (isMerle) names.push("eA MERLE");
+            else if (isHusky) names.push("eA HUSKY");
+            else names.push("eA");
+        } else {
+            if (isMerle) names.push("MERLE");
+            if (isHusky) names.push("HUSKY");
+        }
+    }
+
+    if (isBrindle && aVal.includes('at')) names.push("TRINDLE");
+    else if (isBrindle) names.push("BRINDLE");
+    if (isFullPied) names.push("PIED");
+    if (isCurly && !isFloodle) names.push("CURLY");
+
+    // 5. DNA & Carrier Detection
+    const dnaParts: string[] = [];
+    const carriers: string[] = [];
+
+    if (get('A') !== 'Ay/Ay') dnaParts.push(get('A'));
+    if (b) dnaParts.push('b/b');
+    if (co) dnaParts.push('co/co');
+    if (d) dnaParts.push('d/d');
+    dnaParts.push(get('E'));
+    if (isBrindle) dnaParts.push(get('K'));
+    if (isMerle) dnaParts.push('M');
+    if (isHusky) dnaParts.push('Panda');
+    if (lVal !== 'L/L') dnaParts.push(get('L'));
+    if (fVal !== 'n/n') dnaParts.push(get('F'));
+    if (cVal !== 'n/n') dnaParts.push(get('C'));
+    if (isFullPied || isCarrierPied) dnaParts.push(sVal);
+
+    if (get('D').includes('d') && !d) carriers.push('Blue');
+    if (get('B').includes('b') && !b) carriers.push('Rojo');
+    if (get('Co').includes('co') && !co) carriers.push('Cocoa');
+    if (get('E').includes('e') && !showCreamBase) carriers.push('Cream');
+    if (get('L').includes('l') && !isFluffy) carriers.push('Fluffy');
+    if (isCarrierPied) carriers.push('Pied');
+
+    return {
+        baseColorName: colorName,
+        phenotypeName: names.filter(Boolean).join(" "),
+        layers,
+        compactDnaString: dnaParts.join(' ') || 'Standard',
+        carriersString: carriers.length > 0 ? carriers.join(', ') : ''
+    };
+};
+
+// =============================================================
+// GPS 4: LITTER PREDICTOR LOGIC
+// =============================================================
+export const calculateLitterPrediction = (sire: any, dam: any) => {
+    if (!sire || !dam) return { phenotypes: [], loci: {} };
+
+    // 🔥 VITAL FIX: Expand parent DNA *before* combinations
+    // If a parent is "Koi", they MUST pass 'M' alleles AND 'Panda' alleles
+    const getAlleles = (dna: any, key: string) => {
+        let val = dna[key] || 'n/n';
+
+        // INTERVENTION: The "Koi" toggle overrides the M and Panda selectors
+        if (dna['Koi'] === 'Yes') {
+            if (key === 'M') return ['n', 'M'];     // Koi acts as Merle carrier
+            if (key === 'Panda') return ['No', 'Yes']; // Koi acts as Panda carrier
+        }
+
+        if (key === 'Panda' || key === 'Koi') return val === 'Yes' ? ['Yes', 'No'] : ['No', 'No'];
+        if (!val || val === 'n/n') return ['n', 'n'];
+        return val.includes('/') ? val.split('/') : [val, val];
+    };
+
+    const locusProbabilities: any = {};
+    Object.keys(LOCI).forEach(key => {
+        const sA = getAlleles(sire, key);
+        const dA = getAlleles(dam, key);
+        const outcomes: any = {};
+        sA.forEach(s => dA.forEach(d => {
+            let g = [s, d].sort().join('/');
+            outcomes[g] = (outcomes[g] || 0) + 0.25;
+        }));
+        locusProbabilities[key] = outcomes;
+    });
+
+    let combinations: { dna: Record<string, any>, prob: number }[] = [{ dna: {}, prob: 1.0 }];
+    Object.keys(locusProbabilities).forEach(key => {
+        const next: any = [];
+        combinations.forEach(combo => {
+            Object.entries(locusProbabilities[key]).forEach(([g, chance]) => {
+                next.push({ dna: { ...combo.dna, [key]: g }, prob: combo.prob * (chance as number) });
+            });
+        });
+        combinations = next;
+    });
+
+    const stats: any = {};
+    const breakdown = {
+        baseColors: {} as Record<string, number>,
+        coats: {} as Record<string, number>,
+        patterns: {} as Record<string, number>,
+        carriers: {} as Record<string, number>
+    };
+
+    combinations.forEach(c => {
+        // Resolve the puppy's traits from the new allele combinations
+        const isMerle = c.dna.M !== 'n/n';
+        const isHusky = c.dna.Panda?.includes('Yes');
+
+        // Force the phenotypic output to match the genes
+        const modifiedDna: any = {
+            ...c.dna,
+            M: isMerle ? (c.dna.M === 'n/n' ? 'n/M' : c.dna.M) : 'n/n',
+            Panda: isHusky ? 'Yes' : 'No',
+            Koi: (isMerle && isHusky) ? 'Yes' : 'No'
+        };
+
+        const traits = getPhenotype(modifiedDna);
+
+        // --- HIERARCHICAL TRAIT AGGREGATION ---
+        const bColor = traits.baseColorName.toUpperCase();
+        breakdown.baseColors[bColor] = (breakdown.baseColors[bColor] || 0) + c.prob;
+
+        let coat = 'STANDARD';
+        const dnaL = modifiedDna.L || '';
+        const dnaF = modifiedDna.F || '';
+        const dnaC = modifiedDna.C || '';
+        if (dnaL.includes('l') && !dnaL.includes('L') && !dnaL.includes('N')) {
+            if (dnaF.includes('F')) coat = 'FLOODLE';
+            else coat = 'FLUFFY';
+        } else if (dnaF.includes('F')) coat = 'FURNISHED';
+        else if (dnaC.includes('C')) coat = 'CURLY';
+        breakdown.coats[coat] = (breakdown.coats[coat] || 0) + c.prob;
+
+        const isPied = modifiedDna.S === 'S/S';
+        const isBrindle = modifiedDna.K && modifiedDna.K.includes('KB');
+        let pattern = 'SOLID';
+        if (modifiedDna.Koi === 'Yes') pattern = 'KOI';
+        else if (isHusky) pattern = 'HUSKY';
+        else if (isMerle) pattern = 'MERLE';
+        else if (isPied) pattern = 'PIED';
+        else if (isBrindle) pattern = 'BRINDLE';
+        breakdown.patterns[pattern] = (breakdown.patterns[pattern] || 0) + c.prob;
+
+        const bb = modifiedDna.B === 'b/b', co = modifiedDna.Co === 'co/co', dd = modifiedDna.D === 'd/d';
+        const ee = modifiedDna.E === 'e/e';
+        const hasAncientRed = modifiedDna.E && modifiedDna.E.includes('eA');
+        const isVisualCreamOverride = hasAncientRed && ((modifiedDna.Int === 'Int/Int') || ((modifiedDna.S === 'S/S' || modifiedDna.S === 'n/S' || modifiedDna.S === 'S/n') && modifiedDna.Int !== 'n/n'));
+        const isCream = ee || isVisualCreamOverride;
+        const isPink = modifiedDna.Pink === 'Pink' || (modifiedDna.Pink && modifiedDna.Pink.includes('A/A'));
+        
+        if (modifiedDna.D && modifiedDna.D.includes('d') && !dd) breakdown.carriers['BLUE'] = (breakdown.carriers['BLUE'] || 0) + c.prob;
+        if (modifiedDna.B && modifiedDna.B.includes('b') && !bb) breakdown.carriers['ROJO'] = (breakdown.carriers['ROJO'] || 0) + c.prob;
+        if (modifiedDna.Co && modifiedDna.Co.includes('co') && !co) breakdown.carriers['COCOA'] = (breakdown.carriers['COCOA'] || 0) + c.prob;
+        if (modifiedDna.E && modifiedDna.E.includes('e') && !isCream) breakdown.carriers['CREAM'] = (breakdown.carriers['CREAM'] || 0) + c.prob;
+        if (dnaL.includes('l') && (dnaL.includes('L') || dnaL.includes('N'))) breakdown.carriers['FLUFFY'] = (breakdown.carriers['FLUFFY'] || 0) + c.prob;
+        if (modifiedDna.S === 'n/S' || modifiedDna.S === 'S/n') breakdown.carriers['PIED'] = (breakdown.carriers['PIED'] || 0) + c.prob;
+        if (modifiedDna.Pink && modifiedDna.Pink.includes('A/n') && !isPink) breakdown.carriers['PINK'] = (breakdown.carriers['PINK'] || 0) + c.prob;
+        // --------------------------------------
+
+        // --- UNIQUE KEY GROUPING (Color Only) ---
+        const groupingBaseColor = traits.baseColorName.toUpperCase();
+        const visualKey = groupingBaseColor;
+
+        if (!stats[visualKey]) {
+            stats[visualKey] = { 
+                dna: modifiedDna, 
+                prob: 0, 
+                traits: { ...traits, phenotypeName: visualKey }, 
+                possibleDnas: [] 
+            };
+        }
+        stats[visualKey].prob += c.prob;
+        stats[visualKey].possibleDnas.push({ dna: c.dna, prob: c.prob });
+    });
+
+    const phenotypes = Object.values(stats).sort((a: any, b: any) => b.prob - a.prob).map((item: any) => {
+        // Sort possibleDnas so the most likely DNA combination is at index 0 for the base visualizer
+        const sortedDnas = item.possibleDnas.sort((da: any, db: any) => db.prob - da.prob);
+        return {
+            dna: sortedDnas[0].dna,
+            phenotypeName: item.traits.phenotypeName,
+            baseColor: item.traits.baseColorName.toUpperCase(),
+            probability: `${(item.prob * 100).toFixed(2)}%`,
+            probPrecision: `${(item.prob * 100).toFixed(4)}%`,
+            probRaw: item.prob,
+            possibleDnas: sortedDnas
+        };
+    });
+
+    const formatBreakdown = (obj: Record<string, number>) => {
+        return Object.entries(obj)
+            .filter(([_, prob]) => prob > 0)
+            .sort((a, b) => b[1] - a[1])
+            .map(([name, prob]) => ({ name, prob: `${Math.round(prob * 100)}%`, probRaw: prob }));
+    };
+
+    const finalBreakdown = {
+        baseColors: formatBreakdown(breakdown.baseColors),
+        coats: formatBreakdown(breakdown.coats),
+        patterns: formatBreakdown(breakdown.patterns),
+        carriers: formatBreakdown(breakdown.carriers)
+    };
+
+    return { phenotypes, loci: locusProbabilities, breakdown: finalBreakdown };
+};
+
+// =============================================================
+// GPS 5: DATABASE OPERATIONS
+// =============================================================
+
+export const saveDogToDB = async (userId: string, dog: any): Promise<SavedDog | null> => {
+    if (!userId) return null;
+    const { data, error } = await supabase.from('dogs').insert([{ owner_id: userId, dog_name: dog.name, sex: dog.gender, dna: dog.dna }]).select().single();
+    if (error) return null;
+    return { ...dog, id: String(data.id) };
+};
+
+export const fetchDogsFromDB = async (userId: string): Promise<SavedDog[]> => {
+    if (!userId) return [];
+    const { data, error } = await supabase.from('dogs').select('*').eq('owner_id', userId).order('created_at', { ascending: false });
+    if (error) return [];
+    return data.map((row: any) => ({ id: String(row.id), name: row.dog_name, gender: row.sex, dna: row.dna, date: new Date(row.created_at).toLocaleDateString() }));
+};
+
+export const deleteDogFromDB = async (dogId: string) => {
+    const { error } = await supabase.from('dogs').delete().eq('id', dogId);
+    return !error;
+};
+
+// 🔥 NEW: Helper for the new Inquiry System
+export const submitInquiry = async (inquiryData: any) => {
+    const { data, error } = await supabase
+        .from('inquiries')
+        .insert([inquiryData]);
+    return { data, error };
+};

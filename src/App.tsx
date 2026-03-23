@@ -21,11 +21,12 @@ import Blog from './pages/Blog';
 import Inquiry from './pages/Inquiry';
 import Protocol from './pages/Protocol';
 import Genetics from './pages/Genetics';
-import Calculator from './pages/Calculator';
 import Footer from './components/Footer';
 import KennelKingPrivacy from './pages/KennelKingPrivacy';
 import KennelKingSupport from './pages/KennelKingSupport';
 import KennelKingDataDeletion from './pages/KennelKingDataDeletion';
+import Application from './pages/Application';
+import BuyerEducation from './pages/BuyerEducation';
 
 const App: React.FC = () => {
   return (
@@ -60,9 +61,10 @@ const App: React.FC = () => {
             <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
             <Route path="/french-bulldog-stud-service" element={<Studs />} />
             <Route path="/french-bulldog-coat-color-genetics" element={<Genetics />} />
-            <Route path="/french-bulldog-color-calculator" element={<Calculator />} />
             <Route path="/french-bulldog-breeding-blog" element={<Blog />} />
             <Route path="/french-bulldog-breeding-protocol" element={<Protocol />} />
+            <Route path="/buyer-education" element={<BuyerEducation />} />
+            <Route path="/application" element={<Application />} />
             <Route path="/puppy-inquiry-form" element={<Inquiry />} />
 
             {/* 🔗 Legacy Redirects */}
@@ -72,7 +74,6 @@ const App: React.FC = () => {
             <Route path="/journal" element={<Blog />} />
             <Route path="/protocol" element={<Protocol />} />
             <Route path="/genetics" element={<Genetics />} />
-            <Route path="/calculator" element={<Calculator />} />
             <Route path="/inquiry" element={<Inquiry />} />
           </Routes>
         </main>
