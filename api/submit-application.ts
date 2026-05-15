@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
+import { sendCAPIEvent } from './meta-capi';
 
 // Initialize resilient error handling for missing API keys in local dev vs. prod
 const apiKey = process.env.RESEND_API_KEY || '';
@@ -35,10 +36,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     message
   } = req.body;
 
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '') as string;
+  const userAgent = (req.headers['user-agent'] || '') as string;
+
   try {
     if (!apiKey) {
       console.warn("RESEND_API_KEY is not defined in the environment.");
       // We will pretend to succeed for local testing if the key doesn't exist
+      await sendCAPIEvent('Lead', { email, phone, clientIp, userAgent });
       return res.status(200).json({ success: true, message: "Simulated email send (No API Key)" });
     }
 
@@ -96,6 +101,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subject: `BREEDER APP: ${fullName} (${intent})`,
       html: htmlBody
     });
+
+    // Fire CAPI event securely
+    await sendCAPIEvent('Lead', { email, phone, clientIp, userAgent });
 
     return res.status(200).json({ success: true, data });
   } catch (error: any) {

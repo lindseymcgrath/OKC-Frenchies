@@ -1,0 +1,90 @@
+[
+  {
+    "id": "studs-1",
+    "name": "Ghost",
+    "status": "Stud",
+    "dna": "A/A at/at co/co d/d E/e",
+    "dna_technical": "",
+    "price": "$2,000",
+    "description": "A/A at/at co/co d/d E/e",
+    "altText": "Full Pink French Bulldog Stud Ghost - A/A at/at co/co d/d E/e genetics. Free same-day shipping to major airports & free AI included with stud fee.",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Stud",
+    "gender": "Male",
+    "image": "/images/data/studs_1_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/studs_1_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "studs-2",
+    "name": "Everest",
+    "status": "Stud",
+    "dna": "n/A at/at n/co n/d eA/e l1/l1",
+    "dna_technical": "",
+    "price": "$1,500",
+    "description": "n/A at/at n/co n/d eA/e l1/l1",
+    "altText": "Everest is a Black & Tan visual eA husky carrying Pink. Free airport shipping or free in-clinic AI included with stud fee.",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Stud",
+    "gender": "Male",
+    "image": "/images/data/studs_2_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/studs_2_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "studs-3",
+    "name": "Shifu",
+    "status": "Stud",
+    "dna": "n/A at/a b/b n/co d/d EM/EM l1/l1",
+    "dna_technical": "",
+    "price": "$1,500",
+    "description": "n/A at/a b/b n/co d/d EM/EM l1/l1",
+    "altText": "Shifu is a Fluffy Big Rope Isabella & Tan Pink Carrier. Luxury stud service with free same-day shipping to most major airports or free on-site AI.",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Stud",
+    "gender": "Male",
+    "image": "/images/data/studs_3_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/studs_3_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "studs-4",
+    "name": "Denali",
+    "status": "Stud",
+    "dna": "at/at co/co d/d e/eA L/l1",
+    "dna_technical": "",
+    "price": "$1,500",
+    "description": "at/at co/co d/d e/eA L/l1",
+    "altText": "Denali is a Lilac & Tan visual eA Husky carrying Fluffy. Luxury stud service with free same-day shipping to most major airports or free on-site AI.",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Stud",
+    "gender": "Male",
+    "image": "/images/data/studs_4_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/studs_4_main.webp"
+      }
+    ]
+  }
+]

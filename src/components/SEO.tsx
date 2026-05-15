@@ -6,13 +6,15 @@ interface SEOProps {
   description?: string;
   image?: string;
   url?: string;
+  schema?: Record<string, any> | Record<string, any>[];
 }
 
 const SEO: React.FC<SEOProps> = ({ 
   title = "OKC Frenchies | Elite DNA", 
   description = "A luxury breeding program specializing in rare loci, structural excellence, and advanced nutrition for French Bulldogs.", 
   image = "https://okcfrenchies.com/IMG_3894.png",
-  url = "https://okcfrenchies.com"
+  url = "https://okcfrenchies.com",
+  schema
 }) => {
   return (
     <Helmet>
@@ -35,6 +37,12 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="twitter:title" content={title} />
       <meta property="twitter:description" content={description} />
       <meta property="twitter:image" content={image} />
+
+      {schema && (
+        <script type="application/ld+json">
+          {JSON.stringify(schema)}
+        </script>
+      )}
     </Helmet>
   );
 };

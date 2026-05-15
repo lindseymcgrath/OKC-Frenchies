@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 
 const SITE_URL = 'https://okcfrenchies.com';
-const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
 
 const STATIC_ROUTES = [
   '/',
@@ -15,48 +14,24 @@ const STATIC_ROUTES = [
   '/puppy-inquiry-form'
 ];
 
-async function fetchSheetNames(sheetName) {
-  try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
-    const res = await fetch(url);
-    const text = await res.text();
-    
-    // Google Sheets JSON endpoint wraps response in a function call
-    // e.g., /*O_o*/\ngoogle.visualization.Query.setResponse({...});
-    const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-    const data = JSON.parse(jsonStr);
-    
-    const cols = data.table.cols;
-    let nameIdx = -1;
-    for (let i = 0; i < cols.length; i++) {
-      if (cols[i] && cols[i].label && cols[i].label.toLowerCase().includes('name')) {
-        nameIdx = i;
-        break;
-      }
-    }
-    
-    if (nameIdx === -1) nameIdx = 0; // fallback manually
-    
-    const rows = data.table.rows;
-    const items = [];
-    rows.forEach(row => {
-      // row.c is an array of cells
-      if (row.c && row.c[nameIdx] && row.c[nameIdx].v) {
-        items.push(row.c[nameIdx].v.trim().toLowerCase());
-      }
-    });
-    return items;
-  } catch (err) {
-    console.error(`Failed to fetch sheet ${sheetName}:`, err);
-    return [];
-  }
-}
-
 async function generateSitemap() {
   console.log('Generating sitemap.xml...');
   
-  const puppies = await fetchSheetNames('Puppies');
-  const studs = await fetchSheetNames('Studs');
+  const puppiesDataPath = path.resolve(process.cwd(), 'src/data/puppies.json');
+  const studsDataPath = path.resolve(process.cwd(), 'src/data/studs.json');
+
+  let puppies = [];
+  let studs = [];
+
+  if (fs.existsSync(puppiesDataPath)) {
+      const puppiesData = JSON.parse(fs.readFileSync(puppiesDataPath, 'utf8'));
+      puppies = puppiesData.map(d => d.name.toLowerCase());
+  }
+
+  if (fs.existsSync(studsDataPath)) {
+      const studsData = JSON.parse(fs.readFileSync(studsDataPath, 'utf8'));
+      studs = studsData.map(d => d.name.toLowerCase());
+  }
   
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;

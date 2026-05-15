@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Send, CheckCircle2, Loader2, ChevronDown, AlertCircle } from 'lucide-react';
 import { supabase } from '../utils/calculatorHelpers';
+import studsData from '../data/studs.json';
+import puppiesData from '../data/puppies.json';
+import SEO from '../components/SEO';
+import seoData from '../data/seo.json';
 
 interface DogOption {
     name: string;
@@ -40,30 +44,14 @@ const Inquiry: React.FC = () => {
         }));
     }, [searchParams]);
 
-    // Fetch Dogs from Sheets for the dropdown
+    // Load Dogs from Local JSON
     useEffect(() => {
-        const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
-        const sheets = ['Puppies', 'Studs'];
-        const fetchAll = async () => {
-            let combined: DogOption[] = [];
-            for (const sheet of sheets) {
-                try {
-                    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheet}`;
-                    const res = await fetch(url);
-                    const text = await res.text();
-                    if ((window as any).Papa) {
-                        const parsed = (window as any).Papa.parse(text, { header: true, skipEmptyLines: true });
-                        const names = parsed.data
-                            .map((row: any) => row['Name'] ? { name: row['Name'].trim(), type: sheet === 'Puppies' ? 'Puppy' : 'Stud' } : null)
-                            .filter((item: any) => item !== null);
-                        combined = [...combined, ...names];
-                    }
-                } catch (e) { console.error(`Error fetching ${sheet}`, e); }
-            }
-            setAvailableDogs(combined);
-            setLoadingDogs(false);
-        };
-        fetchAll();
+        const combined = [
+            ...studsData.map((d: any) => ({ name: d.name, type: 'Stud' as const })),
+            ...puppiesData.map((d: any) => ({ name: d.name, type: 'Puppy' as const }))
+        ];
+        setAvailableDogs(combined);
+        setLoadingDogs(false);
     }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -93,6 +81,10 @@ const Inquiry: React.FC = () => {
 
             if (error) throw error;
 
+            if (window.fbq) {
+                window.fbq('track', 'Lead');
+            }
+
             setSuccess(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error: any) {
@@ -103,8 +95,49 @@ const Inquiry: React.FC = () => {
         }
     };
 
+    const inquirySchema = [
+        {
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "OKC Frenchies",
+            "image": "https://okcfrenchies.com/IMG_3894.png",
+            "url": "https://okcfrenchies.com/puppy-inquiry-form",
+            "telephone": "",
+            "address": {
+                "@type": "PostalAddress",
+                "addressLocality": "Oklahoma City",
+                "addressRegion": "OK",
+                "addressCountry": "US"
+            }
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": "https://okcfrenchies.com/"
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Inquiry",
+                    "item": "https://okcfrenchies.com/puppy-inquiry-form"
+                }
+            ]
+        }
+    ];
+
     return (
         <section className="min-h-screen bg-[#020617] pt-32 pb-20 relative font-sans">
+            <SEO 
+                title={seoData.Inquiry.title} 
+                description={seoData.Inquiry.description}
+                url="https://okcfrenchies.com/puppy-inquiry-form"
+                schema={inquirySchema}
+            />
             {/* ... Background ambience and header remain exactly as you have them ... */}
 
             <div className="max-w-3xl mx-auto px-6 relative z-10">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Stethoscope, Beef, CheckCircle2, AlertTriangle, ArrowRight, HeartHandshake, ClipboardList, Video, ScrollText, Home } from 'lucide-react';
 import SEO from '../components/SEO';
+import seoData from '../data/seo.json';
 
 const BuyerEducation: React.FC = () => {
     return (
@@ -11,9 +12,27 @@ const BuyerEducation: React.FC = () => {
 
             <div className="max-w-4xl mx-auto px-6 relative z-10">
                 <SEO
-                    title="Buyer Education & Quality Standards | OKC Frenchies"
-                    description="Learn about the OKC Standard. Discover the reality of owning a French Bulldog, our health testing protocols, raw feeding, and our protection policy."
+                    title={seoData.BuyerEducation.title}
+                    description={seoData.BuyerEducation.description}
                     url="https://okcfrenchies.com/buyer-education"
+                    schema={{
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Home",
+                                "item": "https://okcfrenchies.com/"
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": "Buyer Education",
+                                "item": "https://okcfrenchies.com/buyer-education"
+                            }
+                        ]
+                    }}
                 />
 
                 {/* Header */}

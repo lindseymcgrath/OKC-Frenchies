@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, CheckCircle2, Loader2, AlertCircle, Home, ShieldCheck, Stethoscope, ClipboardList } from 'lucide-react';
 import SEO from '../components/SEO';
+import seoData from '../data/seo.json';
 
 const Application: React.FC = () => {
     const navigate = useNavigate();
@@ -58,6 +59,10 @@ const Application: React.FC = () => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to submit application');
 
+            if (window.fbq) {
+                window.fbq('track', 'Lead');
+            }
+
             setSuccess(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error: any) {
@@ -76,9 +81,27 @@ const Application: React.FC = () => {
 
             <div className="max-w-4xl mx-auto px-6 relative z-10">
                 <SEO 
-                    title="Breeder Application | OKC Frenchies"
-                    description="Submit your official application to join the OKC Frenchies family. We require comprehensive details to ensure our dogs are placed in elite homes."
+                    title={seoData.Application.title}
+                    description={seoData.Application.description}
                     url="https://okcfrenchies.com/application"
+                    schema={{
+                        "@context": "https://schema.org",
+                        "@type": "BreadcrumbList",
+                        "itemListElement": [
+                            {
+                                "@type": "ListItem",
+                                "position": 1,
+                                "name": "Home",
+                                "item": "https://okcfrenchies.com/"
+                            },
+                            {
+                                "@type": "ListItem",
+                                "position": 2,
+                                "name": "Application",
+                                "item": "https://okcfrenchies.com/application"
+                            }
+                        ]
+                    }}
                 />
 
                 <div className="text-center mb-16 animate-in fade-in slide-in-from-bottom-8">

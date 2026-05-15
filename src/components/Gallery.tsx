@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, ShieldCheck, Dna, X, Activity, Loader2, Play, ChevronLeft, ChevronRight, Image as ImageIcon, AlertTriangle, RefreshCw, FileText } from 'lucide-react';
 import SEO from './SEO';
+import studsData from '../data/studs.json';
+import puppiesData from '../data/puppies.json';
 
 const getString = (val: any): string => {
     if (val === null || val === undefined) return '';
@@ -157,9 +159,6 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
     };
 
     useEffect(() => {
-        const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
-
         const analyzeDNA = (dna: string): Badge[] => {
             if (!dna) return [];
             const cleanDna = getString(dna);
@@ -206,149 +205,30 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
             return badges;
         };
 
-        const fetchDogs = async () => {
+        const loadDogs = () => {
             try {
                 setLoading(true);
                 setError(null);
 
-                const response = await fetch(CSV_URL);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch spreadsheet: ${response.status} ${response.statusText}`);
-                }
+                const rawData = sheetName === 'Studs' ? studsData : puppiesData;
+                
+                const mappedDogs = rawData.map((d: any) => ({
+                    ...d,
+                    badges: analyzeDNA(d.dna_technical || d.dna)
+                })).filter((dog: DogData) => {
+                    if (filterType === 'Stud') return dog.type === 'Stud';
+                    return dog.type !== 'Stud';
+                });
 
-                const csvText = await response.text();
-
-                if (csvText.trim().toLowerCase().startsWith('<!doctype html')) {
-                    throw new Error("Spreadsheet not published to web. Please go to File > Share > Publish to web in Google Sheets.");
-                }
-
-                if ((window as any).Papa) {
-                    (window as any).Papa.parse(csvText, {
-                        header: false, // Manual mapping for maximum robustness
-                        skipEmptyLines: true,
-                        complete: (results: any) => {
-                            const rows = results.data;
-                            if (rows && rows.length > 1) {
-                                // Clean and map headers
-                                const headers = rows[0].map((h: any) =>
-                                    getString(h).toLowerCase().replace(/[^a-z0-0]/g, '_')
-                                );
-
-                                const findIdx = (possibleNames: string[]) => {
-                                    return headers.findIndex(h => possibleNames.includes(h));
-                                };
-
-                                const idx = {
-                                    name: findIdx(['name']),
-                                    status: findIdx(['status']),
-                                    visual: findIdx(['visual_description', 'dna_summary', 'phenotype']),
-                                    technical: findIdx(['dna_technical', 'technical_dna']),
-                                    investment: findIdx(['investment', 'stud_fee', 'price']),
-                                    image: findIdx(['image_url', 'main_image']),
-                                    bio: findIdx(['bio', 'description', 'profile']),
-                                    alt: findIdx(['alt_text', 'accessibility']),
-                                    video: findIdx(['video_url', 'video']),
-                                    breed: findIdx(['breed']),
-                                    pedigree: findIdx(['pedigree_link', 'pedigree']),
-                                    gender: findIdx(['gender', 'sex']),
-                                    id: findIdx(['id'])
-                                };
-
-                                const fetchedDogs = rows.slice(1)
-                                    .map((row: any[], index: number) => {
-                                        const getVal = (i: number) => i !== -1 ? getString(row[i]) : '';
-
-                                        const name = getVal(idx.name);
-                                        if (!name) return null;
-
-                                        const status = getVal(idx.status) || (sheetName === 'Studs' ? 'Stud' : 'Available');
-                                        const visualDesc = getVal(idx.visual);
-                                        const techDNA = getVal(idx.technical);
-                                        const investment = getVal(idx.investment) || 'Inquire';
-                                        const mainImageUrl = getVal(idx.image);
-                                        const bio = getVal(idx.bio) || visualDesc || 'No description provided.';
-                                        const altText = getVal(idx.alt);
-                                        const videoUrl = getVal(idx.video);
-                                        const breed = getVal(idx.breed) || 'French Bulldog';
-                                        const pedigreeLink = getVal(idx.pedigree);
-
-                                        const rawGender = getVal(idx.gender);
-                                        let gender = '';
-                                        if (sheetName === 'Studs') {
-                                            gender = 'Male';
-                                        } else {
-                                            const lowerGender = rawGender.toLowerCase();
-                                            if (lowerGender.startsWith('f') || lowerGender.includes('female')) gender = 'Female';
-                                            else if (lowerGender.startsWith('m') || lowerGender.includes('male')) gender = 'Male';
-                                            else if (status.toLowerCase().includes('female')) gender = 'Female';
-                                            else if (status.toLowerCase().includes('male')) gender = 'Male';
-                                        }
-
-                                        const dnaForBadges = techDNA || visualDesc;
-                                        const badges = analyzeDNA(dnaForBadges);
-
-                                        const media: MediaItem[] = [];
-                                        const processedMainImage = getDirectDriveLink(mainImageUrl);
-                                        if (processedMainImage) media.push({ type: 'image', url: processedMainImage });
-
-                                        // Check for additional images (Image_URL_1 to 4)
-                                        for (let i = 1; i <= 4; i++) {
-                                            const colName = `image_url_${i}`;
-                                            const cIdx = headers.indexOf(colName);
-                                            if (cIdx !== -1 && row[cIdx]) {
-                                                const url = getDirectDriveLink(getString(row[cIdx]));
-                                                if (url) media.push({ type: 'image', url });
-                                            }
-                                        }
-
-                                        if (videoUrl) {
-                                            const vUrl = getVideoEmbedLink(videoUrl);
-                                            media.push({ type: 'video', url: vUrl });
-                                        }
-
-                                        const type = (sheetName === 'Studs' || status.toLowerCase().includes('stud')) ? 'Stud' : 'Puppy';
-
-                                        return {
-                                            id: getVal(idx.id) || `sheet-${index}`,
-                                            name: name,
-                                            breed: breed,
-                                            gender: gender,
-                                            dna: visualDesc,
-                                            dna_technical: techDNA,
-                                            description: bio,
-                                            altText: altText,
-                                            image: processedMainImage,
-                                            price: investment,
-                                            type: type,
-                                            status: status,
-                                            badges: badges,
-                                            media: media,
-                                            pedigreeLink: pedigreeLink
-                                        };
-                                    })
-                                    .filter((dog: any) => dog !== null)
-                                    .filter((dog: DogData) => {
-                                        if (filterType === 'Stud') return dog.type === 'Stud';
-                                        return dog.type !== 'Stud';
-                                    });
-
-                                setDogs(fetchedDogs);
-                            }
-                            setLoading(false);
-                        },
-                        error: (err: any) => {
-                            setError(`Parser Error: ${err.message}`);
-                            setLoading(false);
-                        }
-                    });
-                }
+                setDogs(mappedDogs);
+                setLoading(false);
             } catch (err: any) {
-                setError(`Fetch Error: ${err.message}`);
+                setError(`Local Data Error: ${err.message}`);
                 setLoading(false);
             }
         };
 
-        fetchDogs();
+        loadDogs();
     }, [filterType, sheetName]);
 
     const handleNextMedia = () => {
@@ -475,6 +355,19 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         title={`${selectedDog.name} | OKC Frenchies ${selectedDog.type}`}
                         description={selectedDog.description || `${selectedDog.name} is an elite French Bulldog ${selectedDog.type.toLowerCase()} featuring ${selectedDog.dna}.`}
                         image={selectedDog.image}
+                        schema={{
+                            "@context": "https://schema.org",
+                            "@type": "Product",
+                            "name": selectedDog.name,
+                            "image": selectedDog.image,
+                            "description": selectedDog.description || `French Bulldog ${selectedDog.type} named ${selectedDog.name}`,
+                            "offers": {
+                                "@type": "Offer",
+                                "priceCurrency": "USD",
+                                "price": (selectedDog.price || "").replace(/[^0-9.]/g, '') || "0",
+                                "availability": "https://schema.org/InStock"
+                            }
+                        }}
                     />
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={closeModal} />
 

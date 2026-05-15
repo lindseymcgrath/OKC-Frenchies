@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowUpRight, BookOpen, Loader2, X, Calendar, ChevronRight } from 'lucide-react';
 import SEO from '../components/SEO';
+import blogData from '../data/blog.json';
+import seoData from '../data/seo.json';
 
 const getString = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -92,72 +94,44 @@ const Blog: React.FC = () => {
   }, [selectedPost]);
 
   useEffect(() => {
-    const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Journal`;
-
-    fetch(CSV_URL)
-      .then(r => {
-          if (!r.ok) throw new Error("Failed to fetch sheet");
-          return r.text();
-      })
-      .then(csvText => {
-         if ((window as any).Papa) {
-            (window as any).Papa.parse(csvText, {
-                header: true,
-                skipEmptyLines: true, 
-                transformHeader: (h: string) => h.trim(),
-                complete: (results: any) => {
-                    const fetchedPosts = results.data
-                        .map((row: any, idx: number) => {
-                            // Robust column mapping
-                            const getVal = (possibleNames: string[]) => {
-                                for (const name of possibleNames) {
-                                    if (row[name] !== undefined) return getString(row[name]);
-                                }
-                                return '';
-                            };
-
-                            const rawTitle = getVal(['Title', 'name', 'Post Title']);
-                            if (!rawTitle) return null;
-
-                            return {
-                                id: getVal(['Slug', 'slug', 'id']) || `post-${idx}`,
-                                title: rawTitle,
-                                summary: getVal(['Summary', 'summary', 'Excerpt', 'excerpt']),
-                                content: getVal(['Content', 'content', 'Body', 'body']),
-                                category: getVal(['Category', 'category']) || 'Journal',
-                                image: getDirectDriveLink(getVal(['Featured_Image', 'image_url', 'Image_URL', 'Image', 'image', 'main_image'])),
-                                date: getVal(['Date', 'date']) || new Date().toLocaleDateString(),
-                                tags: getVal(['Tags', 'tags']).split(',').map((t: string) => t.trim()).filter(Boolean)
-                            };
-                        })
-                        .filter((post: BlogPost | null) => post !== null);
-                    
-                    setPosts(fetchedPosts);
-                    setLoading(false);
-                },
-                error: (err: any) => {
-                    console.error("CSV Parse Error:", err);
-                    setLoading(false);
-                }
-            });
-         }
-      })
-      .catch(err => {
+      try {
+          setPosts(blogData);
+          setLoading(false);
+      } catch (err) {
           console.error("Failed to load blog posts:", err);
           setLoading(false);
-      });
+      }
   }, []);
 
   const featuredPost = posts.length > 0 ? posts[0] : null;
   const gridPosts = posts.length > 1 ? posts.slice(1) : [];
 
+  const blogSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://okcfrenchies.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://okcfrenchies.com/french-bulldog-breeding-blog"
+      }
+    ]
+  };
+
   return (
     <section className="min-h-screen bg-[#020617] text-slate-200 pt-32 pb-20 relative">
        <SEO 
-         title="French Bulldog Breeding Blog | OKC Frenchies"
-         description="Follow the OKC Frenchies editorial for expert insights into French Bulldog breeding protocols, DNA analysis, and canine reproduction."
+         title={seoData.Blog.title}
+         description={seoData.Blog.description}
          url="https://okcfrenchies.com/french-bulldog-breeding-blog"
+         schema={blogSchema}
        />
        {/* Background Elements */}
        <div className="absolute inset-0 bg-noise opacity-20 mix-blend-overlay pointer-events-none"></div>
@@ -279,6 +253,18 @@ const Blog: React.FC = () => {
                     title={`${selectedPost.title} | OKC Frenchies Journal`}
                     description={selectedPost.summary || `Read ${selectedPost.title} on the OKC Frenchies Journal.`}
                     image={selectedPost.image}
+                    schema={{
+                        "@context": "https://schema.org",
+                        "@type": "BlogPosting",
+                        "headline": selectedPost.title,
+                        "image": selectedPost.image,
+                        "datePublished": selectedPost.date,
+                        "author": {
+                            "@type": "Organization",
+                            "name": "OKC Frenchies"
+                        },
+                        "description": selectedPost.summary
+                    }}
                 />
                 <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={closePost} />
                 <div className="relative w-full h-full md:h-auto md:max-h-[85vh] md:max-w-4xl bg-[#0a0a0a] border border-slate-800 shadow-2xl overflow-y-auto z-[10000] animate-in fade-in zoom-in-95 duration-300 md:rounded-lg">

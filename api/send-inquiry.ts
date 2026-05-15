@@ -1,5 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
+import { sendCAPIEvent } from './meta-capi';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -8,6 +9,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { record } = req.body; // Supabase sends the new row data here
+
+  const clientIp = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || '') as string;
+  const userAgent = (req.headers['user-agent'] || '') as string;
 
   try {
     const data = await resend.emails.send({
@@ -23,6 +27,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <p><strong>Dog:</strong> ${record.selected_dog}</p>
         <p><strong>Message:</strong> ${record.message}</p>
       `
+    });
+
+    // Fire CAPI event securely using data from Supabase webhook
+    await sendCAPIEvent('Lead', { 
+        email: record.email, 
+        phone: record.phone, 
+        clientIp, 
+        userAgent 
     });
 
     return res.status(200).json(data);
