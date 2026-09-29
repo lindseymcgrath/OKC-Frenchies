@@ -1,13 +1,13 @@
 [
   {
     "id": "puppies-1",
-    "name": "$IX FIGURE$",
+    "name": "Alex",
     "status": "Available",
-    "dna": "Pink Floodle/Teddy Big Rope",
-    "dna_technical": "A/A, n/F, l1/l4, at/at, B/b, co/co, d/d, Em/e, n/Kb",
-    "price": "$80,000",
-    "description": "Elite Lilac base with homozygous Albinism and Furnishings.",
-    "altText": "Pink Floodle Teddy Big Rope French Bulldog male for sale - $IX FIGURE - Rare A/A n/F genetics",
+    "dna": "Fluffy Lilac & Tan",
+    "dna_technical": "at/at, B/b, co/co, d/d, EM/e, n/Int, n/S, l1/l4",
+    "price": "$3,000",
+    "description": "Fluffy Lilac & Tan",
+    "altText": "",
     "videoUrl": "",
     "breed": "French Bulldog",
     "pedigreeLink": "",
@@ -22,22 +22,18 @@
       {
         "type": "image",
         "url": "/images/data/puppies_1_img1.webp"
-      },
-      {
-        "type": "image",
-        "url": "/images/data/puppies_1_img2.webp"
       }
     ]
   },
   {
     "id": "puppies-2",
-    "name": "Scrappy",
+    "name": "Andrew",
     "status": "Available",
-    "dna": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
-    "dna_technical": "at/at, n/A, co/co, d/d, Em/e, Int/Int, n/Kb, n/F, L/l1",
-    "price": "$15,000",
-    "description": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
-    "altText": "Lilac and Tan French Bulldog male Scrappy - Floodle Teddy Producer carrying Pink - Rare stud genetics",
+    "dna": "Fluffy Lilan & Tan Pied Big Rope carrying Pink",
+    "dna_technical": "n/A, at/at, B/b, co/co, d/d, Em/e, n/Int, S/S, l1/l4",
+    "price": "$3,500",
+    "description": "Fluffy Lilan & Tan Pied Big Rope carrying Pink",
+    "altText": "",
     "videoUrl": "",
     "breed": "French Bulldog",
     "pedigreeLink": "",
@@ -48,13 +44,117 @@
       {
         "type": "image",
         "url": "/images/data/puppies_2_main.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_2_img1.webp"
       }
     ]
   },
   {
     "id": "puppies-3",
-    "name": "Scooby",
+    "name": "Alice",
     "status": "Available",
+    "dna": "Lilac & Tan Big Rope carrying pink and fluffy",
+    "dna_technical": "n/A, at/a, B/b, co/co, d/d, Em/e, Int/Int, n/S, L/l1",
+    "price": "$4,000",
+    "description": "Lilac & Tan Big Rope carrying pink and fluffy",
+    "altText": "",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Female",
+    "image": "/images/data/puppies_3_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_3_main.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_3_img1.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-4",
+    "name": "Arya",
+    "status": "Available",
+    "dna": "Lilac & Tan Big Rope carrying pink and fluffy",
+    "dna_technical": "n/A, at/at, B/b, co/co, d/d, Em/e, n/Int, n/S, L/l1",
+    "price": "$4,000",
+    "description": "Lilac & Tan Big Rope carrying pink and fluffy",
+    "altText": "",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Female",
+    "image": "/images/data/puppies_4_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_4_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-5",
+    "name": "$IX FIGURE$",
+    "status": "SOLD",
+    "dna": "Pink Floodle/Teddy Big Rope",
+    "dna_technical": "A/A, n/F, l1/l4, at/at, B/b, co/co, d/d, Em/e, n/Kb",
+    "price": "$80,000",
+    "description": "Elite Lilac base with homozygous Albinism and Furnishings.",
+    "altText": "Pink Floodle Teddy Big Rope French Bulldog male for sale - $IX FIGURE - Rare A/A n/F genetics",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Male",
+    "image": "/images/data/puppies_5_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_5_main.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_5_img1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_5_img2.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-6",
+    "name": "Scrappy",
+    "status": "SOLD",
+    "dna": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
+    "dna_technical": "at/at, n/A, co/co, d/d, Em/e, Int/Int, n/Kb, n/F, L/l1",
+    "price": "$15,000",
+    "description": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
+    "altText": "Lilac and Tan French Bulldog male Scrappy - Floodle Teddy Producer carrying Pink - Rare stud genetics",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Male",
+    "image": "/images/data/puppies_6_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_6_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-7",
+    "name": "Scooby",
+    "status": "SOLD",
     "dna": "Isabella & Tan Floodle/Teddy Producer  carrying Pink",
     "dna_technical": "at/at, n/A, b/b, n/co, d/d, E/Em, n/Kb, n/F, L/l4",
     "price": "$15,000",
@@ -65,18 +165,18 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_3_main.webp",
+    "image": "/images/data/puppies_7_main.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_3_main.webp"
+        "url": "/images/data/puppies_7_main.webp"
       }
     ]
   },
   {
-    "id": "puppies-4",
+    "id": "puppies-8",
     "name": "Polar",
-    "status": "Available",
+    "status": "SOLD",
     "dna": "Full Pink",
     "dna_technical": "at/at, A/A, co/co, d/d, Em/e, n/Int, n/Kb, n/S, L/l1",
     "price": "$5,000",
@@ -87,11 +187,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_4_main.webp",
+    "image": "/images/data/puppies_8_main.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_4_main.webp"
+        "url": "/images/data/puppies_8_main.webp"
       },
       {
         "type": "video",
