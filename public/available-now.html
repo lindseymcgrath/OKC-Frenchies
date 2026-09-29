@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OKC Frenchies — Available Now</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Manrope:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .story {
+      aspect-ratio: 9 / 16;
+      height: min(100vh, 100vw * (16/9));
+      width: calc(min(100vh, 100vw * (16/9)) * 9 / 16);
+      position: relative;
+      overflow: hidden;
+      background: #020617;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .bg-gradient {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(45,212,191,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 20% 110%, rgba(217,70,239,0.15) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 50% at 85% 60%, rgba(212,175,55,0.08) 0%, transparent 50%),
+        #020617;
+      animation: bgShift 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgShift {
+      0%   { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(20deg); }
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.25;
+      animation: orbFloat linear infinite;
+    }
+    .orb-1 { width: 40%; aspect-ratio: 1; background: #2dd4bf; top: -10%; left: -10%; animation-duration: 14s; }
+    .orb-2 { width: 35%; aspect-ratio: 1; background: #d946ef; bottom: 5%; right: -8%; animation-duration: 18s; animation-delay: -4s; }
+    .orb-3 { width: 28%; aspect-ratio: 1; background: #d4af37; top: 45%; left: 60%; animation-duration: 22s; animation-delay: -9s; }
+
+    @keyframes orbFloat {
+      0%   { transform: translate(0, 0) scale(1); }
+      25%  { transform: translate(6%, 8%) scale(1.05); }
+      50%  { transform: translate(-4%, 5%) scale(0.97); }
+      75%  { transform: translate(8%, -6%) scale(1.03); }
+      100% { transform: translate(0, 0) scale(1); }
+    }
+
+    .grid-overlay {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(45,212,191,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45,212,191,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridFade 6s ease-in-out infinite alternate;
+    }
+    @keyframes gridFade {
+      0%   { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .shimmer {
+      position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 50%, transparent 60%);
+      background-size: 200% 100%;
+      animation: shimmer 5s linear infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .content {
+      position: relative;
+      z-index: 10;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6% 7%;
+    }
+
+    .badge {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(8px, 1.6vw, 11px);
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #2dd4bf;
+      border: 1px solid rgba(45,212,191,0.4);
+      padding: 0.4em 1.2em;
+      background: rgba(45,212,191,0.07);
+      animation: fadeSlideDown 0.8s ease both;
+    }
+
+    .brand {
+      margin-top: 5%;
+      text-align: center;
+      animation: fadeSlideDown 0.9s 0.1s ease both;
+    }
+    .brand-name {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(18px, 5vw, 36px);
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 0%, #2dd4bf 40%, #d4af37 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+      animation: glowPulse 3s ease-in-out infinite alternate;
+    }
+    .brand-sub {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(7px, 1.4vw, 10px);
+      font-weight: 500;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: rgba(212,175,55,0.8);
+      margin-top: 0.4em;
+    }
+
+    @keyframes glowPulse {
+      0%   { filter: drop-shadow(0 0 4px rgba(45,212,191,0.3)); }
+      100% { filter: drop-shadow(0 0 14px rgba(45,212,191,0.7)); }
+    }
+
+    .divider {
+      width: 60%;
+      height: 1px;
+      margin: 4% auto;
+      background: linear-gradient(90deg, transparent, #2dd4bf, #d4af37, #2dd4bf, transparent);
+      animation: dividerGlow 3s ease-in-out infinite alternate;
+    }
+    @keyframes dividerGlow {
+      0%   { opacity: 0.6; transform: scaleX(0.9); }
+      100% { opacity: 1;   transform: scaleX(1); }
+    }
+
+    .headline {
+      text-align: center;
+      animation: fadeSlideDown 1s 0.2s ease both;
+    }
+    .headline-eyebrow {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(7px, 1.5vw, 10px);
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #d946ef;
+      margin-bottom: 0.4em;
+    }
+    .headline-main {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(14px, 3.8vw, 28px);
+      font-weight: 700;
+      font-style: italic;
+      color: #f8fafc;
+      line-height: 1.2;
+    }
+    .headline-main span { color: #2dd4bf; font-style: normal; }
+
+    .section {
+      width: 100%;
+      margin-top: 3.5%;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+      margin-bottom: 2%;
+    }
+    .section-dot {
+      width: clamp(6px, 1.2vw, 8px);
+      height: clamp(6px, 1.2vw, 8px);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(7px, 1.6vw, 11px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .section-line {
+      flex: 1;
+      height: 1px;
+      opacity: 0.3;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      padding: 2.5% 3.5%;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(8px);
+    }
+
+    .puppy-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 2.5%;
+      padding: 2.2% 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      animation: itemFadeIn 0.6s ease both;
+    }
+    .puppy-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .puppy-item:nth-child(1) { animation-delay: 0.5s; }
+    .puppy-item:nth-child(2) { animation-delay: 0.7s; }
+    .puppy-item:nth-child(3) { animation-delay: 0.9s; }
+
+    @keyframes itemFadeIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .item-icon {
+      font-size: clamp(10px, 2vw, 14px);
+      margin-top: 0.1em;
+      flex-shrink: 0;
+    }
+    .item-text { flex: 1; }
+    .item-qty {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(7px, 1.4vw, 10px);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.2em 0.55em;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 0.1em;
+    }
+    .item-name {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(10px, 2.2vw, 16px);
+      font-weight: 600;
+      color: #f1f5f9;
+      line-height: 1.2;
+    }
+    .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5% 2%;
+      margin-top: 1.5%;
+    }
+    .tag {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(5px, 1vw, 7.5px);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.2em 0.5em;
+    }
+
+    .meb-card {
+      background: rgba(212,175,55,0.05);
+      border: 1px solid rgba(212,175,55,0.2);
+      padding: 3% 3.5%;
+      display: flex;
+      align-items: center;
+      gap: 3%;
+      backdrop-filter: blur(8px);
+      animation: fadeSlideUp 1s 0.6s ease both;
+    }
+    .meb-icon { font-size: clamp(18px, 3.5vw, 26px); }
+    .meb-text { flex: 1; }
+    .meb-label {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(7px, 1.4vw, 10px);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: #d4af37;
+      text-transform: uppercase;
+    }
+    .meb-date {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(12px, 2.8vw, 20px);
+      font-weight: 600;
+      color: #f8fafc;
+      margin-top: 0.15em;
+    }
+    .meb-sub {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(6px, 1.1vw, 8px);
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: rgba(212,175,55,0.6);
+      text-transform: uppercase;
+      margin-top: 0.3em;
+    }
+    .coming-soon {
+      text-align: right;
+    }
+    .coming-soon-top {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(6px, 1.1vw, 8px);
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: rgba(212,175,55,0.5);
+      text-transform: uppercase;
+    }
+    .coming-soon-bottom {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(8px, 1.6vw, 11px);
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: #d4af37;
+    }
+
+    .bottom-bar {
+      margin-top: auto;
+      padding-top: 3%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5%;
+      animation: fadeSlideUp 1s 0.8s ease both;
+    }
+    .current-as-of {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(6px, 1.1vw, 8px);
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+    .website {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(7px, 1.4vw, 10px);
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      color: rgba(45,212,191,0.6);
+      text-transform: uppercase;
+    }
+
+    .corner {
+      position: absolute;
+      width: 5%;
+      height: 5%;
+      z-index: 20;
+    }
+    .corner-tl { top: 2%; left: 2%; border-top: 2px solid rgba(45,212,191,0.5); border-left: 2px solid rgba(45,212,191,0.5); }
+    .corner-tr { top: 2%; right: 2%; border-top: 2px solid rgba(45,212,191,0.5); border-right: 2px solid rgba(45,212,191,0.5); }
+    .corner-bl { bottom: 2%; left: 2%; border-bottom: 2px solid rgba(212,175,55,0.4); border-left: 2px solid rgba(212,175,55,0.4); }
+    .corner-br { bottom: 2%; right: 2%; border-bottom: 2px solid rgba(212,175,55,0.4); border-right: 2px solid rgba(212,175,55,0.4); }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="story" role="main">
+
+    <div class="bg-gradient"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-overlay"></div>
+    <div class="shimmer"></div>
+
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <div class="content">
+
+      <div class="badge">&#10022; Available Now &#10022;</div>
+
+      <div class="brand">
+        <img src="/IMG_3894.png" alt="OKC Frenchies Logo"
+          style="height:clamp(60px,14vw,110px);width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(45,212,191,0.35));animation:glowPulse 3s ease-in-out infinite alternate;" />
+        <div class="brand-sub" style="margin-top:0.6em;">Elite DNA &middot; Rare Loci &middot; Structural Excellence</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="headline">
+        <div class="headline-eyebrow">&#10022; Currently Available &#10022;</div>
+        <div class="headline-main">Premium <span>Puppies</span> Ready for You</div>
+      </div>
+
+      <!-- French Bulldogs -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-dot" style="background:#2dd4bf;box-shadow:0 0 6px #2dd4bf;"></div>
+          <div class="section-label" style="color:#2dd4bf;">French Bulldogs</div>
+          <div class="section-line" style="background:#2dd4bf;"></div>
+        </div>
+        <div class="card">
+          <div class="puppy-item">
+            <div class="item-icon">&#128062;</div>
+            <div class="item-text">
+              <div class="item-name">Fluffy Lilac &amp; Tan Male</div>
+              <div class="item-tags">
+                <span class="tag" style="background:rgba(162,85,175,0.15);color:#c084fc;border:1px solid rgba(162,85,175,0.3);">Fluffy</span>
+                <span class="tag" style="background:rgba(45,212,191,0.1);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3);">Lilac &amp; Tan</span>
+                <span class="tag" style="background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);">&#9794; Male</span>
+              </div>
+            </div>
+            <div class="item-qty" style="background:rgba(45,212,191,0.1);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3);">1&times;</div>
+          </div>
+          <div class="puppy-item">
+            <div class="item-icon">&#128062;</div>
+            <div class="item-text">
+              <div class="item-name">Lilac &amp; Tan Big Rope Females</div>
+              <div class="item-tags">
+                <span class="tag" style="background:rgba(217,70,239,0.12);color:#e879f9;border:1px solid rgba(217,70,239,0.3);">Big Rope</span>
+                <span class="tag" style="background:rgba(236,72,153,0.12);color:#f472b6;border:1px solid rgba(236,72,153,0.3);">Carries Pink</span>
+                <span class="tag" style="background:rgba(162,85,175,0.12);color:#c084fc;border:1px solid rgba(162,85,175,0.3);">Carries Fluffy</span>
+                <span class="tag" style="background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.3);">&#9792; Female</span>
+              </div>
+            </div>
+            <div class="item-qty" style="background:rgba(217,70,239,0.1);color:#e879f9;border:1px solid rgba(217,70,239,0.3);">2&times;</div>
+          </div>
+          <div class="puppy-item">
+            <div class="item-icon">&#128062;</div>
+            <div class="item-text">
+              <div class="item-name">Fluffy Lilac Pied Big Rope Male</div>
+              <div class="item-tags">
+                <span class="tag" style="background:rgba(162,85,175,0.15);color:#c084fc;border:1px solid rgba(162,85,175,0.3);">Fluffy</span>
+                <span class="tag" style="background:rgba(71,85,105,0.2);color:#94a3b8;border:1px solid rgba(71,85,105,0.3);">Lilac Pied</span>
+                <span class="tag" style="background:rgba(217,70,239,0.12);color:#e879f9;border:1px solid rgba(217,70,239,0.3);">Big Rope</span>
+                <span class="tag" style="background:rgba(236,72,153,0.12);color:#f472b6;border:1px solid rgba(236,72,153,0.3);">Carries Pink</span>
+              </div>
+            </div>
+            <div class="item-qty" style="background:rgba(45,212,191,0.1);color:#2dd4bf;border:1px solid rgba(45,212,191,0.3);">1&times;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini English Bulldogs -->
+      <div class="section" style="margin-top:3%;">
+        <div class="section-header">
+          <div class="section-dot" style="background:#d4af37;box-shadow:0 0 6px #d4af37;"></div>
+          <div class="section-label" style="color:#d4af37;">Mini-English Bulldogs</div>
+          <div class="section-line" style="background:#d4af37;"></div>
+        </div>
+        <div class="meb-card">
+          <div class="meb-icon">&#128054;</div>
+          <div class="meb-text">
+            <div class="meb-label">Litter Due</div>
+            <div class="meb-date">October 2, 2026</div>
+            <div class="meb-sub">Reserve Your Spot Now</div>
+          </div>
+          <div class="coming-soon">
+            <div class="coming-soon-top">Coming</div>
+            <div class="coming-soon-bottom">Soon</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-bar">
+        <div class="current-as-of">Current as of September 28, 2026</div>
+        <div class="website">okcfrenchies.com</div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
