@@ -219,9 +219,9 @@ const run = async () => {
         fs.writeFileSync(path.join(DATA_DIR, 'puppies.json'), JSON.stringify(puppies, null, 2));
         console.log(`Saved ${puppies.length} puppies.`);
         
-        const blog = await processBlog();
-        fs.writeFileSync(path.join(DATA_DIR, 'blog.json'), JSON.stringify(blog, null, 2));
-        console.log(`Saved ${blog.length} blog posts.`);
+        // Blog is managed in git (src/data/blog.json) — not synced from sheet.
+        // To add/edit posts, update src/data/blog.json and commit.
+        // Blog images live in public/images/blog/.
         
         console.log("Sync Complete!");
     } catch (e) {
