@@ -96,7 +96,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 6% 7%;
+      padding: 3.5% 7% 5%;
     }
 
     .badge {
@@ -113,7 +113,7 @@
     }
 
     .brand {
-      margin-top: 5%;
+      margin-top: 2%;
       text-align: center;
       animation: fadeSlideDown 0.9s 0.1s ease both;
     }
@@ -148,7 +148,7 @@
     .divider {
       width: 60%;
       height: 1px;
-      margin: 4% auto;
+      margin: 2.5% auto;
       background: linear-gradient(90deg, transparent, #2dd4bf, #d4af37, #2dd4bf, transparent);
       animation: dividerGlow 3s ease-in-out infinite alternate;
     }
@@ -398,10 +398,11 @@
 
       <div class="badge">&#10022; Available Now &#10022;</div>
 
-      <div class="brand">
-        <img src="/IMG_3894.png" alt="OKC Frenchies Logo"
+      <div class="brand" id="brand-block">
+        <img src="/IMG_3894.png" alt=""
+          onerror="this.style.display='none';document.getElementById('brand-sub').style.display='none';document.getElementById('brand-block').style.margin='0';"
           style="height:clamp(60px,14vw,110px);width:auto;object-fit:contain;filter:drop-shadow(0 0 14px rgba(45,212,191,0.35));animation:glowPulse 3s ease-in-out infinite alternate;" />
-        <div class="brand-sub" style="margin-top:0.6em;">Elite DNA &middot; Rare Loci &middot; Structural Excellence</div>
+        <div id="brand-sub" class="brand-sub" style="margin-top:0.6em;">Elite DNA &middot; Rare Loci &middot; Structural Excellence</div>
       </div>
 
       <div class="divider"></div>
