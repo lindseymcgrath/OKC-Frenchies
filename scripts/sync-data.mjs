@@ -43,6 +43,7 @@ const downloadAndConvertImage = async (url, filename) => {
         const outPath = path.join(IMAGES_DIR, webpFilename);
         
         await sharp(Buffer.from(buffer))
+            .toColorspace('srgb')
             .webp({ quality: 80 })
             .toFile(outPath);
             
