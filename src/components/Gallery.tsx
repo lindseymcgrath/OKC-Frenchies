@@ -90,6 +90,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
     const [error, setError] = useState<string | null>(null);
     const [selectedDog, setSelectedDog] = useState<DogData | null>(null);
     const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+    const [activeBreedFilter, setActiveBreedFilter] = useState<string>('All');
 
     const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
     const [modalImageError, setModalImageError] = useState(false);
@@ -280,81 +281,160 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                 )}
 
                 {!loading && !error && (
-                    <div className="space-y-16">
+                    <div className="flex flex-wrap gap-4 mb-12">
+                        <button
+                            onClick={() => setActiveBreedFilter('All')}
+                            className={`px-6 py-2 text-xs uppercase tracking-widest font-bold border rounded-full transition-all duration-300 ${activeBreedFilter === 'All' ? 'bg-luxury-teal text-black border-luxury-teal' : 'bg-transparent text-slate-400 border-slate-700 hover:border-luxury-teal hover:text-white'}`}
+                        >
+                            All Breeds
+                        </button>
                         {Array.from(new Set(dogs.map(d => d.breed || 'French Bulldog'))).map(breed => (
-                            <div key={breed}>
-                                <h3 className="font-serif text-2xl text-slate-200 mb-8 flex items-center gap-4">
-                                    {breed}s
-                                    <div className="h-px bg-slate-800 flex-grow"></div>
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                    {dogs.filter(d => (d.breed || 'French Bulldog') === breed).map((dog) => (
-                                        <div
-                                            key={dog.id}
-                                className="group relative bg-white/5 backdrop-blur-md border border-luxury-teal/30 hover:border-luxury-teal/60 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm"
-                                onClick={() => openModal(dog)}
+                            <button
+                                key={breed}
+                                onClick={() => setActiveBreedFilter(breed)}
+                                className={`px-6 py-2 text-xs uppercase tracking-widest font-bold border rounded-full transition-all duration-300 ${activeBreedFilter === breed ? 'bg-luxury-teal text-black border-luxury-teal' : 'bg-transparent text-slate-400 border-slate-700 hover:border-luxury-teal hover:text-white'}`}
                             >
-                                <div className="relative aspect-[4/5] overflow-hidden bg-slate-900 pointer-events-none">
-                                    {(!dog.image || imageErrors[dog.id]) ? (
-                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 px-6 text-center pt-20">
-                                            <ImageIcon className="text-luxury-teal mb-3 opacity-50" size={32} />
-                                            <span className="text-luxury-teal font-serif text-xl mb-1">Photo Coming Soon</span>
-                                            <span className="text-slate-500 font-sans text-[10px] uppercase tracking-widest">{dog.name}</span>
-                                        </div>
-                                    ) : (
-                                        <img
-                                            src={dog.image}
-                                            alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog Stud Service OKC`}
-                                            className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-all duration-700"
-                                            crossOrigin="anonymous"
-                                            onError={() => handleImageError(dog.id)}
-                                        />
-                                    )}
-
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/40 pointer-events-none">
-                                        <div className="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                            <span className="block text-luxury-teal text-xs uppercase tracking-widest mb-2 font-bold">DNA Analysis</span>
-                                            <span className="font-mono text-white text-sm break-words line-clamp-3">{dog.dna}</span>
-                                        </div>
-                                    </div>
-
-                                    {dog.badges.length > 0 && (
-                                        <div className="absolute top-4 left-4 z-20 flex flex-row flex-wrap items-start gap-2 max-w-[95%] pointer-events-none">
-                                            {dog.badges.map((badge, idx) => (
-                                                <span key={idx} className={`px-3 py-1.5 text-[10px] uppercase tracking-widest font-extrabold backdrop-blur-xl border flex items-center gap-1.5 rounded-sm whitespace-nowrap ${badge.color}`}>
-                                                    <Dna size={12} />
-                                                    {badge.label}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="p-6 border-t border-white/10 bg-black/20 pointer-events-none">
-                                    <div className="flex justify-between items-end mb-2">
-                                        <h3 className="font-serif text-2xl text-slate-100 flex items-center gap-2">
-                                            {dog.name}
-                                            {dog.gender === 'Male' && <span className="text-[#1d4ed8] text-xl font-bold ml-1" title="Male">♂</span>}
-                                            {dog.gender === 'Female' && <span className="text-[#db2777] text-xl font-bold ml-1" title="Female">♀</span>}
-                                        </h3>
-                                        <span className="font-serif text-lg text-luxury-teal">{dog.price}</span>
-                                    </div>
-                                    <p className="font-sans text-slate-500 text-xs tracking-widest uppercase mb-4">
-                                        {dog.breed}
-                                    </p>
-                                    <div className="h-px w-full bg-gradient-to-r from-luxury-teal/50 to-transparent mb-4" />
-                                    <p className="font-mono text-[10px] text-slate-400 truncate">
-                                        {sheetName === 'Studs' ? 'DNA: ' + dog.dna : 'Phenotype: ' + dog.dna}
-                                    </p>
-                                    {dog.status && dog.status !== 'Available' && dog.status !== 'Stud' && (
-                                        <p className="font-sans text-xs text-white uppercase tracking-widest mt-2 bg-white/10 inline-block px-2 py-1">{dog.status}</p>
-                                    )}
-                                </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                                {breed}s
+                            </button>
                         ))}
+                    </div>
+                )}
+
+                {!loading && !error && (
+                    <div className="space-y-16">
+                        {/* AVAILABLE DOGS */}
+                        {Array.from(new Set(dogs.map(d => d.breed || 'French Bulldog')))
+                            .filter(breed => activeBreedFilter === 'All' || activeBreedFilter === breed)
+                            .map(breed => {
+                            const availableForBreed = dogs.filter(d => (d.breed || 'French Bulldog') === breed && (!d.status || d.status.toLowerCase() === 'available' || d.status.toLowerCase() === 'stud'));
+                            
+                            if (availableForBreed.length === 0) return null;
+
+                            return (
+                                <div key={breed}>
+                                    <h3 className="font-serif text-2xl text-slate-200 mb-8 flex items-center gap-4">
+                                        Available {breed}s
+                                        <div className="h-px bg-slate-800 flex-grow"></div>
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        {availableForBreed.map((dog) => (
+                                            <div
+                                                key={dog.id}
+                                                className="group relative bg-white/5 backdrop-blur-md border border-luxury-teal/30 hover:border-luxury-teal/60 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm"
+                                                onClick={() => openModal(dog)}
+                                            >
+                                                <div className="relative aspect-[4/5] overflow-hidden bg-slate-900 pointer-events-none">
+                                                    {(!dog.image || imageErrors[dog.id]) ? (
+                                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 px-6 text-center pt-20">
+                                                            <ImageIcon className="text-luxury-teal mb-3 opacity-50" size={32} />
+                                                            <span className="text-luxury-teal font-serif text-xl mb-1">Photo Coming Soon</span>
+                                                            <span className="text-slate-500 font-sans text-[10px] uppercase tracking-widest">{dog.name}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={dog.image}
+                                                            alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog Stud Service OKC`}
+                                                            className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-all duration-700"
+                                                            crossOrigin="anonymous"
+                                                            onError={() => handleImageError(dog.id)}
+                                                        />
+                                                    )}
+
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-black/40 pointer-events-none">
+                                                        <div className="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                                            <span className="block text-luxury-teal text-xs uppercase tracking-widest mb-2 font-bold">DNA Analysis</span>
+                                                            <span className="font-mono text-white text-sm break-words line-clamp-3">{dog.dna}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    {dog.badges.length > 0 && (
+                                                        <div className="absolute top-4 left-4 z-20 flex flex-row flex-wrap items-start gap-2 max-w-[95%] pointer-events-none">
+                                                            {dog.badges.map((badge, idx) => (
+                                                                <span key={idx} className={`px-3 py-1.5 text-[10px] uppercase tracking-widest font-extrabold backdrop-blur-xl border flex items-center gap-1.5 rounded-sm whitespace-nowrap ${badge.color}`}>
+                                                                    <Dna size={12} />
+                                                                    {badge.label}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="p-6 border-t border-white/10 bg-black/20 pointer-events-none">
+                                                    <div className="flex justify-between items-end mb-2">
+                                                        <h3 className="font-serif text-2xl text-slate-100 flex items-center gap-2">
+                                                            {dog.name}
+                                                            {dog.gender === 'Male' && <span className="text-[#1d4ed8] text-xl font-bold ml-1" title="Male">♂</span>}
+                                                            {dog.gender === 'Female' && <span className="text-[#db2777] text-xl font-bold ml-1" title="Female">♀</span>}
+                                                        </h3>
+                                                        <span className="font-serif text-lg text-luxury-teal">{dog.price}</span>
+                                                    </div>
+                                                    <p className="font-sans text-slate-500 text-xs tracking-widest uppercase mb-4">
+                                                        {dog.breed}
+                                                    </p>
+                                                    <div className="h-px w-full bg-gradient-to-r from-luxury-teal/50 to-transparent mb-4" />
+                                                    <p className="font-mono text-[10px] text-slate-400 truncate">
+                                                        {sheetName === 'Studs' ? 'DNA: ' + dog.dna : 'Phenotype: ' + dog.dna}
+                                                    </p>
+                                                    {dog.status && dog.status !== 'Available' && dog.status !== 'Stud' && (
+                                                        <p className="font-sans text-xs text-white uppercase tracking-widest mt-2 bg-white/10 inline-block px-2 py-1">{dog.status}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* PREVIOUSLY SOLD DOGS */}
+                        {(() => {
+                            const soldDogs = dogs.filter(d => 
+                                (activeBreedFilter === 'All' || (d.breed || 'French Bulldog') === activeBreedFilter) && 
+                                d.status && d.status.toLowerCase() !== 'available' && d.status.toLowerCase() !== 'stud'
+                            );
+
+                            if (soldDogs.length === 0) return null;
+
+                            return (
+                                <div className="pt-20 mt-20 border-t border-slate-800">
+                                    <h3 className="font-serif text-xl text-slate-500 mb-8 flex items-center gap-4">
+                                        Previously Sold
+                                        <div className="h-px bg-slate-800 flex-grow"></div>
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                        {soldDogs.map((dog) => (
+                                            <div
+                                                key={dog.id}
+                                                className="group relative bg-white/5 backdrop-blur-md border border-slate-700/30 hover:border-luxury-teal/40 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm opacity-80 hover:opacity-100"
+                                                onClick={() => openModal(dog)}
+                                            >
+                                                <div className="relative aspect-[4/5] overflow-hidden bg-slate-900 pointer-events-none">
+                                                    {(!dog.image || imageErrors[dog.id]) ? (
+                                                        <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 px-4 text-center">
+                                                            <ImageIcon className="text-slate-600 mb-2 opacity-50" size={24} />
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={dog.image}
+                                                            alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog`}
+                                                            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-all duration-700 grayscale hover:grayscale-0"
+                                                            crossOrigin="anonymous"
+                                                            onError={() => handleImageError(dog.id)}
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="p-4 border-t border-white/5 bg-black/40 pointer-events-none text-center">
+                                                    <h3 className="font-serif text-lg text-slate-300 mb-1 truncate">
+                                                        {dog.name}
+                                                    </h3>
+                                                    <p className="font-sans text-[10px] text-luxury-teal uppercase tracking-widest">{dog.status}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 )}
             </div>
