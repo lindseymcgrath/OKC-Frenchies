@@ -111,15 +111,15 @@
   },
   {
     "id": "puppies-6",
-    "name": "$IX FIGURE$",
-    "status": "SOLD",
-    "dna": "Pink Floodle/Teddy Big Rope",
-    "dna_technical": "A/A, n/F, l1/l4, at/at, B/b, co/co, d/d, Em/e, n/Kb",
-    "price": "$80,000",
-    "description": "Elite Lilac base with homozygous Albinism and Furnishings.",
-    "altText": "Pink Floodle Teddy Big Rope French Bulldog male for sale - $IX FIGURE - Rare A/A n/F genetics",
+    "name": "Brew",
+    "status": "Available",
+    "dna": "Lilac Tri Merle",
+    "dna_technical": "",
+    "price": "$4,500",
+    "description": "Lilac Tri Merle",
+    "altText": "",
     "videoUrl": "",
-    "breed": "French Bulldog",
+    "breed": "Mini English Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
@@ -128,28 +128,20 @@
       {
         "type": "image",
         "url": "/images/data/puppies_6_main.webp"
-      },
-      {
-        "type": "image",
-        "url": "/images/data/puppies_6_img1.webp"
-      },
-      {
-        "type": "image",
-        "url": "/images/data/puppies_6_img2.webp"
       }
     ]
   },
   {
     "id": "puppies-7",
-    "name": "Scrappy",
-    "status": "SOLD",
-    "dna": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
-    "dna_technical": "at/at, n/A, co/co, d/d, Em/e, Int/Int, n/Kb, n/F, L/l1",
-    "price": "$15,000",
-    "description": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
-    "altText": "Lilac and Tan French Bulldog male Scrappy - Floodle Teddy Producer carrying Pink - Rare stud genetics",
+    "name": "Bean",
+    "status": "Available",
+    "dna": "Lilac Tri",
+    "dna_technical": "",
+    "price": "$4,000",
+    "description": "Lilac Tri",
+    "altText": "",
     "videoUrl": "",
-    "breed": "French Bulldog",
+    "breed": "Mini English Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
@@ -163,6 +155,102 @@
   },
   {
     "id": "puppies-8",
+    "name": "Biscotti",
+    "status": "Available",
+    "dna": "Chocolate Tri",
+    "dna_technical": "",
+    "price": "$5,000",
+    "description": "Chocolate Tri",
+    "altText": "",
+    "videoUrl": "",
+    "breed": "Mini English Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Female",
+    "image": "/images/data/puppies_8_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_8_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-9",
+    "name": "Brulee",
+    "status": "Available",
+    "dna": "Lilac Tri",
+    "dna_technical": "",
+    "price": "$5,000",
+    "description": "Lilac Tri",
+    "altText": "",
+    "videoUrl": "",
+    "breed": "Mini English Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Female",
+    "image": "/images/data/puppies_9_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_9_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-10",
+    "name": "$IX FIGURE$",
+    "status": "SOLD",
+    "dna": "Pink Floodle/Teddy Big Rope",
+    "dna_technical": "A/A, n/F, l1/l4, at/at, B/b, co/co, d/d, Em/e, n/Kb",
+    "price": "$80,000",
+    "description": "Elite Lilac base with homozygous Albinism and Furnishings.",
+    "altText": "Pink Floodle Teddy Big Rope French Bulldog male for sale - $IX FIGURE - Rare A/A n/F genetics",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Male",
+    "image": "/images/data/puppies_10_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_10_main.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_10_img1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/data/puppies_10_img2.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-11",
+    "name": "Scrappy",
+    "status": "SOLD",
+    "dna": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
+    "dna_technical": "at/at, n/A, co/co, d/d, Em/e, Int/Int, n/Kb, n/F, L/l1",
+    "price": "$15,000",
+    "description": "Lilac & Tan Floodle/Teddy Producer carrying Pink",
+    "altText": "Lilac and Tan French Bulldog male Scrappy - Floodle Teddy Producer carrying Pink - Rare stud genetics",
+    "videoUrl": "",
+    "breed": "French Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Male",
+    "image": "/images/data/puppies_11_main.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/data/puppies_11_main.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-12",
     "name": "Scooby",
     "status": "SOLD",
     "dna": "Isabella & Tan Floodle/Teddy Producer  carrying Pink",
@@ -175,16 +263,16 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_8_main.webp",
+    "image": "/images/data/puppies_12_main.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_8_main.webp"
+        "url": "/images/data/puppies_12_main.webp"
       }
     ]
   },
   {
-    "id": "puppies-9",
+    "id": "puppies-13",
     "name": "Polar",
     "status": "SOLD",
     "dna": "Full Pink",
@@ -197,11 +285,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_9_main.webp",
+    "image": "/images/data/puppies_13_main.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_9_main.webp"
+        "url": "/images/data/puppies_13_main.webp"
       },
       {
         "type": "video",
