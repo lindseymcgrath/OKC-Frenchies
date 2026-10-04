@@ -280,10 +280,17 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                 )}
 
                 {!loading && !error && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {dogs.map((dog) => (
-                            <div
-                                key={dog.id}
+                    <div className="space-y-16">
+                        {Array.from(new Set(dogs.map(d => d.breed || 'French Bulldog'))).map(breed => (
+                            <div key={breed}>
+                                <h3 className="font-serif text-2xl text-slate-200 mb-8 flex items-center gap-4">
+                                    {breed}s
+                                    <div className="h-px bg-slate-800 flex-grow"></div>
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                    {dogs.filter(d => (d.breed || 'French Bulldog') === breed).map((dog) => (
+                                        <div
+                                            key={dog.id}
                                 className="group relative bg-white/5 backdrop-blur-md border border-luxury-teal/30 hover:border-luxury-teal/60 transition-all duration-500 overflow-hidden cursor-pointer rounded-sm"
                                 onClick={() => openModal(dog)}
                             >
@@ -342,6 +349,9 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                     {dog.status && dog.status !== 'Available' && dog.status !== 'Stud' && (
                                         <p className="font-sans text-xs text-white uppercase tracking-widest mt-2 bg-white/10 inline-block px-2 py-1">{dog.status}</p>
                                     )}
+                                </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         ))}
