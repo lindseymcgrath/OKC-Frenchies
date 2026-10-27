@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shuffin Marketing Graphics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: #0a0608;
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      gap: 60px;
+      padding: 40px;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background orbs */
+    .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: -1; }
+    .orb-amber { width: 50vw; height: 50vw; background: rgba(180,100,20,0.15); bottom: -10%; right: -10%; }
+    .orb-teal { width: 40vw; height: 40vw; background: rgba(45,212,191,0.08); top: -10%; left: -10%; }
+
+    .graphic-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .label {
+      font-size: 14px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(212,175,55,0.8);
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      font-weight: 700;
+    }
+
+    .graphic {
+      background: linear-gradient(to bottom, #151013, #050304);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 60px -15px rgba(0,0,0,1), 0 0 30px rgba(212,175,55,0.1);
+      border: 1px solid rgba(212,175,55,0.3);
+    }
+
+    /* Formats */
+    .story-format {
+      aspect-ratio: 9 / 16;
+      height: 780px; /* Fits well on MacBook */
+    }
+
+    .post-format {
+      aspect-ratio: 4 / 5;
+      height: 780px;
+      background: #000; /* Flat black for carousel */
+    }
+
+    /* Sections */
+    .top-section {
+      height: 65%; /* Dog takes up majority of the graphic */
+      width: 100%;
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .bottom-section {
+      height: 35%; /* DNA takes up smaller bottom portion */
+      width: 100%;
+      background: #050304;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px; /* Keeps DNA from touching the absolute edges */
+      border-top: 1px solid rgba(212,175,55,0.4); /* Gold divider */
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain; /* Prevents ANY cutoff. Scales image to perfectly fit. */
+      filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+    }
+    
+    .full-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 20px;
+    }
+
+    /* Available badge */
+    .badge {
+      position: absolute;
+      top: 30px;
+      right: -40px;
+      background: linear-gradient(135deg, #d4af37, #fbbf24);
+      color: #000;
+      padding: 8px 45px;
+      font-weight: 800;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transform: rotate(45deg);
+      z-index: 30;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-amber"></div>
+  <div class="orb orb-teal"></div>
+
+  <!-- 4:5 Feed Post - Slide 1 (Dog) -->
+  <div class="graphic-container">
+    <div class="label">4:5 Instagram Post (Slide 1)</div>
+    <div class="graphic post-format">
+      <div class="badge">Available</div>
+      <img src="Luxury Floodle Available.png" alt="Shuffin Luxury Floodle" class="full-img">
+    </div>
+  </div>
+
+  <!-- 4:5 Feed Post - Slide 2 (DNA) -->
+  <div class="graphic-container">
+    <div class="label">4:5 Instagram Post (Slide 2)</div>
+    <div class="graphic post-format">
+      <div class="badge">Available</div>
+      <img src="DNA-shuffin.png" alt="Shuffin DNA Results" class="full-img">
+    </div>
+  </div>
+
+  <!-- 9:16 Story Post (Stacked) -->
+  <div class="graphic-container">
+    <div class="label">9:16 Instagram Story (Stacked)</div>
+    <div class="graphic story-format">
+      <div class="badge">Available</div>
+      
+      <div class="top-section">
+        <img src="Luxury Floodle Available.png" alt="Shuffin Luxury Floodle">
+      </div>
+      <div class="bottom-section">
+        <img src="DNA-shuffin.png" alt="Shuffin DNA Results">
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
