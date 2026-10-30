@@ -9,6 +9,7 @@ const Home: React.FC = () => {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://okcfrenchies.com/#organization",
       "name": "OKC Frenchies",
       "url": "https://okcfrenchies.com",
       "logo": "https://okcfrenchies.com/IMG_3894.png",
@@ -18,7 +19,19 @@ const Home: React.FC = () => {
       },
       "sameAs": [
         "https://www.instagram.com/okcfrenchies"
-      ]
+      ],
+      // Sister brands: same founders own Raw & Paw Co. & Okie Estates Group.
+      // Keep these @ids identical on all three sites.
+      "founder": ["Lindsey Steward", "Eric Steward"].map((name) => ({
+        "@type": "Person",
+        "@id": `https://okieestates.com/#${name.toLowerCase().replace(' ', '-')}`,
+        "name": name,
+        "worksFor": [
+          { "@type": "Organization", "@id": "https://okcfrenchies.com/#organization", "name": "OKC Frenchies", "url": "https://okcfrenchies.com" },
+          { "@type": "Organization", "@id": "https://rawandpawco.com/#organization", "name": "Raw & Paw Co.", "url": "https://rawandpawco.com" },
+          { "@type": "RealEstateAgent", "@id": "https://okieestates.com/#organization", "name": "Okie Estates Group", "url": "https://okieestates.com" }
+        ]
+      }))
     },
     {
       "@context": "https://schema.org",

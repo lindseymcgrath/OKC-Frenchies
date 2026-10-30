@@ -39,6 +39,37 @@ const Footer: React.FC = () => {
             </div>
         </div>
 
+        {/* Family of Brands */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 py-8 mb-8 border-t border-slate-900/50">
+            <p className="font-sans text-slate-600 text-[10px] tracking-[0.25em] uppercase">Our Family of Brands</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                    href="https://rawandpawco.com/?utm_source=okcfrenchies&utm_medium=referral&utm_campaign=sister_brands"
+                    target="_blank"
+                    rel="noopener"
+                    className="group flex items-center gap-3 px-5 py-3 border border-slate-800 hover:border-luxury-teal transition-all"
+                >
+                    <span className="text-lg" aria-hidden="true">🐾</span>
+                    <span className="text-left">
+                        <span className="block font-sans text-slate-200 text-sm tracking-wide group-hover:text-luxury-teal transition-colors">Raw &amp; Paw Co.</span>
+                        <span className="block font-sans text-slate-500 text-[11px]">Raw dog food &amp; breeder supplements</span>
+                    </span>
+                </a>
+                <a
+                    href="https://okieestates.com/?utm_source=okcfrenchies&utm_medium=referral&utm_campaign=sister_brands"
+                    target="_blank"
+                    rel="noopener"
+                    className="group flex items-center gap-3 px-5 py-3 border border-slate-800 hover:border-luxury-teal transition-all"
+                >
+                    <span className="text-lg" aria-hidden="true">🏡</span>
+                    <span className="text-left">
+                        <span className="block font-sans text-slate-200 text-sm tracking-wide group-hover:text-luxury-teal transition-colors">Okie Estates Group</span>
+                        <span className="block font-sans text-slate-500 text-[11px]">Veteran-owned OKC real estate</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+
         {/* Sub Footer */}
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-slate-900/50">
             <p className="font-sans text-slate-600 text-xs tracking-wide">
