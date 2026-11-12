@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Concept 3: Sunlit Garden & Arched Nursery — OKC Frenchies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F6F4EE;
+    --sage: #2E5A44;
+    --sage-light: #E3EFE8;
+    --clay: #D46A4E;
+    --gold: #F4D37E;
+    --ink: #1C2621;
+    --muted: #5C6B63;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+  }
+  header {
+    max-width: 1340px;
+    margin: 0 auto;
+    padding: 22px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #E2DDD2;
+  }
+  .brand {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--sage);
+  }
+  .menu {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .menu a { color: var(--ink); text-decoration: none; }
+  .menu .pill {
+    background: var(--sage);
+    color: #fff;
+    padding: 11px 22px;
+    border-radius: 99px;
+  }
+  .container {
+    max-width: 1340px;
+    margin: 0 auto;
+    padding: 32px 28px 80px;
+  }
+  .intro-row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 24px;
+    align-items: end;
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    display: inline-block;
+    background: var(--sage-light);
+    color: var(--sage);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(38px, 4.3vw, 56px);
+    line-height: 1.06;
+  }
+  h1 em { color: var(--clay); }
+  .controls-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 14px;
+  }
+  .controls-right p {
+    color: var(--muted);
+    font-size: 16px;
+    text-align: right;
+    max-width: 440px;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+  }
+  .tab {
+    background: #fff;
+    border: 1px solid #DCD6C8;
+    padding: 10px 18px;
+    border-radius: 99px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: var(--sage);
+    color: #fff;
+    border-color: var(--sage);
+  }
+  /* Arched Botanical Cards */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+  .arch-card {
+    background: #fff;
+    border-radius: 140px 140px 26px 26px;
+    padding: 14px 14px 20px;
+    box-shadow: 0 12px 30px rgba(28,38,33,0.06);
+    border: 1px solid #EAE5D9;
+    text-align: center;
+    transition: transform 0.25s;
+  }
+  .arch-card:hover { transform: translateY(-6px); }
+  .arch-photo {
+    position: relative;
+    border-radius: 130px 130px 18px 18px;
+    overflow: hidden;
+    aspect-ratio: 4/4.4;
+  }
+  .arch-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .arch-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    background: rgba(255,255,255,0.9);
+    padding: 4px 10px;
+    border-radius: 99px;
+  }
+  .arch-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: #E2DDD2;
+    font-weight: 700;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .arch-dot.active {
+    background: var(--sage);
+    color: #fff;
+  }
+  .arch-badge {
+    display: inline-block;
+    margin-top: -14px;
+    position: relative;
+    z-index: 2;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 99px;
+  }
+  .arch-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    margin-top: 8px;
+  }
+  .arch-dna {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 4px 0 10px;
+    min-height: 36px;
+  }
+  .arch-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 8px 0;
+    border-top: 1px solid #F0ECE1;
+  }
+  .arch-price {
+    font-weight: 800;
+    color: var(--clay);
+    font-size: 18px;
+  }
+  .arch-btn {
+    background: var(--sage-light);
+    color: var(--sage);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">🌿 OKC Frenchies & Mini Bulldogs</div>
+    <div class="menu">
+      <a href="#">The Nursery (7 Available)</a>
+      <a href="#">Our Studs</a>
+      <a href="#">Health & Genetics</a>
+      <a href="#" class="pill">Visit or FaceTime Us</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="intro-row">
+      <div>
+        <span class="eyebrow">🏡 Oklahoma City Family Breeder • Available Right Now</span>
+        <h1>Raised in the sunlight, <em>ready for your couch.</em></h1>
+      </div>
+      <div class="controls-right">
+        <p>Every available puppy is right here on the front page — click the photo numbers to flip through their newest portraits!</p>
+        <div class="tabs">
+          <button class="tab active" onclick="render('all', this)">All Puppies (8)</button>
+          <button class="tab" onclick="render('French Bulldog', this)">Frenchies (4)</button>
+          <button class="tab" onclick="render('Mini English Bulldog', this)">Mini English (4)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-grid" id="arch-grid"></div>
+  </div>
+
+  <script>
+    const puppies = [{"name":"Alice","nickname":"Little Twin","status":"Available","breed":"French Bulldog","gender":"Female","age":"5 Months","dna":"Lilac & Tan Big Rope • Carries Pink & Fluffy","vibe":"Super Tiny Pocket Princess","price":"$4,000","badgeColor":"#FADADD","images":["../images/puppies/alice-1.webp","../images/puppies/alice-2.webp"]},{"name":"Arya","nickname":"Big Twin","status":"Available","breed":"French Bulldog","gender":"Female","age":"5 Months","dna":"Lilac & Tan Big Rope • Carries Pink & Fluffy","vibe":"Compact Wrinkle Queen","price":"$4,000","badgeColor":"#E2D4F0","images":["../images/puppies/arya-1.webp","../images/puppies/arya-2.webp"]},{"name":"Brew","nickname":"Merle Chunk","status":"Available","breed":"Mini English Bulldog","gender":"Male","age":"Newborn Litter","dna":"Lilac Tri Merle","vibe":"Sleepy Sweetheart","price":"$4,500","badgeColor":"#D9EAD3","images":["../images/puppies/brew-1.webp","../images/puppies/brew-2.webp","../images/puppies/brew-3.webp"]},{"name":"Bean","nickname":"Teddy Bear","status":"Available","breed":"Mini English Bulldog","gender":"Male","age":"Newborn Litter","dna":"Lilac Tri","vibe":"Cuddle Bug","price":"$4,000","badgeColor":"#FFF2CC","images":["../images/puppies/bean-1.webp","../images/puppies/bean-2.webp","../images/puppies/bean-3.webp"]},{"name":"Biscotti","nickname":"Sweet Cookie","status":"Available","breed":"Mini English Bulldog","gender":"Female","age":"Newborn Litter","dna":"Chocolate Tri","vibe":"Playful & Curious","price":"$5,000","badgeColor":"#FCE5CD","images":["../images/puppies/biscotti.webp"]},{"name":"Alex","nickname":"Fluffy Boy","status":"Available","breed":"French Bulldog","gender":"Male","age":"Ready Now","dna":"Fluffy Lilac & Tan","vibe":"Floofy Gentleman","price":"$3,000","badgeColor":"#D0E0E3","images":["../images/puppies/alex.webp"]},{"name":"Shuffin","nickname":"Rare Floodle","status":"Available","breed":"French Bulldog","gender":"Female","age":"Ready Now","dna":"Isabella & Tan Sable Floodle • Carries Pink","vibe":"One-of-a-Kind Teddy","price":"$20,000","badgeColor":"#FADADD","images":["../images/puppies/shuffin.webp"]},{"name":"Brulee","nickname":"Cream Puff","status":"Pending","breed":"Mini English Bulldog","gender":"Female","age":"Newborn Litter","dna":"Lilac Tri","vibe":"Reserved / Pending","price":"$5,000","badgeColor":"#E6E6E6","images":["../images/puppies/brulee.webp"]}];
+    function render(filter = 'all', btn) {
+      if (btn) {
+        document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      const list = filter === 'all' ? puppies : puppies.filter(p => p.breed === filter);
+      document.getElementById('arch-grid').innerHTML = list.map((p, idx) => `
+        <div class="arch-card">
+          <div class="arch-photo">
+            <img id="arch-img-${idx}" src="${p.images[0]}" alt="${p.name}" />
+            ${p.images.length > 1 ? `
+              <div class="arch-dots">
+                ${p.images.map((u, i) => `
+                  <button class="arch-dot ${i===0?'active':''}" onclick="swap(${idx}, '${u}', this)">${i+1}</button>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+          <span class="arch-badge">${p.status === 'Pending' ? '⏳ Pending' : '✨ ' + p.vibe}</span>
+          <h3>${p.name}</h3>
+          <div class="arch-dna">${p.dna}</div>
+          <div class="arch-bottom">
+            <span class="arch-price">${p.price}</span>
+            <button class="arch-btn">Inquire →</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function swap(idx, url, btn) {
+      document.getElementById('arch-img-' + idx).src = url;
+      btn.parentElement.querySelectorAll('.arch-dot').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    render();
+  </script>
+</body>
+</html>

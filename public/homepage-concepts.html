@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OKC Frenchies — Homepage Redesign Concepts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; display: flex; flex-direction: column; background: #111; }
+  .switcher-bar {
+    background: #1B1917;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #333;
+  }
+  .switcher-bar h1 { font-size: 15px; font-weight: 700; }
+  .concept-tabs { display: flex; gap: 10px; }
+  .c-btn {
+    background: #2C2926;
+    color: #ddd;
+    border: 1px solid #444;
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .c-btn.active {
+    background: #FFE156;
+    color: #111;
+    border-color: #FFE156;
+  }
+  iframe { flex: 1; width: 100%; border: none; background: #fff; }
+</style>
+</head>
+<body>
+  <div class="switcher-bar">
+    <h1>🎨 OKC Frenchies Homepage Redesign Preview — Click to Switch Styles:</h1>
+    <div class="concept-tabs">
+      <button class="c-btn active" onclick="loadConcept('./concepts/concept-1-parisian-cream.html', this)">1. Sunny Parisian Boutique (Warm Cream & Coral)</button>
+      <button class="c-btn" onclick="loadConcept('./concepts/concept-2-playful-pop.html', this)">2. Playful Pop Sticker Cards (Bright & Energetic)</button>
+      <button class="c-btn" onclick="loadConcept('./concepts/concept-3-sunlit-garden.html', this)">3. Sunlit Garden Arches (Warm Sage & Linen)</button>
+    </div>
+  </div>
+  <iframe id="preview-frame" src="./concepts/concept-1-parisian-cream.html"></iframe>
+  <script>
+    function loadConcept(url, btn) {
+      document.getElementById('preview-frame').src = url;
+      document.querySelectorAll('.c-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
