@@ -29,9 +29,9 @@ export const PRODUCTS: Product[] = [
     id: 'goat-brew',
     name: 'Goat Brew',
     subtitle: 'Raw & Paw Naturals',
-    description: 'Easy-to-Digest Dehydrated Goat Milk: A natural source of calcium, protein, and essential fatty acids that is gentle on the tummy and perfect for sensitive systems.',
-    image: 'https://rawandpawco.com/cdn/shop/files/raw-and-paw-naturals-goat-brew-goat-milk-supplement-for-dogs.png?v=1770078727',
-    price: '$34.99',
+    description: 'Targeted Nutrition for Puppy Weaning, Nursing Support, and Gut Recovery (60 Serving). Easy-to-digest dehydrated goat milk with bovine colostrum and probiotics.',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/raw-paw-goat-brew-instant-powder-60-serving_600x.png.webp?v=1771290574',
+    price: '$49.99',
     link: 'https://rawandpawco.com/products/goat-brew-goat-milk-dog-supplement',
     benefits: [
         '1,000mg Bovine Colostrum',
@@ -42,10 +42,10 @@ export const PRODUCTS: Product[] = [
   },
   {
     id: 'plasma',
-    name: 'Plasma',
+    name: 'Plasma™',
     subtitle: 'K9 Super Supplements',
-    description: 'Made from premium bovine plasma, naturally rich in bioactive compounds scientifically shown to support healing. Think of it as immune insurance for your dog.',
-    image: 'https://rawandpawco.com/cdn/shop/files/raw-and-paw-naturals-bovine-plasma-dog-supplement.png?v=1770078019',
+    description: 'Made from premium bovine plasma, naturally rich in bioactive immunoglobulins scientifically shown to support gut repair, inflammation reduction, and immune strength.',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/raw-and-paw-naturals-bovine-plasma-dog-supplement_600x.png.webp?v=1770078019',
     price: '$49.99',
     link: 'https://rawandpawco.com/products/raw-and-paw-naturals-bovine-plasma-dog-supplement',
     benefits: [
@@ -59,8 +59,8 @@ export const PRODUCTS: Product[] = [
     id: 'omega-mania',
     name: 'Omega Mania',
     subtitle: 'K9 Super Supplements',
-    description: 'Wild-Caught Salmon Oil provides a rich source of EPA & DHA to support a healthy skin & coat, soothe achy joints, and promote a balanced inflammatory response.',
-    image: 'https://rawandpawco.com/cdn/shop/files/raw-and-paw-naturals-omega-mania-dog-oil-blend.png?v=1770083721&width=2890',
+    description: 'Wild-Caught Salmon & 4-Oil Omega 3-6-9 Blend to support plush skin & coat density, soothe joints, and promote a balanced inflammatory response.',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/raw-and-paw-naturals-omega-mania-dog-oil-blend_600x.png.webp?v=1770083721',
     price: '$29.99',
     link: 'https://rawandpawco.com/products/raw-and-paw-naturals-omega-mania-dog-oil-blend',
     benefits: [
@@ -71,18 +71,17 @@ export const PRODUCTS: Product[] = [
     ]
   },
   {
-    id: 'raw-beef',
-    name: 'Raw Beef Blend',
-    subtitle: 'Foundation Nutrition',
-    description: 'The base of our program. 80/10/10 premium raw beef blends sourced for maximum muscle development.',
-    // Fixed: Replaced 404 image
-    image: 'https://images.unsplash.com/photo-1628260412297-a3377e45006f?auto=format&fit=crop&q=80&w=600',
-    price: 'From $4.50/lb',
-    link: 'https://rawandpawco.com/collections/raw',
+    id: 'heavy-hitter',
+    name: 'Heavy Hitter™',
+    subtitle: 'Performance Muscle & Recovery',
+    description: 'Plasma-powered beef weight gainer and immune support designed to build lean muscle density, bone strength, and top-condition coat health.',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/heavy-hitter-beef-weight-gainer-immune-support-for-dogs_600x.png.webp?v=1770076586',
+    price: '$49.99',
+    link: 'https://rawandpawco.com/products/heavy-hitter-beef-weight-gainer',
     benefits: [
-        'Bio-Appropriate Nutrition',
-        'Maximum Muscle Density',
-        'Natural Enzyme Intake'
+        'Plasma-Powered Recovery',
+        'Healthy Weight & Muscle Gain',
+        'High-Protein Beef Formula'
     ]
   }
 ];

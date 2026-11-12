@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { FlaskConical, ShoppingBag, X, CheckCircle2, Disc, Calculator, Sun, Utensils, ArrowRight, Activity, ShieldPlus } from 'lucide-react';
+import { FlaskConical, ShoppingBag, X, CheckCircle2, Disc, Calculator, Sun, Utensils, ArrowRight, Activity, ShieldPlus, ExternalLink } from 'lucide-react';
 import SEO from './SEO';
 
 interface StackItem {
@@ -35,16 +35,16 @@ const DAILY_STACK: StackItem[] = [
 
 const PERFORMANCE_STACK: StackItem[] = [
   {
-    name: "Gentleman's Litter",
-    description: 'Performance enhancer for our active studs. Zinc and Magnesium load.',
-    link: 'https://rawandpawco.com/collections/supplements',
-    image: 'https://lh3.googleusercontent.com/d/1dSmxbA3g-4qVRzxvBhd-ueijtfna77Ct=s1000'
+    name: "The Gentlemen's Litter",
+    description: 'Performance enhancer for our active studs. Zinc, Magnesium & vitality support.',
+    link: 'https://rawandpawco.com/products/the-gentlemans-litter-stud-dog-fertility-supplement',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/the-gentlemans-litter-stud-dog-fertility-supplement_600x.png.webp?v=1770076168'
   },
   {
     name: 'Joint Support',
-    description: 'Glucosamine & Chondroitin for heavy bone development and joint longevity.',
-    link: 'https://rawandpawco.com/collections/supplements',
-    image: 'https://lh3.googleusercontent.com/d/1znd-3Egcq27kfY7DSwkmcAzia_KWvmDE=s1000'
+    description: 'Glucosamine, Chondroitin & MSM for heavy bone development and joint longevity.',
+    link: 'https://rawandpawco.com/products/k9-super-supplements-joint-support',
+    image: 'https://cdn.shopify.com/s/files/1/0714/2726/0656/files/k9-super-supplements-joint-support-for-dogs-combo_600x.png.webp?v=1770077158'
   }
 ];
 
@@ -357,41 +357,64 @@ const Protocol: React.FC = () => {
 
         {/* Essentials Collection */}
         <div>
-          <h3 className="font-display font-bold text-3xl text-[#1C2621] mb-8">
-            The Essentials Collection
-          </h3>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+            <div>
+              <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3.5 py-1 rounded-full mb-2">
+                🛒 Official Sister Store • Opens in New Tab
+              </span>
+              <h3 className="font-display font-bold text-3xl text-[#1C2621]">
+                The Essentials Collection
+              </h3>
+            </div>
+            <a
+              href="https://rawandpawco.com/shop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 font-sans font-bold text-sm text-[#2E5A44] hover:text-[#D46A4E] transition-colors"
+            >
+              Visit RawAndPawCo.com <ExternalLink size={15} />
+            </a>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {PRODUCTS.map((product) => (
-              <div
+              <a
                 key={product.id}
-                onClick={() => openProduct(product)}
-                className="bg-white border border-[#EAE5D9] rounded-3xl p-5 flex flex-col items-center text-center hover:-translate-y-1 hover:shadow-md transition-all duration-300 cursor-pointer group"
+                href={product.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white border border-[#EAE5D9] hover:border-[#2E5A44] rounded-3xl p-5 flex flex-col text-left hover:-translate-y-1 hover:shadow-md transition-all duration-300 group"
               >
-                <div className="w-full aspect-square mb-4 overflow-hidden bg-[#F6F4EE] rounded-2xl border border-[#EAE5D9]">
+                <div className="relative w-full aspect-square mb-4 overflow-hidden bg-[#F6F4EE] rounded-2xl border border-[#EAE5D9]">
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500"
                   />
+                  <span className="absolute top-2.5 right-2.5 bg-white/95 text-[#2E5A44] text-[10px] font-bold px-2.5 py-1 rounded-full border border-[#EAE5D9] shadow-xs flex items-center gap-1">
+                    rawandpawco.com <ExternalLink size={10} />
+                  </span>
                 </div>
-                <h4 className="font-display font-bold text-xl text-[#1C2621] group-hover:text-[#2E5A44] transition-colors">
-                  {product.name}
-                </h4>
-                <p className="font-sans text-[#2E5A44] text-[11px] font-bold uppercase tracking-wider mt-0.5 mb-2">
+
+                <p className="font-sans text-[#2E5A44] text-[11px] font-bold uppercase tracking-wider mb-1">
                   {product.subtitle}
                 </p>
+                <h4 className="font-display font-bold text-xl text-[#1C2621] group-hover:text-[#2E5A44] transition-colors mb-2">
+                  {product.name}
+                </h4>
                 <p className="font-sans text-[#5C6B63] text-xs leading-relaxed mb-4 line-clamp-3">
                   {product.description}
                 </p>
-                <div className="mt-auto pt-3 border-t border-[#F0ECE1] w-full flex items-center justify-between px-1">
-                  <span className="font-sans font-extrabold text-base text-[#D46A4E]">
+
+                <div className="mt-auto pt-3 border-t border-[#F0ECE1] w-full flex items-center justify-between">
+                  <span className="font-sans font-extrabold text-lg text-[#D46A4E]">
                     {product.price}
                   </span>
-                  <span className="text-xs font-bold text-[#2E5A44] group-hover:underline">
-                    View Details →
+                  <span className="inline-flex items-center gap-1.5 bg-[#E3EFE8] group-hover:bg-[#2E5A44] text-[#2E5A44] group-hover:text-white font-sans font-bold text-xs px-3.5 py-2 rounded-full transition-colors">
+                    Shop Now <ExternalLink size={12} />
                   </span>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>

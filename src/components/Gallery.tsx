@@ -528,7 +528,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
               selectedDog.description ||
               `${selectedDog.name} is an elite ${selectedDog.breed} ${selectedDog.type.toLowerCase()} featuring ${selectedDog.dna}.`
             }
-            image={selectedDog.image}
+            image={`https://okcfrenchies.com/og/dogs/${selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}.jpg`}
             schema={{
               '@context': 'https://schema.org',
               '@type': 'Product',

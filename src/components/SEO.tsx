@@ -10,12 +10,16 @@ interface SEOProps {
 }
 
 const SEO: React.FC<SEOProps> = ({ 
-  title = "OKC Frenchies | Elite DNA", 
-  description = "A luxury breeding program specializing in rare loci, structural excellence, and advanced nutrition for French Bulldogs.", 
-  image = "https://okcfrenchies.com/og-image.jpg",
+  title = "OKC Frenchies | Sunlit Garden French & Mini English Bulldogs", 
+  description = "Health-tested French Bulldogs and Mini English Bulldogs raised in Oklahoma City.", 
+  image = "https://okcfrenchies.com/og/home.jpg",
   url = "https://okcfrenchies.com",
   schema
 }) => {
+  const absoluteImage = image.startsWith('http')
+    ? image
+    : `https://okcfrenchies.com${image.startsWith('/') ? '' : '/'}${image}`;
+
   return (
     <Helmet>
       <title>{title}</title>
@@ -27,7 +31,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:url" content={url} />
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={absoluteImage} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
 
@@ -36,7 +40,7 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="twitter:url" content={url} />
       <meta property="twitter:title" content={title} />
       <meta property="twitter:description" content={description} />
-      <meta property="twitter:image" content={image} />
+      <meta property="twitter:image" content={absoluteImage} />
 
       {schema && (
         <script type="application/ld+json">

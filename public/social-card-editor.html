@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OKC Frenchies — Instagram Card Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,500;1,600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F6F4EE;
+      --card: #FFFFFF;
+      --border: #EAE5D9;
+      --ink: #1C2621;
+      --sage: #2E5A44;
+      --terracotta: #D46A4E;
+      --gold: #F4D37E;
+      --muted: #5C6B63;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      background: #EFECE3;
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    header h1 {
+      margin: 0;
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--sage);
+    }
+    header p {
+      margin: 2px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-primary {
+      background: var(--sage);
+      color: #fff;
+      padding: 11px 22px;
+      font-size: 14px;
+    }
+    .btn-secondary {
+      background: var(--bg);
+      color: var(--ink);
+      border: 1.5px solid #D9D2C3;
+      padding: 9px 16px;
+      font-size: 13px;
+    }
+    .workspace {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      padding: 20px 24px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      align-items: start;
+    }
+    .controls {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--sage);
+      margin: 4px 0 0;
+      border-top: 1px solid #F0ECE1;
+      padding-top: 12px;
+    }
+    .section-title:first-child {
+      border-top: none;
+      padding-top: 0;
+      margin-top: 0;
+    }
+    .template-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .tpl-btn {
+      padding: 10px 8px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 1.5px solid #DDD6C7;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+    }
+    .tpl-btn.active {
+      background: #E4EFE8;
+      border-color: var(--sage);
+      color: var(--sage);
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3E4D45;
+    }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    input[type="text"], textarea, select {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1.5px solid #DDD6C7;
+      border-radius: 10px;
+      background: #FCFBF8;
+      color: var(--ink);
+      width: 100%;
+    }
+    textarea { resize: vertical; min-height: 54px; }
+    input[type="range"] { width: 100%; accent-color: var(--sage); }
+    .range-val { float: right; color: var(--terracotta); font-weight: 800; }
+    .thumbs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 2px solid #DDD6C7;
+      cursor: pointer;
+    }
+    .thumb.active { border-color: var(--sage); box-shadow: 0 0 0 2px #CFE2D7; }
+    .upload-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1.5px dashed #BDB5A4;
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .preview-pane {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .hint {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      background: #FFFFFF;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .stage-wrap {
+      width: 540px;
+      height: 675px;
+      position: relative;
+      box-shadow: 0 24px 60px rgba(28,38,33,0.16);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    /* Exact 1080x1350 card scaled 0.5x for crisp live editing */
+    #card-canvas-dom {
+      width: 1080px;
+      height: 1350px;
+      transform: scale(0.5);
+      transform-origin: top left;
+      background: #F6F4EE;
+      color: #1C2621;
+      font-family: 'DM Sans', sans-serif;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    #card-canvas-dom.tpl-sage {
+      background: #2E5A44;
+      padding: 36px;
+    }
+    .card {
+      flex: 1;
+      background: #FFFFFF;
+      border: 2px solid #EAE5D9;
+      border-radius: 230px 230px 40px 40px;
+      padding: 20px 26px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(28,38,33,0.08);
+    }
+    #card-canvas-dom.tpl-editorial .card {
+      border-radius: 38px;
+      padding: 24px 28px 22px;
+      text-align: left;
+      align-items: flex-start;
+    }
+    #card-canvas-dom.tpl-sage .card {
+      background: #F6F4EE;
+      border: none;
+      border-radius: 38px;
+      padding: 26px 30px 22px;
+    }
+    .sage-header {
+      display: none;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    #card-canvas-dom.tpl-sage .sage-header {
+      display: flex;
+    }
+    .sage-handle {
+      font-size: 22px;
+      font-weight: 800;
+      color: #2E5A44;
+    }
+    .arch {
+      position: relative;
+      width: 100%;
+      height: 815px;
+      border-radius: 210px 210px 26px 26px;
+      overflow: hidden;
+      background: #EFECE4;
+      cursor: grab;
+    }
+    #card-canvas-dom.tpl-editorial .arch,
+    #card-canvas-dom.tpl-sage .arch {
+      border-radius: 28px;
+    }
+    .arch:active { cursor: grabbing; }
+    .arch img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 35%;
+      transform-origin: center center;
+      pointer-events: none;
+    }
+    .pill {
+      margin-top: -25px;
+      position: relative;
+      z-index: 2;
+      background: #F4D37E;
+      color: #1C2621;
+      font-size: 23px;
+      font-weight: 800;
+      padding: 9px 30px;
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      letter-spacing: 0.02em;
+    }
+    #card-canvas-dom.tpl-editorial .pill {
+      margin-left: 24px;
+    }
+    #card-canvas-dom.tpl-sage .pill {
+      display: none;
+    }
+    .sage-pill {
+      background: #F4D37E;
+      color: #1C2621;
+      font-size: 21px;
+      font-weight: 800;
+      padding: 9px 24px;
+      border-radius: 999px;
+    }
+    .brand {
+      margin-top: 10px;
+      font-size: 19px;
+      font-weight: 800;
+      color: #2E5A44;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    #card-canvas-dom.tpl-sage .brand {
+      margin-top: 16px;
+    }
+    .headline {
+      font-family: 'Playfair Display', serif;
+      font-size: 62px;
+      font-weight: 700;
+      line-height: 1.03;
+      margin-top: 4px;
+      color: #1C2621;
+    }
+    .meta-row {
+      margin-top: 8px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #D46A4E;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .coat {
+      font-size: 27px;
+      color: #2F3E37;
+      font-weight: 700;
+      margin-top: 6px;
+      max-width: 920px;
+      line-height: 1.24;
+    }
+    .dna-box {
+      margin-top: 10px;
+      background: #F6F4EE;
+      border: 1.5px solid #E2DCCD;
+      border-radius: 14px;
+      padding: 7px 20px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #2E5A44;
+      max-width: 940px;
+      line-height: 1.3;
+    }
+    #card-canvas-dom.tpl-sage .dna-box {
+      background: #FFFFFF;
+    }
+    .dna-label {
+      color: #1C2621;
+      font-weight: 800;
+      margin-right: 6px;
+      text-transform: uppercase;
+      font-size: 0.9em;
+      letter-spacing: 0.05em;
+    }
+    .quote {
+      margin-top: 12px;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 28px;
+      color: #2E5A44;
+      max-width: 900px;
+      line-height: 1.24;
+    }
+    .footer {
+      margin-top: auto;
+      width: 100%;
+      padding-top: 14px;
+      border-top: 2px solid #F0ECE1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-inline: 8px;
+      gap: 16px;
+    }
+    #card-canvas-dom.tpl-sage .footer {
+      border-top-color: #DFD8C8;
+    }
+    .contact-left {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .email { font-size: 25px; font-weight: 800; color: #1C2621; }
+    .site { font-size: 22px; font-weight: 700; color: #5C6B63; }
+    .cta {
+      background: #2E5A44;
+      color: #FFFFFF;
+      font-size: 24px;
+      font-weight: 800;
+      padding: 14px 32px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    @media (max-width: 1020px) {
+      .workspace { grid-template-columns: 1fr; }
+      .controls { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🌿 OKC Frenchies — Instagram Card Studio</h1>
+      <p>Switch templates, drag photos inside the window, adjust text sizes, and export 1080×1350 PNGs.</p>
+    </div>
+    <div class="actions">
+      <button class="btn-secondary" id="reset-framing">Reset Photo</button>
+      <button class="btn-primary" id="download-btn">⬇ Download 1080×1350 PNG</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="controls">
+      <div class="section-title">1. Layout Template</div>
+      <div class="template-grid">
+        <button type="button" class="tpl-btn active" data-tpl="arch">Botanical Arch</button>
+        <button type="button" class="tpl-btn" data-tpl="editorial">Editorial Card</button>
+        <button type="button" class="tpl-btn" data-tpl="sage">Sage Mat Frame</button>
+      </div>
+
+      <div class="section-title">2. Puppy &amp; Photo Gallery</div>
+      <label>
+        Choose Puppy
+        <select id="puppy-select"></select>
+      </label>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#3E4D45;margin-bottom:6px;">Gallery Photos (Click to Swap)</div>
+        <div class="thumbs" id="photo-thumbs"></div>
+      </div>
+      <div>
+        <label class="upload-label">
+          📷 Upload Custom Photo
+          <input type="file" id="photo-upload" accept="image/*" style="display:none;" />
+        </label>
+      </div>
+
+      <div class="section-title">3. Window &amp; Photo Framing</div>
+      <label>
+        <span>Photo Window Height <span class="range-val" id="val-arch">815px</span></span>
+        <input type="range" id="ctrl-arch" min="600" max="920" value="815" />
+      </label>
+      <label>
+        <span>Photo Zoom <span class="range-val" id="val-zoom">1.00×</span></span>
+        <input type="range" id="ctrl-zoom" min="0.6" max="2.4" step="0.02" value="1" />
+      </label>
+
+      <div class="section-title">4. Text &amp; Details</div>
+      <div class="row-2">
+        <label>Status Pill <input type="text" id="ctrl-pill" /></label>
+        <label>Headline <input type="text" id="ctrl-headline" /></label>
+      </div>
+      <label>Breed • Gender • Age • DOB <input type="text" id="ctrl-meta" placeholder="FRENCH BULLDOG • FEMALE • 5 MONTHS • DOB 06/10/2026" /></label>
+      <label>Coat Description <input type="text" id="ctrl-coat" /></label>
+      <label>DNA String (optional) <input type="text" id="ctrl-dna" placeholder="Leave blank to hide DNA pill" /></label>
+      <label>Sweet Quote <textarea id="ctrl-quote"></textarea></label>
+      <div class="row-2">
+        <label>Email <input type="text" id="ctrl-email" value="info@okcfrenchies.com" /></label>
+        <label>Website <input type="text" id="ctrl-site" value="OKCFrenchies.com" /></label>
+      </div>
+      <label>CTA Button <input type="text" id="ctrl-cta" value="Text 405.300.8482" /></label>
+
+      <div class="section-title">5. Font Sizes</div>
+      <label>
+        <span>Headline Size <span class="range-val" id="val-h1">62px</span></span>
+        <input type="range" id="ctrl-h1" min="40" max="90" value="62" />
+      </label>
+      <label>
+        <span>Details &amp; Coat Size <span class="range-val" id="val-body">27px</span></span>
+        <input type="range" id="ctrl-body" min="18" max="40" value="27" />
+      </label>
+      <label>
+        <span>Quote Size <span class="range-val" id="val-quote">28px</span></span>
+        <input type="range" id="ctrl-quote-size" min="20" max="42" value="28" />
+      </label>
+    </aside>
+
+    <main class="preview-pane">
+      <div class="hint">💡 Drag directly on the puppy photo to move it! Use sliders on the left for text sizes &amp; window height.</div>
+      <div class="stage-wrap">
+        <div id="card-canvas-dom" class="tpl-arch">
+          <div class="card">
+            <div class="sage-header">
+              <div class="sage-pill" id="preview-sage-pill"></div>
+              <div class="sage-handle">@okcfrenchies</div>
+            </div>
+            <div class="arch" id="arch-box">
+              <img id="preview-img" alt="Puppy preview" />
+            </div>
+            <div class="pill" id="preview-pill"></div>
+            <div class="brand" id="preview-brand">🌿 OKC Frenchies &amp; Mini Bulldogs</div>
+            <div class="headline" id="preview-headline"></div>
+            <div class="meta-row" id="preview-meta"></div>
+            <div class="coat" id="preview-coat"></div>
+            <div class="dna-box" id="preview-dna-wrap"><span class="dna-label">DNA:</span><span id="preview-dna"></span></div>
+            <div class="quote" id="preview-quote"></div>
+            <div class="footer">
+              <div class="contact-left">
+                <div class="email" id="preview-email"></div>
+                <div class="site" id="preview-site"></div>
+              </div>
+              <div class="cta" id="preview-cta"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const PUPPIES = [
+      {
+        name: "Alice",
+        status: "✨ Available Now",
+        meta: "FRENCH BULLDOG • FEMALE • 5 MONTHS OLD",
+        coat: "Lilac & Tan Big Rope carrying pink and fluffy",
+        dna: "n/A, at/a, B/b, co/co, d/d, Em/e, Int/Int, n/S, L/l1",
+        quote: "\"Super tiny pocket princess with a gentle soul and endless cuddles to give.\"",
+        photos: ["./images/puppies/alice-1.webp", "./images/puppies/alice-2.webp"],
+        offsetY: 80
+      },
+      {
+        name: "Arya",
+        status: "✨ Available Now",
+        meta: "FRENCH BULLDOG • FEMALE • 5 MONTHS OLD",
+        coat: "Lilac & Tan Big Rope carrying pink and fluffy",
+        dna: "n/A, at/at, B/b, co/co, d/d, Em/e, n/Int, n/S, L/l1",
+        quote: "\"Compact, confident, and bursting with playful charm from nose to tail.\"",
+        photos: ["./images/puppies/arya-1.webp", "./images/puppies/arya-2.webp"],
+        offsetY: 80
+      },
+      {
+        name: "Alex",
+        status: "✨ Available Now",
+        meta: "FRENCH BULLDOG • MALE • 4 MONTHS OLD",
+        coat: "Fluffy Lilac & Tan",
+        dna: "at/at, B/b, co/co, d/d, EM/e, n/Int, n/S, l1/l4",
+        quote: "\"All ears, happy paws, and the sweetest little shadow you could ever ask for.\"",
+        photos: ["./images/puppies/alex.webp"],
+        offsetY: 110
+      },
+      {
+        name: "Shuffin",
+        status: "✨ Available Now",
+        meta: "FRENCH BULLDOG • FEMALE",
+        coat: "Isabella & Tan Sable Floodle carrying pink",
+        dna: "",
+        quote: "\"Fluffy, joyful, and always ready to steal your heart with one big smile.\"",
+        photos: ["./images/puppies/shuffin.webp"],
+        offsetY: 90
+      },
+      {
+        name: "Brew",
+        status: "✨ Available Now",
+        meta: "MINI ENGLISH BULLDOG • MALE",
+        coat: "Lilac Tri Merle",
+        dna: "",
+        quote: "\"Little merle sweetheart with soulful eyes and the coziest cuddle energy.\"",
+        photos: ["./images/puppies/brew-1.webp", "./images/puppies/brew-2.webp", "./images/puppies/brew-3.webp"],
+        offsetY: 30
+      },
+      {
+        name: "Bean",
+        status: "✨ Available Now",
+        meta: "MINI ENGLISH BULLDOG • MALE",
+        coat: "Lilac Tri",
+        dna: "",
+        quote: "\"Chunky, sweet-natured baby who loves warm laps and quiet afternoon naps.\"",
+        photos: ["./images/puppies/bean-1.webp", "./images/puppies/bean-2.webp", "./images/puppies/bean-3.webp"],
+        offsetY: 0
+      },
+      {
+        name: "Biscotti",
+        status: "✨ Available Now",
+        meta: "MINI ENGLISH BULLDOG • FEMALE",
+        coat: "Chocolate Tri",
+        dna: "",
+        quote: "\"A tiny bundle of sweetness—soft, snuggly, and spoiled with love from day one.\"",
+        photos: ["./images/puppies/biscotti-2.webp", "./images/puppies/biscotti-1.webp", "./images/puppies/biscotti.webp"],
+        offsetY: 0
+      },
+      {
+        name: "Brulee",
+        status: "✨ Pending • Deposit Placed",
+        meta: "MINI ENGLISH BULLDOG • FEMALE",
+        coat: "Lilac Tri",
+        dna: "",
+        quote: "\"Gentle, dreamy, and already stealing hearts with that rosy little nose.\"",
+        photos: ["./images/puppies/brulee-2.webp", "./images/puppies/brulee-1.webp", "./images/puppies/brulee.webp"],
+        offsetY: 0
+      }
+    ];
+
+    const state = {
+      template: "arch",
+      puppyIdx: 0,
+      photoSrc: PUPPIES[0].photos[0],
+      panX: 0,
+      panY: 0,
+      zoom: 1,
+      archH: 815
+    };
+
+    const el = (id) => document.getElementById(id);
+    const selectEl = el("puppy-select");
+    PUPPIES.forEach((p, idx) => {
+      const opt = document.createElement("option");
+      opt.value = idx;
+      opt.textContent = p.name;
+      selectEl.appendChild(opt);
+    });
+
+    document.querySelectorAll(".tpl-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tpl-btn").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        state.template = btn.dataset.tpl;
+        const dom = el("card-canvas-dom");
+        dom.className = "tpl-" + state.template;
+        updatePreview();
+      });
+    });
+
+    function loadPuppy(idx) {
+      state.puppyIdx = idx;
+      const p = PUPPIES[idx];
+      state.photoSrc = p.photos[0];
+      state.panX = 0;
+      state.panY = 0;
+      state.zoom = 1;
+      el("ctrl-zoom").value = 1;
+      el("val-zoom").textContent = "1.00×";
+      el("ctrl-pill").value = p.status;
+      el("ctrl-headline").value = "Meet " + p.name;
+      el("ctrl-meta").value = p.meta;
+      el("ctrl-coat").value = p.coat;
+      el("ctrl-dna").value = p.dna;
+      el("ctrl-quote").value = p.quote;
+      renderThumbs(p.photos);
+      updatePreview();
+    }
+
+    function renderThumbs(photos) {
+      const box = el("photo-thumbs");
+      box.innerHTML = "";
+      photos.forEach((src) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.className = "thumb" + (src === state.photoSrc ? " active" : "");
+        img.onclick = () => {
+          state.photoSrc = src;
+          state.panX = 0;
+          state.panY = 0;
+          renderThumbs(photos);
+          updatePreview();
+        };
+        box.appendChild(img);
+      });
+    }
+
+    function updatePreview() {
+      const img = el("preview-img");
+      if (img.getAttribute("src") !== state.photoSrc) img.src = state.photoSrc;
+      const posX = Math.max(0, Math.min(100, 50 - state.panX * 0.15));
+      const posY = Math.max(0, Math.min(100, 35 - state.panY * 0.15));
+      img.style.objectPosition = `${posX}% ${posY}%`;
+      img.style.transform = state.zoom > 1
+        ? `translate(${state.panX * 0.5}px, ${state.panY * 0.5}px) scale(${state.zoom})`
+        : `scale(${state.zoom})`;
+
+      el("arch-box").style.height = state.archH + "px";
+      el("preview-pill").textContent = el("ctrl-pill").value;
+      el("preview-sage-pill").textContent = el("ctrl-pill").value;
+      el("preview-headline").textContent = el("ctrl-headline").value;
+      el("preview-meta").textContent = el("ctrl-meta").value;
+      el("preview-coat").textContent = el("ctrl-coat").value;
+
+      const dna = el("ctrl-dna").value.trim();
+      el("preview-dna-wrap").style.display = dna ? "inline-block" : "none";
+      el("preview-dna").textContent = dna;
+
+      el("preview-quote").textContent = el("ctrl-quote").value;
+      el("preview-email").textContent = el("ctrl-email").value;
+      el("preview-site").textContent = el("ctrl-site").value;
+      el("preview-cta").textContent = el("ctrl-cta").value;
+
+      const h1Size = Number(el("ctrl-h1").value);
+      const bodySize = Number(el("ctrl-body").value);
+      const quoteSize = Number(el("ctrl-quote-size").value);
+
+      el("preview-headline").style.fontSize = h1Size + "px";
+      el("preview-meta").style.fontSize = Math.max(16, bodySize - 3) + "px";
+      el("preview-coat").style.fontSize = bodySize + "px";
+      el("preview-dna-wrap").style.fontSize = Math.max(15, bodySize - 5) + "px";
+      el("preview-quote").style.fontSize = quoteSize + "px";
+    }
+
+    let dragging = false, startX = 0, startY = 0, basePanX = 0, basePanY = 0;
+    const archBox = el("arch-box");
+    archBox.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      basePanX = state.panX;
+      basePanY = state.panY;
+      archBox.setPointerCapture(e.pointerId);
+    });
+    archBox.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      state.panX = basePanX + (e.clientX - startX) * 2;
+      state.panY = basePanY + (e.clientY - startY) * 2;
+      updatePreview();
+    });
+    archBox.addEventListener("pointerup", () => { dragging = false; });
+
+    selectEl.addEventListener("change", (e) => loadPuppy(Number(e.target.value)));
+    el("ctrl-arch").addEventListener("input", (e) => {
+      state.archH = Number(e.target.value);
+      el("val-arch").textContent = state.archH + "px";
+      updatePreview();
+    });
+    el("ctrl-zoom").addEventListener("input", (e) => {
+      state.zoom = Number(e.target.value);
+      el("val-zoom").textContent = state.zoom.toFixed(2) + "×";
+      updatePreview();
+    });
+    el("ctrl-h1").addEventListener("input", (e) => {
+      el("val-h1").textContent = e.target.value + "px";
+      updatePreview();
+    });
+    el("ctrl-body").addEventListener("input", (e) => {
+      el("val-body").textContent = e.target.value + "px";
+      updatePreview();
+    });
+    el("ctrl-quote-size").addEventListener("input", (e) => {
+      el("val-quote").textContent = e.target.value + "px";
+      updatePreview();
+    });
+    ["ctrl-pill", "ctrl-headline", "ctrl-meta", "ctrl-coat", "ctrl-dna", "ctrl-quote", "ctrl-email", "ctrl-site", "ctrl-cta"].forEach((id) => {
+      el(id).addEventListener("input", updatePreview);
+    });
+
+    el("reset-framing").addEventListener("click", () => {
+      state.panX = 0;
+      state.panY = 0;
+      state.zoom = 1;
+      el("ctrl-zoom").value = 1;
+      el("val-zoom").textContent = "1.00×";
+      updatePreview();
+    });
+
+    el("photo-upload").addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        state.photoSrc = ev.target.result;
+        state.panX = 0;
+        state.panY = 0;
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function roundRectPath(ctx, x, y, w, h, tl, tr, br, bl) {
+      ctx.beginPath();
+      ctx.moveTo(x + tl, y);
+      ctx.lineTo(x + w - tr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+      ctx.lineTo(x + w, y + h - br);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+      ctx.lineTo(x + bl, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+      ctx.lineTo(x, y + tl);
+      ctx.quadraticCurveTo(x, y, x + tl, y);
+      ctx.closePath();
+    }
+
+    function wrapLines(ctx, text, maxW) {
+      const words = text.split(/\s+/);
+      const lines = [];
+      let line = "";
+      for (const word of words) {
+        const test = line ? line + " " + word : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    el("download-btn").addEventListener("click", async () => {
+      await document.fonts.ready;
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1350;
+      const ctx = canvas.getContext("2d");
+
+      const isSage = state.template === "sage";
+      const isEditorial = state.template === "editorial";
+
+      // Outer background
+      ctx.fillStyle = isSage ? "#2E5A44" : "#F6F4EE";
+      ctx.fillRect(0, 0, 1080, 1350);
+
+      // Card container
+      const pad = isSage ? 36 : 26;
+      const cardW = 1080 - pad * 2;
+      const cardH = 1350 - pad * 2;
+      const topR = (isEditorial || isSage) ? 38 : 230;
+      ctx.save();
+      ctx.shadowColor = "rgba(28,38,33,0.08)";
+      ctx.shadowBlur = 50;
+      ctx.shadowOffsetY = 20;
+      roundRectPath(ctx, pad, pad, cardW, cardH, topR, topR, 40, 40);
+      ctx.fillStyle = isSage ? "#F6F4EE" : "#FFFFFF";
+      ctx.fill();
+      ctx.restore();
+
+      if (!isSage) {
+        roundRectPath(ctx, pad, pad, cardW, cardH, topR, topR, 40, 40);
+        ctx.strokeStyle = "#EAE5D9";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      let archY = pad + 20;
+      const archX = pad + 26;
+      const archW = cardW - 52;
+      const archH = state.archH;
+
+      // Sage header row
+      if (isSage) {
+        const pillText = el("ctrl-pill").value;
+        ctx.font = "800 21px 'DM Sans', sans-serif";
+        const pW = ctx.measureText(pillText).width + 48;
+        roundRectPath(ctx, archX, pad + 24, pW, 44, 22, 22, 22, 22);
+        ctx.fillStyle = "#F4D37E";
+        ctx.fill();
+        ctx.fillStyle = "#1C2621";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(pillText, archX + pW / 2, pad + 47);
+
+        ctx.textAlign = "right";
+        ctx.font = "800 22px 'DM Sans', sans-serif";
+        ctx.fillStyle = "#2E5A44";
+        ctx.fillText("@okcfrenchies", archX + archW, pad + 47);
+        archY = pad + 84;
+      }
+
+      // Photo area
+      ctx.save();
+      const photoTopR = (isEditorial || isSage) ? 28 : 210;
+      roundRectPath(ctx, archX, archY, archW, archH, photoTopR, photoTopR, 26, 26);
+      ctx.clip();
+      ctx.fillStyle = "#EFECE4";
+      ctx.fillRect(archX, archY, archW, archH);
+
+      const img = el("preview-img");
+      if (img.naturalWidth > 0) {
+        const coverScale = Math.max(archW / img.naturalWidth, archH / img.naturalHeight) * state.zoom;
+        const drawW = img.naturalWidth * coverScale;
+        const drawH = img.naturalHeight * coverScale;
+        const drawX = archX + archW / 2 - drawW / 2 + state.panX;
+        const drawY = archY + archH / 2 - drawH / 2 + state.panY;
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      }
+      ctx.restore();
+
+      let curY = archY + archH;
+      if (!isSage) {
+        const pillText = el("ctrl-pill").value;
+        ctx.font = "800 23px 'DM Sans', sans-serif";
+        const pillW = ctx.measureText(pillText).width + 64;
+        const pillX = isEditorial ? archX + 24 : 540 - pillW / 2;
+        const pillY = archY + archH - 25;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.08)";
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 6;
+        roundRectPath(ctx, pillX, pillY, pillW, 48, 24, 24, 24, 24);
+        ctx.fillStyle = "#F4D37E";
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = "#1C2621";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(pillText, pillX + pillW / 2, pillY + 25);
+        curY = pillY + 66;
+      } else {
+        curY += 28;
+      }
+
+      const textX = isEditorial ? archX : 540;
+      ctx.textAlign = isEditorial ? "left" : "center";
+
+      ctx.font = "800 19px 'DM Sans', sans-serif";
+      ctx.fillStyle = "#2E5A44";
+      ctx.fillText("🌿 OKC FRENCHIES & MINI BULLDOGS", textX, curY);
+
+      const h1Size = Number(el("ctrl-h1").value);
+      curY += h1Size * 0.85;
+      ctx.font = `700 ${h1Size}px 'Playfair Display', serif`;
+      ctx.fillStyle = "#1C2621";
+      ctx.fillText(el("ctrl-headline").value, textX, curY);
+
+      const bodySize = Number(el("ctrl-body").value);
+      curY += bodySize * 1.45;
+      ctx.font = `800 ${Math.max(16, bodySize - 3)}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = "#D46A4E";
+      ctx.fillText(el("ctrl-meta").value, textX, curY);
+
+      curY += bodySize * 1.3;
+      ctx.font = `700 ${bodySize}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = "#2F3E37";
+      const coatLines = wrapLines(ctx, el("ctrl-coat").value, 900);
+      coatLines.forEach((line) => {
+        ctx.fillText(line, textX, curY);
+        curY += bodySize * 1.24;
+      });
+
+      const dnaText = el("ctrl-dna").value.trim();
+      if (dnaText) {
+        const dnaFont = Math.max(15, bodySize - 5);
+        ctx.font = `700 ${dnaFont}px 'DM Sans', sans-serif`;
+        const fullDna = "DNA: " + dnaText;
+        const boxW = Math.min(940, ctx.measureText(fullDna).width + 44);
+        const boxX = isEditorial ? archX : 540 - boxW / 2;
+        roundRectPath(ctx, boxX, curY - 12, boxW, dnaFont + 22, 14, 14, 14, 14);
+        ctx.fillStyle = isSage ? "#FFFFFF" : "#F6F4EE";
+        ctx.fill();
+        ctx.strokeStyle = "#E2DCCD";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = "#2E5A44";
+        ctx.textAlign = "center";
+        ctx.fillText(fullDna, boxX + boxW / 2, curY + dnaFont / 2 - 1);
+        ctx.textAlign = isEditorial ? "left" : "center";
+        curY += dnaFont + 30;
+      }
+
+      const quoteSize = Number(el("ctrl-quote-size").value);
+      ctx.font = `italic 600 ${quoteSize}px 'Playfair Display', serif`;
+      ctx.fillStyle = "#2E5A44";
+      const quoteLines = wrapLines(ctx, el("ctrl-quote").value, 880);
+      curY += 6;
+      quoteLines.forEach((line) => {
+        ctx.fillText(line, textX, curY);
+        curY += quoteSize * 1.24;
+      });
+
+      // Footer
+      const footerY = 1350 - pad - 96;
+      ctx.strokeStyle = isSage ? "#DFD8C8" : "#F0ECE1";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(archX, footerY);
+      ctx.lineTo(archX + archW, footerY);
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+      ctx.font = "800 25px 'DM Sans', sans-serif";
+      ctx.fillStyle = "#1C2621";
+      ctx.fillText(el("ctrl-email").value, archX + 6, footerY + 36);
+
+      ctx.font = "700 22px 'DM Sans', sans-serif";
+      ctx.fillStyle = "#5C6B63";
+      ctx.fillText(el("ctrl-site").value, archX + 6, footerY + 68);
+
+      const ctaText = el("ctrl-cta").value;
+      ctx.font = "800 24px 'DM Sans', sans-serif";
+      const ctaW = ctx.measureText(ctaText).width + 64;
+      roundRectPath(ctx, archX + archW - ctaW - 6, footerY + 22, ctaW, 56, 28, 28, 28, 28);
+      ctx.fillStyle = "#2E5A44";
+      ctx.fill();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.fillText(ctaText, archX + archW - ctaW / 2 - 6, footerY + 51);
+
+      try {
+        const a = document.createElement("a");
+        a.download = `okcfrenchies-${PUPPIES[state.puppyIdx].name.toLowerCase()}-${state.template}.png`;
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+      } catch (err) {
+        alert("To export PNGs for built-in puppy photos, please open this page via http://localhost:5173/social-card-editor.html (run 'npm run dev') or on your live website, or use the Upload Custom Photo button!");
+      }
+    });
+
+    loadPuppy(0);
+  </script>
+</body>
+</html>

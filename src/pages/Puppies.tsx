@@ -51,6 +51,7 @@ const Puppies: React.FC = () => {
       <SEO 
         title={seoData.Puppies.title}
         description={seoData.Puppies.description}
+        image="https://okcfrenchies.com/og/puppies.jpg"
         url="https://okcfrenchies.com/french-bulldog-puppies-for-sale"
         schema={puppiesSchema}
       />

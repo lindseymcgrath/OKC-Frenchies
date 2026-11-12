@@ -116,6 +116,7 @@ const Blog: React.FC = () => {
       <SEO
         title={seoData.Blog.title}
         description={seoData.Blog.description}
+        image="https://okcfrenchies.com/og/blog.jpg"
         url="https://okcfrenchies.com/french-bulldog-breeding-blog"
         schema={blogSchema}
       />

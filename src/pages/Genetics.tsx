@@ -28,6 +28,7 @@ const Genetics: React.FC = () => {
       <SEO 
         title={seoData.Genetics.title}
         description={seoData.Genetics.description}
+        image="https://okcfrenchies.com/og/genetics.jpg"
         url="https://okcfrenchies.com/french-bulldog-coat-color-genetics"
         schema={schema}
       />

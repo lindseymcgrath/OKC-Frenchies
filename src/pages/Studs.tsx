@@ -51,6 +51,7 @@ const Studs: React.FC = () => {
       <SEO 
         title={seoData.Studs.title}
         description={seoData.Studs.description}
+        image="https://okcfrenchies.com/og/studs.jpg"
         url="https://okcfrenchies.com/french-bulldog-stud-service"
         schema={studsSchema}
       />

@@ -14,6 +14,7 @@ const Application: React.FC = () => {
       <SEO
         title={seoData.Application.title}
         description={seoData.Application.description}
+        image="https://okcfrenchies.com/og/application.jpg"
         url="https://okcfrenchies.com/application"
         schema={{
           '@context': 'https://schema.org',

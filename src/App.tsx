@@ -8,8 +8,9 @@ ReactGA.initialize(TRACKING_ID);
 const AnalyticsTracker = () => {
   const location = useLocation();
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
-  }, [location]);
+  }, [location.pathname, location.search]);
   return null;
 };
 // These remain './' because the folders moved WITH App.tsx into /src
@@ -27,6 +28,7 @@ import KennelKingSupport from './pages/KennelKingSupport';
 import KennelKingDataDeletion from './pages/KennelKingDataDeletion';
 import Application from './pages/Application';
 import BuyerEducation from './pages/BuyerEducation';
+import SocialStudio from './pages/SocialStudio';
 
 const App: React.FC = () => {
   return (
@@ -66,6 +68,8 @@ const App: React.FC = () => {
             <Route path="/buyer-education" element={<BuyerEducation />} />
             <Route path="/application" element={<Application />} />
             <Route path="/puppy-inquiry-form" element={<Inquiry />} />
+            <Route path="/social-studio" element={<SocialStudio />} />
+            <Route path="/admin/social-studio" element={<SocialStudio />} />
 
             {/* 🔗 Legacy Redirects */}
             <Route path="/puppies" element={<Puppies />} />

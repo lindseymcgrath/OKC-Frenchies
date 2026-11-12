@@ -23,6 +23,7 @@ const BuyerEducation: React.FC = () => {
         <SEO
           title={seoData.BuyerEducation.title}
           description={seoData.BuyerEducation.description}
+          image="https://okcfrenchies.com/og/buyer-education.jpg"
           url="https://okcfrenchies.com/buyer-education"
           schema={{
             '@context': 'https://schema.org',

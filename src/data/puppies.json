@@ -191,8 +191,16 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/puppies/biscotti.webp",
+    "image": "/images/puppies/biscotti-2.webp",
     "media": [
+      {
+        "type": "image",
+        "url": "/images/puppies/biscotti-2.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/biscotti-1.webp"
+      },
       {
         "type": "image",
         "url": "/images/puppies/biscotti.webp"
@@ -213,8 +221,16 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/puppies/brulee.webp",
+    "image": "/images/puppies/brulee-2.webp",
     "media": [
+      {
+        "type": "image",
+        "url": "/images/puppies/brulee-2.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/brulee-1.webp"
+      },
       {
         "type": "image",
         "url": "/images/puppies/brulee.webp"

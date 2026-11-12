@@ -64,6 +64,7 @@ const Inquiry: React.FC = () => {
       <SEO
         title={seoData.Inquiry.title}
         description={seoData.Inquiry.description}
+        image={dogName ? `https://okcfrenchies.com/og/dogs/${dogName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}.jpg` : 'https://okcfrenchies.com/og/inquiry.jpg'}
         url="https://okcfrenchies.com/puppy-inquiry-form"
         schema={inquirySchema}
       />
