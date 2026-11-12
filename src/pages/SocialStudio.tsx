@@ -1,39 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { GoogleGenAI } from '@google/genai';
 import puppiesData from '../data/puppies.json';
 import studsData from '../data/studs.json';
-
-type FramePreset = 'minimal' | 'arch' | 'editorial' | 'sage';
-type CanvasRatio = 'feed' | 'story'; // 1080x1350 vs 1080x1920
-type PillStyle = 'none-dark' | 'none-light' | 'cream' | 'sage' | 'gold' | 'terracotta' | 'frosted';
-type FontKind = 'sans' | 'serif' | 'serif-italic';
-
-interface TextLayer {
-  id: string;
-  label: string;
-  visible: boolean;
-  text: string;
-  x: number; // center X in 1080 space
-  y: number; // center Y in 1080xH space
-  baseSize: number;
-  scale: number;
-  pill: PillStyle;
-  font: FontKind;
-}
-
-interface DogRecord {
-  id: string;
-  name: string;
-  status?: string;
-  dna?: string;
-  dna_technical?: string;
-  description?: string;
-  breed?: string;
-  gender?: string;
-  image?: string;
-  media?: { type: string; url: string }[];
-  category: 'Puppy' | 'Stud';
-}
+import {
+  BG_STYLES,
+  BgStyle,
+  CanvasRatio,
+  ContentMode,
+  DID_YOU_KNOW_ITEMS,
+  DogRecord,
+  FramePreset,
+  GLOSSARY_ITEMS,
+  PillStyle,
+  STAMP_BADGES,
+  STANDARDS_AND_BLOG_ITEMS,
+  SavedLayoutPreset,
+  SlideState,
+  TextLayer,
+  TopicCardItem,
+  buildTopicCaption,
+  buildTopicLayers
+} from './socialStudioPresets';
 
 const DEFAULT_QUOTES: Record<string, string> = {
   shuffin: '"Fluffy, joyful, and always ready to steal your heart with one big smile."',
@@ -43,7 +31,11 @@ const DEFAULT_QUOTES: Record<string, string> = {
   brew: '"Little merle sweetheart with soulful eyes and the coziest cuddle energy."',
   bean: '"Chunky, sweet-natured baby who loves warm laps and quiet afternoon naps."',
   biscotti: '"A tiny bundle of sweetness—soft, snuggly, and spoiled with love from day one."',
-  brulee: '"Gentle, dreamy, and already stealing hearts with that rosy little nose."'
+  brulee: '"Gentle, dreamy, and already stealing hearts with that rosy little nose."',
+  ghost: '"Full Pink powerhouse sire—proven structure, calm temperament & elite genetics."',
+  everest: '"Compact frame, heavy bone, and world-class exotic DNA ready for your program."',
+  shifu: '"Plush coat genetics, sweet disposition, and show-stopping presence."',
+  denali: '"Exceptional structure, expressive headpiece, and proven rare coat producer."'
 };
 
 const PILL_PALETTE: Record<
@@ -54,17 +46,21 @@ const PILL_PALETTE: Record<
   sage: { label: 'Forest Pill', bg: '#2E5A44', text: '#FFFFFF', border: '#2E5A44', hasBg: true, shadow: true },
   gold: { label: 'Gold Pill', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
   terracotta: { label: 'Terracotta', bg: '#D46A4E', text: '#FFFFFF', border: '#D46A4E', hasBg: true, shadow: true },
+  blush: { label: 'Soft Rose', bg: '#F9E4E2', text: '#8C2F2B', border: '#EBC6C2', hasBg: true, shadow: true },
   frosted: {
     label: 'Dark Glass',
-    bg: 'rgba(28,38,33,0.82)',
+    bg: 'rgba(28,38,33,0.84)',
     text: '#FFFFFF',
     border: 'rgba(255,255,255,0.22)',
     hasBg: true,
     shadow: true
   },
-  'none-dark': { label: 'Dark Text', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
-  'none-light': { label: 'White Text', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
+  'none-dark': { label: 'Dark Text (No Pill)', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
+  'none-light': { label: 'White Text (No Pill)', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
 };
+
+const SAVED_PRESETS_KEY = 'okcfrenchies_studio_saved_layouts_v1';
+const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v2';
 
 const extractAge = (dog: DogRecord): string => {
   const m = (dog.description || '').match(/(\d+)-(month|week)-old/i);
@@ -77,6 +73,8 @@ const extractAge = (dog: DogRecord): string => {
   return '';
 };
 
+const getCanvasHeight = (r: CanvasRatio) => (r === 'story' ? 1920 : r === 'square' ? 1080 : 1350);
+
 const roundRectPath = (
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -88,35 +86,60 @@ const roundRectPath = (
   br: number,
   bl: number
 ) => {
+  const maxR = Math.min(w / 2, h / 2);
+  const rtl = Math.min(tl, maxR);
+  const rtr = Math.min(tr, maxR);
+  const rbr = Math.min(br, maxR);
+  const rbl = Math.min(bl, maxR);
   ctx.beginPath();
-  ctx.moveTo(x + tl, y);
-  ctx.lineTo(x + w - tr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
-  ctx.lineTo(x + w, y + h - br);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
-  ctx.lineTo(x + bl, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
-  ctx.lineTo(x, y + tl);
-  ctx.quadraticCurveTo(x, y, x + tl, y);
+  ctx.moveTo(x + rtl, y);
+  ctx.lineTo(x + w - rtr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rtr);
+  ctx.lineTo(x + w, y + h - rbr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rbr, y + h);
+  ctx.lineTo(x + rbl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rbl);
+  ctx.lineTo(x, y + rtl);
+  ctx.quadraticCurveTo(x, y, x + rtl, y);
   ctx.closePath();
 };
 
 const wrapLines = (ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] => {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = '';
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width > maxW && line) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = test;
+  const paragraphs = text.split('\n');
+  const allLines: string[] = [];
+  for (const para of paragraphs) {
+    const words = para.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      allLines.push('');
+      continue;
     }
+    let line = '';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxW && line) {
+        allLines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) allLines.push(line);
   }
-  if (line) lines.push(line);
-  return lines;
+  return allLines.length > 0 ? allLines : [''];
 };
+
+const loadImageElement = (src: string): Promise<HTMLImageElement | null> =>
+  new Promise((resolve) => {
+    if (!src) {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    if (/^https?:\/\//i.test(src)) img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
 
 const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) => {
   if (preset === 'minimal') {
@@ -143,6 +166,7 @@ const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) =
   const photoX = pad + 26;
   const photoY = preset === 'sage' ? pad + 86 : pad + 24;
   const photoW = cardW - 52;
+  const clampedArch = Math.min(archH, canvasH - 360);
   return {
     outerBg: preset === 'sage' ? '#2E5A44' : '#F6F4EE',
     hasCard: true,
@@ -155,13 +179,13 @@ const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) =
     photoX,
     photoY,
     photoW,
-    photoH: archH,
+    photoH: clampedArch,
     photoTopR: preset === 'arch' ? 210 : 28,
     photoBottomR: 26
   };
 };
 
-const buildLayersForPreset = (
+const buildLayersForDog = (
   dog: DogRecord,
   preset: FramePreset,
   canvasH: number,
@@ -169,15 +193,25 @@ const buildLayersForPreset = (
 ): TextLayer[] => {
   const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const age = extractAge(dog);
-  const breed = dog.breed || (dog.category === 'Stud' ? 'French Bulldog Stud' : 'French Bulldog');
+  const isStud = dog.category === 'Stud';
+  const breed = dog.breed || (isStud ? 'French Bulldog Sire' : 'French Bulldog');
+  const isFemale = (dog.gender || '').toLowerCase() === 'female';
+  const sexLabel = isStud
+    ? '👑 Proven Sire'
+    : dog.gender
+      ? `${isFemale ? '♀' : '♂'} ${dog.gender}`
+      : '♀ Female';
+  const sexPillStyle: PillStyle = isStud ? 'gold' : isFemale ? 'blush' : 'sage';
+
   const statusStr =
     dog.status === 'Pending'
       ? '✨ Pending • Deposit Placed'
-      : dog.category === 'Stud'
-        ? '✨ Stud Service Available'
+      : isStud
+        ? '👑 Stud Service • Shipped Nationwide'
         : '✨ Available Now';
-  const breedAgeStr = [breed, age || dog.gender].filter(Boolean).join(' • ');
-  const fullMetaStr = [breed, dog.gender, age].filter(Boolean).join(' • ').toUpperCase();
+  const breedAgeStr = isStud
+    ? `${dog.name} • ${breed}`
+    : [breed, age].filter(Boolean).join(' • ');
   const coatStr = dog.dna || dog.description || '';
   const dnaStr = (dog.dna_technical || '').trim();
   const quoteStr =
@@ -187,25 +221,53 @@ const buildLayersForPreset = (
     return [
       {
         id: 'breedAge',
-        label: 'Breed & Age Banner',
+        label: isStud ? 'Sire Banner' : 'Breed & Age Banner',
         visible: true,
         text: breedAgeStr,
         x: 540,
-        y: canvasH - 185,
-        baseSize: 36,
-        scale: 1,
+        y: canvasH - 190,
+        fontSize: 34,
+        pillWidth: 700,
+        padY: 18,
         pill: 'cream',
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: isStud ? 'Sire Badge' : 'Sex Pill',
+        visible: true,
+        text: sexLabel,
+        x: 540,
+        y: canvasH - 102,
+        fontSize: 25,
+        pillWidth: isStud ? 290 : 230,
+        padY: 12,
+        pill: sexPillStyle,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat / DNA',
+        visible: isStud,
+        text: coatStr,
+        x: 540,
+        y: 95,
+        fontSize: 24,
+        pillWidth: 680,
+        padY: 13,
+        pill: 'frosted',
         font: 'sans'
       },
       {
         id: 'handle',
         label: '@okcfrenchies',
-        visible: true,
+        visible: false,
         text: '@okcfrenchies',
         x: 540,
-        y: canvasH - 95,
-        baseSize: 22,
-        scale: 1,
+        y: 80,
+        fontSize: 22,
+        pillWidth: 260,
+        padY: 10,
         pill: 'frosted',
         font: 'sans'
       },
@@ -215,9 +277,10 @@ const buildLayersForPreset = (
         visible: false,
         text: statusStr,
         x: 540,
-        y: 95,
-        baseSize: 24,
-        scale: 1,
+        y: 165,
+        fontSize: 24,
+        pillWidth: 460,
+        padY: 12,
         pill: 'gold',
         font: 'sans'
       },
@@ -225,35 +288,25 @@ const buildLayersForPreset = (
         id: 'name',
         label: 'Meet Name',
         visible: false,
-        text: `Meet ${dog.name}`,
+        text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
         x: 540,
-        y: canvasH - 275,
-        baseSize: 64,
-        scale: 1,
+        y: canvasH - 285,
+        fontSize: 64,
+        pillWidth: 720,
+        padY: 10,
         pill: 'none-light',
         font: 'serif'
-      },
-      {
-        id: 'coat',
-        label: 'Coat Color',
-        visible: false,
-        text: coatStr,
-        x: 540,
-        y: canvasH - 345,
-        baseSize: 28,
-        scale: 1,
-        pill: 'frosted',
-        font: 'sans'
       },
       {
         id: 'dna',
         label: 'DNA String',
         visible: false,
-        text: dnaStr ? `DNA: ${dnaStr}` : 'DNA: Health & Color Tested',
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr || '6-Panel Cleared'}`,
         x: 540,
-        y: 170,
-        baseSize: 22,
-        scale: 1,
+        y: 235,
+        fontSize: 22,
+        pillWidth: 780,
+        padY: 12,
         pill: 'cream',
         font: 'sans'
       },
@@ -263,9 +316,10 @@ const buildLayersForPreset = (
         visible: false,
         text: quoteStr,
         x: 540,
-        y: 250,
-        baseSize: 28,
-        scale: 1,
+        y: 325,
+        fontSize: 27,
+        pillWidth: 820,
+        padY: 16,
         pill: 'cream',
         font: 'serif-italic'
       },
@@ -276,8 +330,9 @@ const buildLayersForPreset = (
         text: 'Text 405.300.8482 • info@okcfrenchies.com',
         x: 540,
         y: canvasH - 42,
-        baseSize: 22,
-        scale: 1,
+        fontSize: 22,
+        pillWidth: 660,
+        padY: 12,
         pill: 'sage',
         font: 'sans'
       }
@@ -293,11 +348,25 @@ const buildLayersForPreset = (
       label: 'Status Pill',
       visible: true,
       text: statusStr,
-      x: preset === 'sage' ? geom.photoX + 165 : 540,
+      x: preset === 'sage' ? geom.photoX + 200 : 395,
       y: preset === 'sage' ? geom.cardY + 46 : photoBottom,
-      baseSize: 23,
-      scale: 1,
+      fontSize: 21,
+      pillWidth: 380,
+      padY: 11,
       pill: 'gold',
+      font: 'sans'
+    },
+    {
+      id: 'sex',
+      label: isStud ? 'Sire Badge' : 'Sex Pill',
+      visible: true,
+      text: sexLabel,
+      x: preset === 'sage' ? geom.photoX + 510 : 715,
+      y: preset === 'sage' ? geom.cardY + 46 : photoBottom,
+      fontSize: 21,
+      pillWidth: 235,
+      padY: 11,
+      pill: sexPillStyle,
       font: 'sans'
     },
     {
@@ -305,10 +374,11 @@ const buildLayersForPreset = (
       label: '@okcfrenchies',
       visible: preset === 'sage',
       text: '@okcfrenchies',
-      x: preset === 'sage' ? geom.photoX + geom.photoW - 95 : 540,
+      x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
       y: preset === 'sage' ? geom.cardY + 46 : 90,
-      baseSize: 22,
-      scale: 1,
+      fontSize: 22,
+      pillWidth: 230,
+      padY: 8,
       pill: 'none-dark',
       font: 'sans'
     },
@@ -316,11 +386,12 @@ const buildLayersForPreset = (
       id: 'name',
       label: 'Meet Name',
       visible: true,
-      text: `Meet ${dog.name}`,
+      text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
       x: 540,
-      y: photoBottom + 78,
-      baseSize: 64,
-      scale: 1,
+      y: photoBottom + 70,
+      fontSize: 58,
+      pillWidth: 780,
+      padY: 8,
       pill: 'none-dark',
       font: 'serif'
     },
@@ -328,11 +399,12 @@ const buildLayersForPreset = (
       id: 'breedAge',
       label: 'Breed & Age',
       visible: true,
-      text: fullMetaStr,
+      text: breedAgeStr.toUpperCase(),
       x: 540,
-      y: photoBottom + 138,
-      baseSize: 23,
-      scale: 1,
+      y: photoBottom + 126,
+      fontSize: 22,
+      pillWidth: 800,
+      padY: 6,
       pill: 'none-dark',
       font: 'sans'
     },
@@ -342,9 +414,10 @@ const buildLayersForPreset = (
       visible: true,
       text: coatStr,
       x: 540,
-      y: photoBottom + 182,
-      baseSize: 26,
-      scale: 1,
+      y: photoBottom + 168,
+      fontSize: 25,
+      pillWidth: 840,
+      padY: 8,
       pill: 'none-dark',
       font: 'sans'
     },
@@ -352,11 +425,12 @@ const buildLayersForPreset = (
       id: 'dna',
       label: 'DNA String',
       visible: Boolean(dnaStr),
-      text: dnaStr ? `DNA: ${dnaStr}` : 'DNA: Tested',
+      text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
       x: 540,
-      y: photoBottom + 232,
-      baseSize: 21,
-      scale: 1,
+      y: photoBottom + 218,
+      fontSize: 20,
+      pillWidth: 780,
+      padY: 10,
       pill: 'cream',
       font: 'sans'
     },
@@ -366,9 +440,10 @@ const buildLayersForPreset = (
       visible: true,
       text: quoteStr,
       x: 540,
-      y: photoBottom + (dnaStr ? 292 : 244),
-      baseSize: 26,
-      scale: 1,
+      y: photoBottom + (dnaStr ? 276 : 230),
+      fontSize: 25,
+      pillWidth: 840,
+      padY: 10,
       pill: 'none-dark',
       font: 'serif-italic'
     },
@@ -378,33 +453,127 @@ const buildLayersForPreset = (
       visible: true,
       text: 'Text 405.300.8482 • info@okcfrenchies.com',
       x: 540,
-      y: canvasH - geom.cardY - 52,
-      baseSize: 22,
-      scale: 1,
+      y: canvasH - geom.cardY - 46,
+      fontSize: 21,
+      pillWidth: 650,
+      padY: 12,
       pill: 'sage',
       font: 'sans'
     }
   ];
 };
 
+const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
+  if (!dog) return '';
+  const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const age = extractAge(dog);
+  const quote = DEFAULT_QUOTES[slug]?.replace(/^"|"$/g, '') || '';
+  const isStud = dog.category === 'Stud';
+
+  if (isStud) {
+    return [
+      `👑 Sire Spotlight: ${dog.name} ✨`,
+      quote,
+      '',
+      `🐾 Breed: ${dog.breed || 'French Bulldog'} Proven Sire`,
+      dog.dna ? `🧬 Genetics: ${dog.dna}` : '',
+      `✈️ Same-day nationwide airport shipping & local OKC AI support available!`,
+      '',
+      `💬 Which trait are you looking to add to your next pairing? Drop a comment or text us! 👇`,
+      '',
+      `📲 Text Lindsey or Eric: 405.300.8482`,
+      `📩 Email: info@okcfrenchies.com`,
+      `🌐 OKCFrenchies.com`,
+      '',
+      `#okcfrenchies #frenchbulldogstud #frenchiegenetics #pinkfrenchie #fluffyfrenchie #oklahomacity`
+    ]
+      .filter((l, idx, arr) => l !== '' || arr[idx - 1] !== '')
+      .join('\n');
+  }
+
+  return [
+    `🌿 Meet ${dog.name} ✨`,
+    quote,
+    '',
+    `🐾 Breed: ${dog.breed || 'French Bulldog'} (${dog.gender || ''})`,
+    age ? `🎂 Age: ${age}` : '',
+    dog.dna ? `🎨 Coat: ${dog.dna}` : '',
+    dog.dna_technical ? `🧬 DNA: ${dog.dna_technical}` : '',
+    `✈️ Raised underfoot in our OKC home • Live FaceTime & Flight Nanny available!`,
+    '',
+    `📲 Text Lindsey or Eric: 405.300.8482`,
+    `📩 Email: info@okcfrenchies.com`,
+    `🌐 OKCFrenchies.com`,
+    '',
+    `#okcfrenchies #frenchbulldog #minibulldog #oklahomacity #frenchiepuppy #rarefrenchies`
+  ]
+    .filter((l, idx, arr) => l !== '' || arr[idx - 1] !== '')
+    .join('\n');
+};
+
+const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
+  const ch = getCanvasHeight(ratio);
+  const archH = ratio === 'story' ? 1180 : ratio === 'square' ? 600 : 800;
+  return {
+    id: 'slide-1',
+    preset: 'minimal',
+    bgStyle: 'photo',
+    photoSrc: dog.image || '',
+    photoDim: 0,
+    panX: 0,
+    panY: 0,
+    zoom: 1,
+    archHeight: archH,
+    layers: buildLayersForDog(dog, 'minimal', ch, archH)
+  };
+};
+
 const SocialStudio: React.FC = () => {
-  const allDogs: DogRecord[] = useMemo(() => {
-    const p = (puppiesData as any[]).map((d) => ({ ...d, category: 'Puppy' as const }));
-    const s = (studsData as any[]).map((d) => ({ ...d, category: 'Stud' as const }));
-    return [...p, ...s];
-  }, []);
-
-  const [filterMode, setFilterMode] = useState<'available' | 'all'>('available');
-  const filteredDogs = useMemo(() => {
-    if (filterMode === 'all') return allDogs;
-    return allDogs.filter((d) => d.status === 'Available' || d.status === 'Pending');
-  }, [allDogs, filterMode]);
-
-  const [selectedId, setSelectedId] = useState<string>('puppies-4');
-  const selectedDog = useMemo(
-    () => filteredDogs.find((d) => d.id === selectedId) || filteredDogs[0] || allDogs[0],
-    [filteredDogs, selectedId, allDogs]
+  const allPuppies: DogRecord[] = useMemo(
+    () => (puppiesData as any[]).map((d) => ({ ...d, category: 'Puppy' as const })),
+    []
   );
+  const allStuds: DogRecord[] = useMemo(
+    () => (studsData as any[]).map((d) => ({ ...d, category: 'Stud' as const })),
+    []
+  );
+
+  // Content Mode
+  const [contentMode, setContentMode] = useState<ContentMode>('puppies');
+  const [filterMode, setFilterMode] = useState<'available' | 'all'>('available');
+  const [selectedDogId, setSelectedDogId] = useState<string>('puppies-8'); // Biscotti or first available
+  const [selectedGlossaryId, setSelectedGlossaryId] = useState<string>(GLOSSARY_ITEMS[0]?.id || '');
+  const [selectedStandardId, setSelectedStandardId] = useState<string>(
+    STANDARDS_AND_BLOG_ITEMS[0]?.id || ''
+  );
+  const [selectedDykIndex, setSelectedDykIndex] = useState<number>(0);
+
+  const visibleDogs = useMemo(() => {
+    if (contentMode === 'studs') return allStuds;
+    if (filterMode === 'all') return allPuppies;
+    return allPuppies.filter((d) => d.status === 'Available' || d.status === 'Pending');
+  }, [contentMode, filterMode, allPuppies, allStuds]);
+
+  const selectedDog = useMemo(
+    () => visibleDogs.find((d) => d.id === selectedDogId) || visibleDogs[0] || allPuppies[0],
+    [visibleDogs, selectedDogId, allPuppies]
+  );
+
+  const activeTopicItem: TopicCardItem | null = useMemo(() => {
+    if (contentMode === 'glossary') {
+      return GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) || GLOSSARY_ITEMS[0];
+    }
+    if (contentMode === 'standards') {
+      return (
+        STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
+        STANDARDS_AND_BLOG_ITEMS[0]
+      );
+    }
+    if (contentMode === 'didyouknow') {
+      return DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length];
+    }
+    return null;
+  }, [contentMode, selectedGlossaryId, selectedStandardId, selectedDykIndex]);
 
   const galleryPhotos = useMemo(() => {
     if (!selectedDog) return [];
@@ -417,35 +586,83 @@ const SocialStudio: React.FC = () => {
     return urls;
   }, [selectedDog]);
 
+  // Canvas Ratio & Multi-Slide Carousel State
   const [ratio, setRatio] = useState<CanvasRatio>('feed');
-  const canvasH = ratio === 'feed' ? 1350 : 1920;
+  const canvasH = getCanvasHeight(ratio);
 
-  const [preset, setPreset] = useState<FramePreset>('minimal');
-  const [archHeight, setArchHeight] = useState<number>(800);
-  const [photoSrc, setPhotoSrc] = useState<string>(selectedDog?.image || '');
-  const [panX, setPanX] = useState<number>(0);
-  const [panY, setPanY] = useState<number>(0);
-  const [zoom, setZoom] = useState<number>(1);
+  const [slides, setSlides] = useState<SlideState[]>(() => [
+    makeInitialSlide(allPuppies[0], 'feed')
+  ]);
+  const [activeSlideIdx, setActiveSlideIdx] = useState<number>(0);
+  const activeSlide = slides[activeSlideIdx] || slides[0];
+
+  // Undo History Stack
+  const [history, setHistory] = useState<SlideState[][]>([]);
+  const pushHistory = (snapshot: SlideState[]) => {
+    setHistory((prev) => [...prev.slice(-22), JSON.parse(JSON.stringify(snapshot))]);
+  };
+  const handleUndo = () => {
+    setHistory((prev) => {
+      if (prev.length === 0) return prev;
+      const last = prev[prev.length - 1];
+      setSlides(last);
+      setActiveSlideIdx((idx) => Math.min(idx, last.length - 1));
+      return prev.slice(0, -1);
+    });
+  };
+
+  // Saved Custom Layout Presets
+  const [savedLayouts, setSavedLayouts] = useState<SavedLayoutPreset[]>(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_PRESETS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [newPresetName, setNewPresetName] = useState<string>('');
+
+  // Selection, Snap Guides & UI Tabs
+  const [photoLocked, setPhotoLocked] = useState<boolean>(false);
   const [imgNat, setImgNat] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
-
-  const [layers, setLayers] = useState<TextLayer[]>(() =>
-    selectedDog ? buildLayersForPreset(selectedDog, 'minimal', 1350, 800) : []
-  );
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
-  const [snapCenterLine, setSnapCenterLine] = useState<boolean>(false);
-  const [mobileTab, setMobileTab] = useState<'fields' | 'puppy' | 'style' | 'caption'>('fields');
-  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+  const [snapVertical, setSnapVertical] = useState<boolean>(false);
+  const [snapHorizontal, setSnapHorizontal] = useState<boolean>(false);
+  const [mobileTab, setMobileTab] = useState<'source' | 'fields' | 'style' | 'caption'>('source');
 
-  // Responsive preview width (fits iPhone screens without horizontal overflow)
+  // Caption & Link State
+  const [captionText, setCaptionText] = useState<string>(() =>
+    buildDefaultDogCaption(allPuppies[0])
+  );
+  const [aiPrompt, setAiPrompt] = useState<string>('');
+  const [aiCategory, setAiCategory] = useState<string>('did-you-know');
+  const [aiLoading, setAiLoading] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string>('');
+  const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [draftSavedAt, setDraftSavedAt] = useState<string>('');
+
+  // Direct Share URL (matches api/page.mjs Open Graph link preview routes!)
+  const directShareUrl = useMemo(() => {
+    if (contentMode === 'puppies' && selectedDog) {
+      return `https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=${encodeURIComponent(selectedDog.name)}`;
+    }
+    if (contentMode === 'studs' && selectedDog) {
+      return `https://okcfrenchies.com/french-bulldog-stud-service?dog=${encodeURIComponent(selectedDog.name)}`;
+    }
+    return activeTopicItem?.shareUrl || 'https://okcfrenchies.com';
+  }, [contentMode, selectedDog, activeTopicItem]);
+
+  // Responsive Stage Sizing
   const [stageWidth, setStageWidth] = useState<number>(480);
   useEffect(() => {
     const updateWidth = () => {
       const w = window.innerWidth;
       if (w < 640) {
-        setStageWidth(Math.min(390, w - 28));
+        setStageWidth(Math.min(395, w - 24));
       } else {
-        setStageWidth(ratio === 'story' ? 390 : 500);
+        setStageWidth(ratio === 'story' ? 380 : ratio === 'square' ? 480 : 490);
       }
     };
     updateWidth();
@@ -456,80 +673,677 @@ const SocialStudio: React.FC = () => {
   const stageScale = stageWidth / 1080;
   const stageHeight = canvasH * stageScale;
 
-  const imgRef = useRef<HTMLImageElement | null>(null);
-
-  // Rebuild default layers when dog, preset, or ratio changes
-  useEffect(() => {
-    if (!selectedDog) return;
-    const defaultArch = ratio === 'story' ? 1180 : preset === 'sage' ? 740 : 800;
-    setArchHeight(defaultArch);
-    setPhotoSrc(selectedDog.image || galleryPhotos[0] || '');
-    setPanX(0);
-    setPanY(0);
-    setZoom(1);
-    setLayers(buildLayersForPreset(selectedDog, preset, ratio === 'feed' ? 1350 : 1920, defaultArch));
-    setSelectedLayerId(null);
-    setEditingLayerId(null);
-  }, [selectedDog?.id, preset, ratio]);
-
-  const selectedLayer = useMemo(
-    () => layers.find((l) => l.id === selectedLayerId) || null,
-    [layers, selectedLayerId]
-  );
-
-  const updateLayer = (id: string, patch: Partial<TextLayer>) => {
-    setLayers((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  // Helpers to mutate active slide cleanly
+  const updateActiveSlide = (patch: Partial<SlideState>, recordUndo = false) => {
+    setSlides((prev) => {
+      if (recordUndo) pushHistory(prev);
+      return prev.map((s, idx) => (idx === activeSlideIdx ? { ...s, ...patch } : s));
+    });
   };
 
+  const updateLayer = (id: string, patch: Partial<TextLayer>, recordUndo = false) => {
+    setSlides((prev) => {
+      if (recordUndo) pushHistory(prev);
+      return prev.map((s, idx) =>
+        idx === activeSlideIdx
+          ? { ...s, layers: s.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)) }
+          : s
+      );
+    });
+  };
+
+  // Load draft once on mount if present
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+          setSlides(parsed.slides);
+          if (parsed.ratio) setRatio(parsed.ratio);
+          if (parsed.contentMode) setContentMode(parsed.contentMode);
+          if (parsed.captionText) setCaptionText(parsed.captionText);
+        }
+      }
+    } catch {
+      // ignore corrupt draft
+    }
+    setTimeout(() => {
+      didMountRef.current = true;
+    }, 100);
+  }, []);
+
+  // Auto-save working draft
+  useEffect(() => {
+    if (!didMountRef.current) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({ slides, ratio, contentMode, captionText })
+        );
+        setDraftSavedAt('Saved');
+      } catch {
+        // storage quota full (e.g. huge custom dataURL)
+      }
+    }, 650);
+    return () => clearTimeout(t);
+  }, [slides, ratio, contentMode, captionText]);
+
+  // Apply content selection when user picks a Dog, Glossary Term, Standard/Blog, or Did-You-Know
+  const loadDogIntoCard = (dog: DogRecord, targetPreset?: FramePreset, targetRatio?: CanvasRatio) => {
+    const r = targetRatio || ratio;
+    const ch = getCanvasHeight(r);
+    const pr = targetPreset || activeSlide.preset || 'minimal';
+    const defaultArch = r === 'story' ? 1180 : r === 'square' ? 580 : pr === 'sage' ? 740 : 800;
+    pushHistory(slides);
+    setSlides([
+      {
+        id: 'slide-1',
+        preset: pr,
+        bgStyle: 'photo',
+        photoSrc: dog.image || '',
+        photoDim: 0,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        archHeight: defaultArch,
+        layers: buildLayersForDog(dog, pr, ch, defaultArch)
+      }
+    ]);
+    setActiveSlideIdx(0);
+    setCaptionText(buildDefaultDogCaption(dog));
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+  };
+
+  const loadTopicIntoCard = (item: TopicCardItem, targetRatio?: CanvasRatio) => {
+    const r = targetRatio || ratio;
+    const ch = getCanvasHeight(r);
+    pushHistory(slides);
+    setSlides([
+      {
+        id: 'slide-1',
+        preset: 'minimal',
+        bgStyle: item.bgStyle,
+        photoSrc: item.image || selectedDog?.image || '',
+        photoDim: item.bgStyle === 'photo' ? 0.48 : 0,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        archHeight: 800,
+        layers: buildTopicLayers(item, ch)
+      }
+    ]);
+    setActiveSlideIdx(0);
+    setCaptionText(buildTopicCaption(item));
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+  };
+
+  // Handle Ratio Switch (rescale Y positions proportionally across all slides!)
+  const handleSwitchRatio = (nextRatio: CanvasRatio) => {
+    if (nextRatio === ratio) return;
+    const oldH = getCanvasHeight(ratio);
+    const newH = getCanvasHeight(nextRatio);
+    const scaleY = newH / oldH;
+    pushHistory(slides);
+    setRatio(nextRatio);
+    setSlides((prev) =>
+      prev.map((s) => ({
+        ...s,
+        archHeight:
+          nextRatio === 'story' ? 1180 : nextRatio === 'square' ? 580 : s.preset === 'sage' ? 740 : 800,
+        layers: s.layers.map((l) => ({
+          ...l,
+          y: Math.round(l.y * scaleY)
+        }))
+      }))
+    );
+  };
+
+  // Handle Template Preset Switch on Active Slide
+  const handleSwitchPreset = (nextPreset: FramePreset) => {
+    const defaultArch =
+      ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
+    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog) {
+      updateActiveSlide(
+        {
+          preset: nextPreset,
+          bgStyle: 'photo',
+          archHeight: defaultArch,
+          layers: buildLayersForDog(selectedDog, nextPreset, canvasH, defaultArch)
+        },
+        true
+      );
+    } else {
+      updateActiveSlide({ preset: nextPreset, archHeight: defaultArch }, true);
+    }
+  };
+
+  // Multi-Slide Carousel Builder
+  const handleBuildAutoCarousel = () => {
+    pushHistory(slides);
+    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog) {
+      const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const quote =
+        DEFAULT_QUOTES[slug] || '"Raised underfoot in our OKC home with 24/7 love & care."';
+      const photo1 = galleryPhotos[0] || selectedDog.image || '';
+      const photo2 = galleryPhotos[1] || photo1;
+      const photo3 = galleryPhotos[2] || photo1;
+      const slide1Layers = buildLayersForDog(selectedDog, 'minimal', canvasH, 800);
+      slide1Layers.push({
+        id: 'swipe-hint',
+        label: 'Swipe Badge',
+        visible: true,
+        text: 'Swipe 👉',
+        x: 910,
+        y: 90,
+        fontSize: 22,
+        pillWidth: 210,
+        padY: 10,
+        pill: 'frosted',
+        font: 'sans'
+      });
+
+      const slide2Layers: TextLayer[] = [
+        {
+          id: 's2-badge',
+          label: 'Spotlight Tag',
+          visible: true,
+          text: `✨ ALL ABOUT ${selectedDog.name.toUpperCase()}`,
+          x: 540,
+          y: 120,
+          fontSize: 23,
+          pillWidth: 460,
+          padY: 12,
+          pill: 'gold',
+          font: 'sans'
+        },
+        {
+          id: 's2-coat',
+          label: 'Coat & Genetics',
+          visible: true,
+          text: selectedDog.dna || selectedDog.breed || 'Rare Genetics',
+          x: 540,
+          y: canvasH - 275,
+          fontSize: 32,
+          pillWidth: 820,
+          padY: 16,
+          pill: 'cream',
+          font: 'sans'
+        },
+        {
+          id: 's2-quote',
+          label: 'Personality Quote',
+          visible: true,
+          text: quote,
+          x: 540,
+          y: canvasH - 135,
+          fontSize: 28,
+          pillWidth: 860,
+          padY: 18,
+          pill: 'frosted',
+          font: 'serif-italic'
+        }
+      ];
+
+      const slide3Layers: TextLayer[] = [
+        {
+          id: 's3-badge',
+          label: 'OKC Promise',
+          visible: true,
+          text: '🏡 THE OKC FRENCHIES PROMISE',
+          x: 540,
+          y: Math.round(canvasH * 0.24),
+          fontSize: 23,
+          pillWidth: 520,
+          padY: 13,
+          pill: 'gold',
+          font: 'sans'
+        },
+        {
+          id: 's3-title',
+          label: 'CTA Headline',
+          visible: true,
+          text:
+            selectedDog.category === 'Stud'
+              ? `Book ${selectedDog.name} For Your Program`
+              : `Bring ${selectedDog.name} Home`,
+          x: 540,
+          y: Math.round(canvasH * 0.4),
+          fontSize: 58,
+          pillWidth: 860,
+          padY: 12,
+          pill: 'none-light',
+          font: 'serif'
+        },
+        {
+          id: 's3-perks',
+          label: 'Included Perks',
+          visible: true,
+          text:
+            selectedDog.category === 'Stud'
+              ? '✓ 6-Panel Health Cleared\n✓ Same-Day Airport Shipping\n✓ Breeder Support Included'
+              : '✓ Live FaceTime Meet & Greet\n✓ 6-Panel Health Tested Parents\n✓ In-Cabin Flight Nanny Nationwide',
+          x: 540,
+          y: Math.round(canvasH * 0.6),
+          fontSize: 29,
+          pillWidth: 820,
+          padY: 26,
+          pill: 'frosted',
+          font: 'sans'
+        },
+        {
+          id: 's3-contact',
+          label: 'Contact CTA',
+          visible: true,
+          text: 'Text Lindsey or Eric • 405.300.8482',
+          x: 540,
+          y: Math.round(canvasH * 0.8),
+          fontSize: 26,
+          pillWidth: 700,
+          padY: 16,
+          pill: 'cream',
+          font: 'sans'
+        }
+      ];
+
+      setSlides([
+        {
+          id: 'slide-1',
+          preset: 'minimal',
+          bgStyle: 'photo',
+          photoSrc: photo1,
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: slide1Layers
+        },
+        {
+          id: 'slide-2',
+          preset: 'minimal',
+          bgStyle: 'photo',
+          photoSrc: photo2,
+          photoDim: 0.12,
+          panX: 0,
+          panY: 0,
+          zoom: 1.05,
+          archHeight: 800,
+          layers: slide2Layers
+        },
+        {
+          id: 'slide-3',
+          preset: 'minimal',
+          bgStyle: photo3 ? 'photo' : 'forest-luxe',
+          photoSrc: photo3,
+          photoDim: 0.58,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: slide3Layers
+        }
+      ]);
+      setActiveSlideIdx(0);
+    } else if (activeTopicItem) {
+      setSlides([
+        {
+          id: 'slide-1',
+          preset: 'minimal',
+          bgStyle: activeTopicItem.bgStyle,
+          photoSrc: activeTopicItem.image || selectedDog?.image || '',
+          photoDim: activeTopicItem.bgStyle === 'photo' ? 0.5 : 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: [
+            {
+              id: 'c1-badge',
+              label: 'Hook Tag',
+              visible: true,
+              text: activeTopicItem.badge,
+              x: 540,
+              y: Math.round(canvasH * 0.34),
+              fontSize: 25,
+              pillWidth: 540,
+              padY: 14,
+              pill: BG_STYLES[activeTopicItem.bgStyle].darkText ? 'sage' : 'gold',
+              font: 'sans'
+            },
+            {
+              id: 'c1-title',
+              label: 'Big Hook',
+              visible: true,
+              text: activeTopicItem.title,
+              x: 540,
+              y: Math.round(canvasH * 0.52),
+              fontSize: 66,
+              pillWidth: 880,
+              padY: 16,
+              pill: BG_STYLES[activeTopicItem.bgStyle].darkText ? 'none-dark' : 'none-light',
+              font: 'serif'
+            },
+            {
+              id: 'c1-swipe',
+              label: 'Swipe Prompt',
+              visible: true,
+              text: 'Swipe for the answer 👉',
+              x: 540,
+              y: Math.round(canvasH * 0.74),
+              fontSize: 26,
+              pillWidth: 460,
+              padY: 14,
+              pill: 'terracotta',
+              font: 'sans'
+            }
+          ]
+        },
+        {
+          id: 'slide-2',
+          preset: 'minimal',
+          bgStyle: 'cream-editorial',
+          photoSrc: '',
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: [
+            {
+              id: 'c2-badge',
+              label: 'The Breakdown',
+              visible: true,
+              text: '🌿 HERE IS WHY IT MATTERS',
+              x: 540,
+              y: Math.round(canvasH * 0.28),
+              fontSize: 24,
+              pillWidth: 500,
+              padY: 13,
+              pill: 'sage',
+              font: 'sans'
+            },
+            {
+              id: 'c2-body',
+              label: 'Explanation',
+              visible: true,
+              text: activeTopicItem.body,
+              x: 540,
+              y: Math.round(canvasH * 0.52),
+              fontSize: 38,
+              pillWidth: 860,
+              padY: 36,
+              pill: 'cream',
+              font: 'serif'
+            },
+            {
+              id: 'c2-swipe',
+              label: 'Next Slide',
+              visible: true,
+              text: 'One more tip 👉',
+              x: 540,
+              y: Math.round(canvasH * 0.78),
+              fontSize: 23,
+              pillWidth: 340,
+              padY: 12,
+              pill: 'gold',
+              font: 'sans'
+            }
+          ]
+        },
+        {
+          id: 'slide-3',
+          preset: 'minimal',
+          bgStyle: 'forest-luxe',
+          photoSrc: '',
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: [
+            {
+              id: 'c3-badge',
+              label: 'Save & Share',
+              visible: true,
+              text: '📌 SAVE & SHARE WITH A DOG LOVER',
+              x: 540,
+              y: Math.round(canvasH * 0.3),
+              fontSize: 23,
+              pillWidth: 580,
+              padY: 13,
+              pill: 'gold',
+              font: 'sans'
+            },
+            {
+              id: 'c3-q',
+              label: 'Question',
+              visible: true,
+              text: 'Have a Frenchie question? Ask Lindsey & Eric below! 👇',
+              x: 540,
+              y: Math.round(canvasH * 0.52),
+              fontSize: 48,
+              pillWidth: 860,
+              padY: 14,
+              pill: 'none-light',
+              font: 'serif'
+            },
+            {
+              id: 'c3-cta',
+              label: 'Contact',
+              visible: true,
+              text: 'Text 405.300.8482 • OKCFrenchies.com',
+              x: 540,
+              y: Math.round(canvasH * 0.75),
+              fontSize: 26,
+              pillWidth: 680,
+              padY: 16,
+              pill: 'cream',
+              font: 'sans'
+            }
+          ]
+        }
+      ]);
+      setActiveSlideIdx(0);
+    }
+  };
+
+  const addBlankOrDuplicateSlide = () => {
+    pushHistory(slides);
+    const cloned: SlideState = JSON.parse(JSON.stringify(activeSlide));
+    cloned.id = `slide-${Date.now()}`;
+    setSlides((prev) => [...prev, cloned]);
+    setActiveSlideIdx(slides.length);
+  };
+
+  const removeActiveSlide = () => {
+    if (slides.length <= 1) return;
+    pushHistory(slides);
+    setSlides((prev) => prev.filter((_, i) => i !== activeSlideIdx));
+    setActiveSlideIdx((idx) => Math.max(0, idx - 1));
+  };
+
+  // Add Custom Text or 1-Tap Status Stamp
   const addCustomText = () => {
     const id = `custom-${Date.now()}`;
     const newLayer: TextLayer = {
       id,
-      label: 'Custom Text',
+      label: 'Custom Pill',
       visible: true,
-      text: 'Tap to edit text ✨',
+      text: 'Tap to edit ✨',
       x: 540,
-      y: Math.round(canvasH * 0.5),
-      baseSize: 34,
-      scale: 1,
+      y: Math.round(canvasH * 0.45),
+      fontSize: 34,
+      pillWidth: 460,
+      padY: 16,
       pill: 'cream',
       font: 'sans'
     };
-    setLayers((prev) => [...prev, newLayer]);
+    updateActiveSlide({ layers: [...activeSlide.layers, newLayer] }, true);
     setSelectedLayerId(id);
     setEditingLayerId(id);
   };
 
-  // Drag & Resize Refs
+  const applyStampBadge = (stamp: { id: string; text: string; pill: PillStyle }) => {
+    const existing = activeSlide.layers.find((l) => l.id === 'stamp-badge');
+    if (existing) {
+      updateLayer(
+        'stamp-badge',
+        { visible: true, text: stamp.text, pill: stamp.pill },
+        true
+      );
+      setSelectedLayerId('stamp-badge');
+      return;
+    }
+    const stampLayer: TextLayer = {
+      id: 'stamp-badge',
+      label: 'Sticker Stamp',
+      visible: true,
+      text: stamp.text,
+      x: 540,
+      y: 115,
+      fontSize: 26,
+      pillWidth: 440,
+      padY: 14,
+      pill: stamp.pill,
+      font: 'sans'
+    };
+    updateActiveSlide({ layers: [...activeSlide.layers, stampLayer] }, true);
+    setSelectedLayerId('stamp-badge');
+  };
+
+  // Save & Apply Custom User Layout Presets
+  const handleSaveLayoutPreset = () => {
+    const name = newPresetName.trim() || `My Layout ${savedLayouts.length + 1}`;
+    const presetItem: SavedLayoutPreset = {
+      id: `layout-${Date.now()}`,
+      name,
+      preset: activeSlide.preset,
+      bgStyle: activeSlide.bgStyle,
+      photoDim: activeSlide.photoDim,
+      archHeight: activeSlide.archHeight,
+      layers: activeSlide.layers.map(({ text, ...rest }) => ({
+        ...rest,
+        sampleText: text
+      }))
+    };
+    const next = [presetItem, ...savedLayouts];
+    setSavedLayouts(next);
+    localStorage.setItem(SAVED_PRESETS_KEY, JSON.stringify(next));
+    setNewPresetName('');
+  };
+
+  const handleApplySavedLayout = (saved: SavedLayoutPreset) => {
+    // Keep current dog's fresh text for matching standard layer IDs (breedAge, sex, name, coat, dna, quote, status)!
+    const freshDogLayers =
+      selectedDog && (contentMode === 'puppies' || contentMode === 'studs')
+        ? buildLayersForDog(selectedDog, saved.preset, canvasH, saved.archHeight)
+        : [];
+    const freshTextMap = new Map(freshDogLayers.map((l) => [l.id, l.text]));
+
+    const mergedLayers: TextLayer[] = saved.layers.map((sl) => ({
+      id: sl.id,
+      label: sl.label,
+      visible: sl.visible,
+      x: sl.x,
+      y: sl.y,
+      fontSize: sl.fontSize,
+      pillWidth: sl.pillWidth,
+      padY: sl.padY,
+      pill:
+        sl.id === 'sex' && selectedDog
+          ? (selectedDog.gender || '').toLowerCase() === 'female'
+            ? 'blush'
+            : 'sage'
+          : sl.pill,
+      font: sl.font,
+      text: freshTextMap.get(sl.id) || sl.sampleText || sl.label
+    }));
+
+    updateActiveSlide(
+      {
+        preset: saved.preset,
+        bgStyle: saved.bgStyle,
+        photoDim: saved.photoDim,
+        archHeight: saved.archHeight,
+        layers: mergedLayers
+      },
+      true
+    );
+  };
+
+  const handleDeleteSavedLayout = (id: string) => {
+    const next = savedLayouts.filter((s) => s.id !== id);
+    setSavedLayouts(next);
+    localStorage.setItem(SAVED_PRESETS_KEY, JSON.stringify(next));
+  };
+
+  const selectedLayer = useMemo(
+    () => activeSlide.layers.find((l) => l.id === selectedLayerId) || null,
+    [activeSlide.layers, selectedLayerId]
+  );
+
+  // Unified Drag & 4-Way Handle State
   const dragModeRef = useRef<{
-    type: 'none' | 'photo' | 'layer' | 'resize';
+    type:
+      | 'none'
+      | 'photo'
+      | 'layer'
+      | 'handle-left'
+      | 'handle-right'
+      | 'handle-top'
+      | 'handle-bottom';
     layerId?: string;
     sx: number;
     sy: number;
     bx: number;
     by: number;
-    bScale: number;
-  }>({ type: 'none', sx: 0, sy: 0, bx: 0, by: 0, bScale: 1 });
+    bWidth: number;
+    bPadY: number;
+    moved: boolean;
+    recordedUndo: boolean;
+  }>({
+    type: 'none',
+    sx: 0,
+    sy: 0,
+    bx: 0,
+    by: 0,
+    bWidth: 400,
+    bPadY: 14,
+    moved: false,
+    recordedUndo: false
+  });
 
-  // Pinch-to-Zoom Touch Ref (works on both selected text layer OR background photo!)
+  // Two-Finger Pinch State
   const pinchRef = useRef<{
     active: boolean;
     startDist: number;
     baseZoom: number;
-    baseLayerScale: number;
+    baseFontSize: number;
     targetLayerId: string | null;
-  }>({ active: false, startDist: 0, baseZoom: 1, baseLayerScale: 1, targetLayerId: null });
+  }>({
+    active: false,
+    startDist: 0,
+    baseZoom: 1,
+    baseFontSize: 30,
+    targetLayerId: null
+  });
 
   const handleTouchStartStage = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
+      pushHistory(slides);
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.hypot(dx, dy);
+      const dist = Math.max(12, Math.hypot(dx, dy));
       pinchRef.current = {
         active: true,
-        startDist: Math.max(10, dist),
-        baseZoom: zoom,
-        baseLayerScale: selectedLayer?.scale || 1,
+        startDist: dist,
+        baseZoom: activeSlide.zoom,
+        baseFontSize: selectedLayer?.fontSize || 30,
         targetLayerId: selectedLayerId
       };
       dragModeRef.current.type = 'none';
@@ -543,11 +1357,13 @@ const SocialStudio: React.FC = () => {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const ratioDist = Math.hypot(dx, dy) / pinchRef.current.startDist;
       if (pinchRef.current.targetLayerId) {
-        const nextScale = Math.max(0.4, Math.min(3.2, pinchRef.current.baseLayerScale * ratioDist));
-        updateLayer(pinchRef.current.targetLayerId, { scale: nextScale });
-      } else {
-        const nextZoom = Math.max(0.6, Math.min(3.0, pinchRef.current.baseZoom * ratioDist));
-        setZoom(nextZoom);
+        const nextFont = Math.round(
+          Math.max(15, Math.min(120, pinchRef.current.baseFontSize * ratioDist))
+        );
+        updateLayer(pinchRef.current.targetLayerId, { fontSize: nextFont });
+      } else if (!photoLocked && activeSlide.bgStyle === 'photo') {
+        const nextZoom = Math.max(0.6, Math.min(3.2, pinchRef.current.baseZoom * ratioDist));
+        updateActiveSlide({ zoom: nextZoom });
       }
     }
   };
@@ -558,32 +1374,160 @@ const SocialStudio: React.FC = () => {
     }
   };
 
-  // Auto-generated Instagram caption for quick copy-paste
-  const generatedCaption = useMemo(() => {
-    if (!selectedDog) return '';
-    const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const age = extractAge(selectedDog);
-    const quote = DEFAULT_QUOTES[slug]?.replace(/^"|"$/g, '') || '';
-    const lines = [
-      `🌿 Meet ${selectedDog.name} ✨`,
-      quote ? `${quote}` : '',
-      '',
-      `🐾 Breed: ${selectedDog.breed || 'French Bulldog'} (${selectedDog.gender || ''})`,
-      age ? `🎂 Age: ${age}` : '',
-      selectedDog.dna ? `🎨 Coat: ${selectedDog.dna}` : '',
-      selectedDog.dna_technical ? `🧬 DNA: ${selectedDog.dna_technical}` : '',
-      '',
-      `📲 Text Lindsey or Eric: 405.300.8482`,
-      `📩 Email: info@okcfrenchies.com`,
-      `🌐 OKCFrenchies.com`,
-      '',
-      `#okcfrenchies #frenchbulldog #minibulldog #oklahomacity #frenchiepuppy #rarefrenchies`
-    ].filter((l, idx, arr) => l !== '' || arr[idx - 1] !== '');
-    return lines.join('\n');
-  }, [selectedDog]);
+  // AI Generation: Supports both Captions AND full AI "Did You Know / Comment Bait" Cards!
+  const handleGenerateAiCaption = async (overridePrompt?: string) => {
+    const promptToUse = overridePrompt ?? aiPrompt;
+    setAiLoading(true);
+    setAiError('');
 
-  // Render exact 1080 x canvasH PNG Blob
-  const renderCanvasBlob = async (): Promise<Blob | null> => {
+    const payloadDog = selectedDog
+      ? {
+          name: selectedDog.name,
+          breed: selectedDog.breed,
+          gender: selectedDog.gender,
+          age: extractAge(selectedDog),
+          status: selectedDog.status,
+          dna: selectedDog.dna,
+          dna_technical: selectedDog.dna_technical,
+          description: selectedDog.description
+        }
+      : {};
+
+    const payloadTopic = activeTopicItem
+      ? {
+          title: activeTopicItem.title,
+          body: activeTopicItem.body
+        }
+      : {
+          title: activeSlide.layers.find((l) => l.visible)?.text || ''
+        };
+
+    try {
+      const resp = await fetch('/api/generate-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'caption',
+          contentMode,
+          dog: payloadDog,
+          topic: payloadTopic,
+          prompt: promptToUse
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data?.caption) {
+          setCaptionText(data.caption);
+          setAiLoading(false);
+          return;
+        }
+      }
+
+      const clientKey = (process.env as any).GEMINI_API_KEY || (process.env as any).API_KEY;
+      if (clientKey) {
+        const ai = new GoogleGenAI({ apiKey: clientKey });
+        const result = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: `Write a warm, high-engagement Instagram caption for OKC Frenchies & Mini Bulldogs. Mode: ${contentMode}. ${
+            contentMode === 'puppies' || contentMode === 'studs'
+              ? `Dog: ${payloadDog.name}, ${payloadDog.gender || ''} ${payloadDog.breed || 'French Bulldog'}, coat: ${payloadDog.dna || ''}.`
+              : `Topic: ${payloadTopic.title} — ${payloadTopic.body || ''}.`
+          } Never include pricing. Include Text Lindsey or Eric at 405.300.8482, info@okcfrenchies.com, OKCFrenchies.com. Direction: ${promptToUse || 'Engaging question hook for comments.'}`
+        });
+        if (result.text) {
+          setCaptionText(result.text.trim());
+          setAiLoading(false);
+          return;
+        }
+      }
+      throw new Error('Add GEMINI_API_KEY in Vercel environment variables to enable live AI generation.');
+    } catch (err: any) {
+      setAiError(err?.message || 'Could not reach AI service.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleGenerateAiCardAndCaption = async (overrideCategory?: string, overridePrompt?: string) => {
+    const cat = overrideCategory || aiCategory;
+    const promptToUse = overridePrompt ?? aiPrompt;
+    setAiLoading(true);
+    setAiError('');
+
+    try {
+      let cardData: any = null;
+      const resp = await fetch('/api/generate-caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'card', category: cat, prompt: promptToUse })
+      });
+      if (resp.ok) {
+        cardData = await resp.json();
+      } else {
+        const clientKey = (process.env as any).GEMINI_API_KEY || (process.env as any).API_KEY;
+        if (clientKey) {
+          const ai = new GoogleGenAI({ apiKey: clientKey });
+          const res = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `Create an Instagram card for OKC Frenchies. Category: ${cat}. Topic: ${promptToUse || 'Surprising French Bulldog care tip, coat DNA fact, or comment game'}. Return JSON with keys: badge, headline, body (max 150 chars), footer, caption (no pricing, include 405.300.8482 and OKCFrenchies.com).`,
+            config: { responseMimeType: 'application/json' }
+          });
+          cardData = JSON.parse((res.text || '{}').trim());
+        }
+      }
+
+      if (!cardData?.headline) {
+        throw new Error('Add GEMINI_API_KEY in Vercel environment variables (or tap Shuffle Built-In Ideas above!).');
+      }
+
+      const bgChoices: BgStyle[] = [
+        'forest-luxe',
+        'cream-editorial',
+        'blush-botanical',
+        'warm-sand',
+        'sage-mist'
+      ];
+      const chosenBg =
+        activeSlide.bgStyle === 'photo'
+          ? bgChoices[Math.floor(Math.random() * bgChoices.length)]
+          : activeSlide.bgStyle;
+
+      const generatedItem: TopicCardItem = {
+        id: `ai-${Date.now()}`,
+        badge: cardData.badge || '💡 DID YOU KNOW?',
+        title: cardData.headline,
+        body: cardData.body || '',
+        footer: cardData.footer || 'Drop your thoughts below! 👇 • @okcfrenchies',
+        bgStyle: chosenBg,
+        shareUrl: 'https://okcfrenchies.com'
+      };
+
+      pushHistory(slides);
+      setSlides([
+        {
+          id: 'slide-1',
+          preset: 'minimal',
+          bgStyle: chosenBg,
+          photoSrc: activeSlide.photoSrc,
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: buildTopicLayers(generatedItem, canvasH)
+        }
+      ]);
+      setActiveSlideIdx(0);
+      if (cardData.caption) setCaptionText(cardData.caption);
+    } catch (err: any) {
+      setAiError(err?.message || 'Could not generate AI card.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Exact 1:1 Canvas PNG Renderer for ANY Slide
+  const renderSlideBlob = async (slide: SlideState): Promise<Blob | null> => {
     if (document.fonts?.ready) {
       await document.fonts.ready;
     }
@@ -593,7 +1537,7 @@ const SocialStudio: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    const geom = getFrameGeometry(preset, canvasH, archHeight);
+    const geom = getFrameGeometry(slide.preset, canvasH, slide.archHeight);
     ctx.fillStyle = geom.outerBg;
     ctx.fillRect(0, 0, 1080, canvasH);
 
@@ -617,7 +1561,7 @@ const SocialStudio: React.FC = () => {
       ctx.fill();
       ctx.restore();
 
-      if (preset !== 'sage') {
+      if (slide.preset !== 'sage') {
         roundRectPath(
           ctx,
           geom.cardX,
@@ -635,7 +1579,6 @@ const SocialStudio: React.FC = () => {
       }
     }
 
-    // Draw Photo inside frame
     ctx.save();
     roundRectPath(
       ctx,
@@ -649,24 +1592,56 @@ const SocialStudio: React.FC = () => {
       geom.photoBottomR
     );
     ctx.clip();
-    ctx.fillStyle = '#EFECE4';
-    ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
 
-    const img = imgRef.current;
-    if (img && img.naturalWidth > 0) {
-      const coverScale = Math.max(geom.photoW / img.naturalWidth, geom.photoH / img.naturalHeight) * zoom;
-      const drawW = img.naturalWidth * coverScale;
-      const drawH = img.naturalHeight * coverScale;
-      const drawX = geom.photoX + (geom.photoW - drawW) / 2 + panX;
-      const drawY = geom.photoY + (geom.photoH - drawH) / 2 + panY;
-      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+    if (slide.bgStyle !== 'photo') {
+      const bgTheme = BG_STYLES[slide.bgStyle];
+      const grad = ctx.createLinearGradient(0, geom.photoY, geom.photoW, geom.photoY + geom.photoH);
+      grad.addColorStop(0, bgTheme.bg1);
+      grad.addColorStop(1, bgTheme.bg2);
+      ctx.fillStyle = grad;
+      ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
+
+      // Subtle editorial arch border decoration
+      ctx.save();
+      roundRectPath(
+        ctx,
+        geom.photoX + 42,
+        geom.photoY + 42,
+        geom.photoW - 84,
+        geom.photoH - 84,
+        220,
+        220,
+        36,
+        36
+      );
+      ctx.strokeStyle = bgTheme.darkText ? 'rgba(46,90,68,0.16)' : 'rgba(244,211,126,0.24)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#EFECE4';
+      ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
+      const loadedImg = await loadImageElement(slide.photoSrc);
+      if (loadedImg && loadedImg.naturalWidth > 0) {
+        const coverScale =
+          Math.max(geom.photoW / loadedImg.naturalWidth, geom.photoH / loadedImg.naturalHeight) *
+          slide.zoom;
+        const drawW = loadedImg.naturalWidth * coverScale;
+        const drawH = loadedImg.naturalHeight * coverScale;
+        const drawX = geom.photoX + (geom.photoW - drawW) / 2 + slide.panX;
+        const drawY = geom.photoY + (geom.photoH - drawH) / 2 + slide.panY;
+        ctx.drawImage(loadedImg, drawX, drawY, drawW, drawH);
+      }
+      if (slide.photoDim > 0) {
+        ctx.fillStyle = `rgba(20, 28, 24, ${slide.photoDim})`;
+        ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
+      }
     }
     ctx.restore();
 
-    // Draw Visible Layers
-    for (const layer of layers) {
+    for (const layer of slide.layers) {
       if (!layer.visible || !layer.text.trim()) continue;
-      const fontSize = Math.round(layer.baseSize * layer.scale);
+      const fontSize = layer.fontSize;
       const fontSpec =
         layer.font === 'serif'
           ? `700 ${fontSize}px 'Playfair Display', serif`
@@ -676,20 +1651,17 @@ const SocialStudio: React.FC = () => {
       ctx.font = fontSpec;
 
       const pal = PILL_PALETTE[layer.pill];
-      const maxTextW = 920;
-      const textLines = wrapLines(ctx, layer.text, maxTextW);
-      const lineH = fontSize * 1.22;
-      const widest = Math.max(...textLines.map((t) => ctx.measureText(t).width), 40);
+      const padX = pal.hasBg ? 26 : 8;
+      const innerMaxW = Math.max(60, layer.pillWidth - padX * 2);
+      const textLines = wrapLines(ctx, layer.text, innerMaxW);
+      const lineH = fontSize * 1.24;
+      const boxW = layer.pillWidth;
+      const boxH = textLines.length * lineH + layer.padY * 2;
+      const bx = layer.x - boxW / 2;
+      const by = layer.y - boxH / 2;
+      const r = textLines.length > 1 || layer.padY > 28 ? 32 : 999;
 
       if (pal.hasBg) {
-        const padX = Math.round(fontSize * 0.95);
-        const padY = Math.round(fontSize * 0.48);
-        const boxW = widest + padX * 2;
-        const boxH = textLines.length * lineH + padY * 2 - (lineH - fontSize);
-        const bx = layer.x - boxW / 2;
-        const by = layer.y - boxH / 2;
-        const r = textLines.length > 1 ? 26 : 999;
-
         ctx.save();
         if (pal.shadow) {
           ctx.shadowColor = 'rgba(0,0,0,0.16)';
@@ -706,7 +1678,7 @@ const SocialStudio: React.FC = () => {
         ctx.lineWidth = 2;
         ctx.stroke();
       } else if (layer.pill === 'none-light') {
-        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.shadowColor = 'rgba(0,0,0,0.48)';
         ctx.shadowBlur = 16;
         ctx.shadowOffsetY = 4;
       }
@@ -725,43 +1697,62 @@ const SocialStudio: React.FC = () => {
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
   };
 
-  const handleSaveOrShare = async (preferShare: boolean) => {
-    const blob = await renderCanvasBlob();
-    if (!blob) return;
-    const safeName = (selectedDog?.name || 'puppy').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const fileName = `okcfrenchies-${safeName}-${preset}.png`;
-    const file = new File([blob], fileName, { type: 'image/png' });
+  const handleExportSlides = async (exportAll: boolean, preferShare: boolean) => {
+    const targetSlides = exportAll ? slides : [activeSlide];
+    const baseSlug = (
+      contentMode === 'puppies' || contentMode === 'studs'
+        ? selectedDog?.name || 'card'
+        : activeTopicItem?.id || 'okcfrenchies'
+    )
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-');
 
-    if (preferShare && navigator.canShare && navigator.canShare({ files: [file] })) {
+    const files: File[] = [];
+    const blobs: { blob: Blob; name: string }[] = [];
+
+    for (let i = 0; i < targetSlides.length; i++) {
+      const b = await renderSlideBlob(targetSlides[i]);
+      if (!b) continue;
+      const suffix = targetSlides.length > 1 ? `-slide-${i + 1}` : '';
+      const name = `okcfrenchies-${baseSlug}-${ratio}${suffix}.png`;
+      blobs.push({ blob: b, name });
+      files.push(new File([b], name, { type: 'image/png' }));
+    }
+    if (files.length === 0) return;
+
+    if (preferShare && navigator.canShare && navigator.canShare({ files })) {
       try {
         await navigator.share({
-          files: [file],
-          title: `OKC Frenchies — ${selectedDog?.name || 'Puppy'}`
+          files,
+          title: 'OKC Frenchies Social Post'
         });
         return;
       } catch {
-        // User cancelled share sheet or share failed; fall through only if needed
         return;
       }
     }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.download = fileName;
-    a.href = url;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    blobs.forEach(({ blob, name }, idx) => {
+      setTimeout(() => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = name;
+        a.href = url;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }, idx * 280);
+    });
   };
 
-  const geom = getFrameGeometry(preset, canvasH, archHeight);
+  const geom = getFrameGeometry(activeSlide.preset, canvasH, activeSlide.archHeight);
   const previewScale =
     imgNat.w > 0 && imgNat.h > 0
-      ? Math.max(geom.photoW / imgNat.w, geom.photoH / imgNat.h) * zoom
+      ? Math.max(geom.photoW / imgNat.w, geom.photoH / imgNat.h) * activeSlide.zoom
       : 1;
   const previewDrawW = imgNat.w > 0 ? imgNat.w * previewScale : geom.photoW;
   const previewDrawH = imgNat.h > 0 ? imgNat.h * previewScale : geom.photoH;
-  const previewDrawX = (geom.photoW - previewDrawW) / 2 + panX;
-  const previewDrawY = (geom.photoH - previewDrawH) / 2 + panY;
+  const previewDrawX = (geom.photoW - previewDrawW) / 2 + activeSlide.panX;
+  const previewDrawY = (geom.photoH - previewDrawH) / 2 + activeSlide.panY;
 
   return (
     <div className="min-h-screen bg-[#EFECE3] text-[#1C2621] pb-16">
@@ -771,141 +1762,349 @@ const SocialStudio: React.FC = () => {
       </Helmet>
 
       {/* Top Sticky Action Bar */}
-      <div className="bg-white border-b border-[#EAE5D9] px-3 sm:px-6 py-2.5 sticky top-0 z-30">
+      <div className="bg-white border-b border-[#EAE5D9] px-3 sm:px-6 py-2 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-serif text-lg sm:text-xl font-bold text-[#2E5A44]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-serif text-base sm:text-xl font-bold text-[#2E5A44]">
               🌿 Card Studio
             </span>
-            <div className="flex bg-[#F6F4EE] rounded-full p-0.5 border border-[#E2DCCD] text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => setRatio('feed')}
-                className={`px-2.5 py-1 rounded-full transition ${
-                  ratio === 'feed' ? 'bg-[#2E5A44] text-white' : 'text-[#5C6B63]'
-                }`}
-              >
-                4:5 Post
-              </button>
-              <button
-                type="button"
-                onClick={() => setRatio('story')}
-                className={`px-2.5 py-1 rounded-full transition ${
-                  ratio === 'story' ? 'bg-[#2E5A44] text-white' : 'text-[#5C6B63]'
-                }`}
-              >
-                9:16 Story
-              </button>
+            <div className="flex bg-[#F6F4EE] rounded-full p-0.5 border border-[#E2DCCD] text-[11px] sm:text-xs font-bold">
+              {(
+                [
+                  ['feed', '4:5 Feed'],
+                  ['story', '9:16 Story'],
+                  ['square', '1:1']
+                ] as const
+              ).map(([rKey, rLabel]) => (
+                <button
+                  key={rKey}
+                  type="button"
+                  onClick={() => handleSwitchRatio(rKey)}
+                  className={`px-2.5 py-1 rounded-full transition ${
+                    ratio === rKey ? 'bg-[#2E5A44] text-white' : 'text-[#5C6B63]'
+                  }`}
+                >
+                  {rLabel}
+                </button>
+              ))}
             </div>
+            {draftSavedAt && (
+              <span className="hidden md:inline text-[11px] font-bold text-[#5C6B63]">
+                ✓ Auto-saved
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
-              onClick={() => handleSaveOrShare(true)}
-              className="sm:hidden px-3.5 py-2 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+              disabled={history.length === 0}
+              onClick={handleUndo}
+              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#1C2621] disabled:opacity-40"
+              title="Undo last change"
             >
-              📲 Save / Share
+              ↩ Undo
+            </button>
+            {activeSlide.bgStyle === 'photo' && (
+              <button
+                type="button"
+                onClick={() => setPhotoLocked((v) => !v)}
+                className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition ${
+                  photoLocked
+                    ? 'bg-[#F4D37E] border-[#D9B451] text-[#1C2621]'
+                    : 'bg-[#F6F4EE] border-[#D9D2C3] text-[#5C6B63]'
+                }`}
+              >
+                {photoLocked ? '🔒 Locked' : '🔓 Lock Photo'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => handleExportSlides(slides.length > 1, true)}
+              className="sm:hidden px-3 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+            >
+              📲 Share{slides.length > 1 ? ` (${slides.length})` : ''}
             </button>
             <button
               type="button"
-              onClick={() => handleSaveOrShare(false)}
-              className="px-4 py-2 rounded-full bg-[#2E5A44] text-white text-xs sm:text-sm font-extrabold hover:bg-[#234735] transition shadow-sm"
+              onClick={() => handleExportSlides(false, false)}
+              className="px-3.5 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold hover:bg-[#234735] transition shadow-sm"
             >
-              ⬇ Export PNG
+              ⬇ PNG
             </button>
+            {slides.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleExportSlides(true, false)}
+                className="px-3.5 py-1.5 rounded-full bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm"
+              >
+                📚 All ({slides.length})
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-4 grid grid-cols-1 lg:grid-cols-[1fr_430px] gap-6 items-start">
-        {/* CENTER / TOP: Interactive Canva Stage (First on iPhone so zero scrolling needed!) */}
-        <main className="flex flex-col items-center gap-2.5 lg:sticky lg:top-20 order-1">
-          {/* Floating Contextual Layer Toolbar when a text box is tapped */}
-          {selectedLayer ? (
-            <div className="w-full max-w-[520px] bg-white border border-[#DDD6C7] rounded-2xl px-3 py-2 shadow-md flex flex-wrap items-center justify-between gap-2 text-xs">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setEditingLayerId(selectedLayer.id)}
-                  className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                >
-                  ✏️ Edit
-                </button>
-                <select
-                  value={selectedLayer.pill}
-                  onChange={(e) => updateLayer(selectedLayer.id, { pill: e.target.value as PillStyle })}
-                  className="rounded-lg border border-[#DDD6C7] bg-[#FCFBF8] px-2 py-1.5 font-bold"
-                >
-                  {Object.entries(PILL_PALETTE).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateLayer(selectedLayer.id, {
-                      font:
-                        selectedLayer.font === 'sans'
-                          ? 'serif'
-                          : selectedLayer.font === 'serif'
-                            ? 'serif-italic'
-                            : 'sans'
-                    })
+      {/* Content Mode Switcher Strip (What are we posting today?) */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {(
+            [
+              ['puppies', '🐾 Puppies'],
+              ['studs', '👑 Studs'],
+              ['glossary', '🧬 Coat & DNA'],
+              ['standards', '🏡 Standards & Blog'],
+              ['didyouknow', '💡 Did You Know & AI']
+            ] as const
+          ).map(([modeKey, modeLabel]) => (
+            <button
+              key={modeKey}
+              type="button"
+              onClick={() => {
+                setContentMode(modeKey);
+                setMobileTab('source');
+                if (modeKey === 'puppies') {
+                  const first = allPuppies.find((d) => d.status === 'Available') || allPuppies[0];
+                  if (first) {
+                    setSelectedDogId(first.id);
+                    loadDogIntoCard(first);
                   }
-                  className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  title="Cycle Font"
-                >
-                  Aa
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateLayer(selectedLayer.id, {
-                      scale: Math.max(0.4, +(selectedLayer.scale - 0.1).toFixed(2))
-                    })
+                } else if (modeKey === 'studs') {
+                  const firstStud = allStuds[0];
+                  if (firstStud) {
+                    setSelectedDogId(firstStud.id);
+                    loadDogIntoCard(firstStud);
                   }
-                  className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-extrabold border border-[#DDD6C7]"
-                >
-                  A-
-                </button>
+                } else if (modeKey === 'glossary') {
+                  loadTopicIntoCard(GLOSSARY_ITEMS[0]);
+                } else if (modeKey === 'standards') {
+                  loadTopicIntoCard(STANDARDS_AND_BLOG_ITEMS[0]);
+                } else if (modeKey === 'didyouknow') {
+                  loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length]);
+                }
+              }}
+              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-extrabold border transition shadow-2xs ${
+                contentMode === modeKey
+                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                  : 'bg-white text-[#3E4D45] border-[#DDD6C7] hover:bg-[#F6F4EE]'
+              }`}
+            >
+              {modeLabel}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-2.5 grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-5 items-start">
+        {/* LEFT / TOP: Interactive Canva Stage */}
+        <main className="flex flex-col items-center gap-2 lg:sticky lg:top-16 order-1">
+          {/* Carousel Slide Strip */}
+          <div className="w-full max-w-[520px] flex items-center justify-between gap-1.5 bg-white/80 border border-[#EAE5D9] rounded-2xl px-2.5 py-1.5">
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+              {slides.map((s, idx) => (
                 <button
+                  key={s.id}
                   type="button"
-                  onClick={() =>
-                    updateLayer(selectedLayer.id, {
-                      scale: Math.min(3.2, +(selectedLayer.scale + 0.1).toFixed(2))
-                    })
-                  }
-                  className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-extrabold border border-[#DDD6C7]"
+                  onClick={() => {
+                    setActiveSlideIdx(idx);
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }}
+                  className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold transition ${
+                    idx === activeSlideIdx
+                      ? 'bg-[#2E5A44] text-white'
+                      : 'bg-[#F6F4EE] text-[#5C6B63] border border-[#E2DCCD]'
+                  }`}
                 >
-                  A+
+                  Slide {idx + 1}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => updateLayer(selectedLayer.id, { x: 540 })}
-                  className="px-2 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  title="Center Horizontally"
-                >
-                  ┼ Center
-                </button>
-              </div>
+              ))}
               <button
                 type="button"
-                onClick={() => {
-                  updateLayer(selectedLayer.id, { visible: false });
-                  setSelectedLayerId(null);
-                  setEditingLayerId(null);
-                }}
-                className="px-2.5 py-1.5 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-extrabold"
+                onClick={addBlankOrDuplicateSlide}
+                className="shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[#F6F4EE] text-[#2E5A44] border border-[#D4CEC0]"
+                title="Duplicate current slide to add another carousel page"
               >
-                🗑️ Hide
+                + Slide
               </button>
+              {slides.length > 1 && (
+                <button
+                  type="button"
+                  onClick={removeActiveSlide}
+                  className="shrink-0 px-2 py-1 rounded-xl text-xs font-extrabold bg-[#FEE2E2] text-[#991B1B]"
+                  title="Remove current slide"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleBuildAutoCarousel}
+              className="shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-extrabold bg-[#F4D37E] text-[#1C2621] border border-[#E2BE62]"
+            >
+              ✨ Auto 3-Slide
+            </button>
+          </div>
+
+          {/* Quick Thumb Layer Picker Bar */}
+          <div className="w-full max-w-[520px] flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLayerId(null);
+                setEditingLayerId(null);
+              }}
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border transition ${
+                !selectedLayerId
+                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                  : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
+              }`}
+            >
+              {activeSlide.bgStyle === 'photo' ? '🖼️ Photo' : '🎨 Card Bg'}
+            </button>
+            {activeSlide.layers
+              .filter((l) => l.visible)
+              .map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedLayerId(l.id);
+                    setEditingLayerId(null);
+                  }}
+                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border transition ${
+                    selectedLayerId === l.id
+                      ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                      : 'bg-white text-[#1C2621] border-[#DDD6C7]'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+          </div>
+
+          {/* Floating Contextual Layer Toolbar */}
+          {selectedLayer ? (
+            <div className="w-full max-w-[520px] bg-white border border-[#DDD6C7] rounded-2xl p-2.5 shadow-md space-y-2 text-xs">
+              <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setEditingLayerId(selectedLayer.id)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
+                  >
+                    ✏️ Type
+                  </button>
+                  <select
+                    value={selectedLayer.pill}
+                    onChange={(e) =>
+                      updateLayer(selectedLayer.id, { pill: e.target.value as PillStyle }, true)
+                    }
+                    className="rounded-lg border border-[#DDD6C7] bg-[#FCFBF8] px-2 py-1.5 font-bold"
+                  >
+                    {Object.entries(PILL_PALETTE).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateLayer(
+                        selectedLayer.id,
+                        {
+                          font:
+                            selectedLayer.font === 'sans'
+                              ? 'serif'
+                              : selectedLayer.font === 'serif'
+                                ? 'serif-italic'
+                                : 'sans'
+                        },
+                        true
+                      )
+                    }
+                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
+                  >
+                    Aa Font
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateLayer(selectedLayer.id, { x: 540 }, true)}
+                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
+                  >
+                    ┼ Center
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateLayer(selectedLayer.id, { visible: false }, true);
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }}
+                  className="px-2.5 py-1.5 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-extrabold"
+                >
+                  🗑️ Hide
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#F0ECE1]">
+                <label className="block text-[11px] font-bold text-[#3E4D45]">
+                  <div className="flex justify-between">
+                    <span>Text Size</span>
+                    <span className="text-[#D46A4E]">{selectedLayer.fontSize}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={15}
+                    max={110}
+                    value={selectedLayer.fontSize}
+                    onChange={(e) =>
+                      updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })
+                    }
+                    className="w-full accent-[#2E5A44]"
+                  />
+                </label>
+                <label className="block text-[11px] font-bold text-[#3E4D45]">
+                  <div className="flex justify-between">
+                    <span>Pill Width</span>
+                    <span className="text-[#D46A4E]">{Math.round(selectedLayer.pillWidth)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={140}
+                    max={1020}
+                    value={selectedLayer.pillWidth}
+                    onChange={(e) =>
+                      updateLayer(selectedLayer.id, { pillWidth: Number(e.target.value) })
+                    }
+                    className="w-full accent-[#2E5A44]"
+                  />
+                </label>
+                <label className="block text-[11px] font-bold text-[#3E4D45]">
+                  <div className="flex justify-between">
+                    <span>Pill Height</span>
+                    <span className="text-[#D46A4E]">{Math.round(selectedLayer.padY)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={4}
+                    max={90}
+                    value={selectedLayer.padY}
+                    onChange={(e) =>
+                      updateLayer(selectedLayer.id, { padY: Number(e.target.value) })
+                    }
+                    className="w-full accent-[#2E5A44]"
+                  />
+                </label>
+              </div>
             </div>
           ) : (
-            <div className="text-xs font-semibold text-[#5C6B63] bg-white px-3.5 py-1.5 rounded-full border border-[#EAE5D9] text-center">
-              👆 Drag photo or any text • Pinch with 2 fingers or drag ↘ corner to resize • Tap text to style/hide
+            <div className="text-[11px] sm:text-xs font-semibold text-[#5C6B63] bg-white px-3.5 py-1.5 rounded-full border border-[#EAE5D9] text-center">
+              👆 Tap any pill to select • Pinch to scale text • Drag ◀ ▶ ▲ ▼ handles to size pill
             </div>
           )}
 
@@ -922,37 +2121,66 @@ const SocialStudio: React.FC = () => {
             className="relative overflow-hidden rounded-2xl shadow-2xl select-none"
           >
             <div
-              onPointerDown={() => {
-                setSelectedLayerId(null);
-                setEditingLayerId(null);
-              }}
               onPointerMove={(e) => {
+                if (pinchRef.current.active) return;
                 const dm = dragModeRef.current;
                 if (dm.type === 'none') return;
                 const dx = (e.clientX - dm.sx) / stageScale;
                 const dy = (e.clientY - dm.sy) / stageScale;
+                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                  if (!dm.recordedUndo) {
+                    pushHistory(slides);
+                    dm.recordedUndo = true;
+                  }
+                  dm.moved = true;
+                }
 
                 if (dm.type === 'photo') {
-                  setPanX(dm.bx + dx);
-                  setPanY(dm.by + dy);
+                  if (!photoLocked && activeSlide.bgStyle === 'photo') {
+                    updateActiveSlide({ panX: dm.bx + dx, panY: dm.by + dy });
+                  }
                 } else if (dm.type === 'layer' && dm.layerId) {
                   let nextX = dm.bx + dx;
-                  const nextY = dm.by + dy;
+                  let nextY = dm.by + dy;
                   if (Math.abs(nextX - 540) < 18) {
                     nextX = 540;
-                    setSnapCenterLine(true);
+                    setSnapVertical(true);
                   } else {
-                    setSnapCenterLine(false);
+                    setSnapVertical(false);
+                  }
+                  if (Math.abs(nextY - canvasH / 2) < 18) {
+                    nextY = Math.round(canvasH / 2);
+                    setSnapHorizontal(true);
+                  } else {
+                    setSnapHorizontal(false);
                   }
                   updateLayer(dm.layerId, { x: nextX, y: nextY });
-                } else if (dm.type === 'resize' && dm.layerId) {
-                  const nextScale = Math.max(0.4, Math.min(3.2, dm.bScale + (dx + dy) * 0.0035));
-                  updateLayer(dm.layerId, { scale: nextScale });
+                } else if (dm.type === 'handle-right' && dm.layerId) {
+                  const nextW = Math.max(140, Math.min(1040, dm.bWidth + dx * 2));
+                  updateLayer(dm.layerId, { pillWidth: nextW });
+                } else if (dm.type === 'handle-left' && dm.layerId) {
+                  const nextW = Math.max(140, Math.min(1040, dm.bWidth - dx * 2));
+                  updateLayer(dm.layerId, { pillWidth: nextW });
+                } else if (dm.type === 'handle-bottom' && dm.layerId) {
+                  const nextPadY = Math.max(4, Math.min(110, dm.bPadY + dy));
+                  updateLayer(dm.layerId, { padY: nextPadY });
+                } else if (dm.type === 'handle-top' && dm.layerId) {
+                  const nextPadY = Math.max(4, Math.min(110, dm.bPadY - dy));
+                  updateLayer(dm.layerId, { padY: nextPadY });
                 }
               }}
               onPointerUp={() => {
+                if (
+                  dragModeRef.current.type === 'photo' &&
+                  !dragModeRef.current.moved &&
+                  !pinchRef.current.active
+                ) {
+                  setSelectedLayerId(null);
+                  setEditingLayerId(null);
+                }
                 dragModeRef.current.type = 'none';
-                setSnapCenterLine(false);
+                setSnapVertical(false);
+                setSnapHorizontal(false);
               }}
               style={{
                 width: 1080,
@@ -963,7 +2191,6 @@ const SocialStudio: React.FC = () => {
                 position: 'relative'
               }}
             >
-              {/* Card Frame if non-minimal */}
               {geom.hasCard && (
                 <div
                   style={{
@@ -973,26 +2200,27 @@ const SocialStudio: React.FC = () => {
                     width: geom.cardW,
                     height: geom.cardH,
                     background: geom.cardBg,
-                    border: preset === 'sage' ? 'none' : '2px solid #EAE5D9',
+                    border: activeSlide.preset === 'sage' ? 'none' : '2px solid #EAE5D9',
                     borderRadius: `${geom.cardTopR}px ${geom.cardTopR}px 40px 40px`,
                     boxShadow: '0 24px 60px rgba(28,38,33,0.08)'
                   }}
                 />
               )}
 
-              {/* Photo Area */}
+              {/* Photo or Editorial Graphic Background Area */}
               <div
                 onPointerDown={(e) => {
-                  e.stopPropagation();
-                  setSelectedLayerId(null);
-                  setEditingLayerId(null);
+                  if (!e.isPrimary || pinchRef.current.active) return;
                   dragModeRef.current = {
                     type: 'photo',
                     sx: e.clientX,
                     sy: e.clientY,
-                    bx: panX,
-                    by: panY,
-                    bScale: 1
+                    bx: activeSlide.panX,
+                    by: activeSlide.panY,
+                    bWidth: 0,
+                    bPadY: 0,
+                    moved: false,
+                    recordedUndo: false
                   };
                   (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                 }}
@@ -1004,33 +2232,69 @@ const SocialStudio: React.FC = () => {
                   height: geom.photoH,
                   borderRadius: `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
                   overflow: 'hidden',
-                  background: '#EFECE4',
-                  cursor: 'grab'
+                  background:
+                    activeSlide.bgStyle === 'photo'
+                      ? '#EFECE4'
+                      : `linear-gradient(155deg, ${BG_STYLES[activeSlide.bgStyle].bg1}, ${BG_STYLES[activeSlide.bgStyle].bg2})`,
+                  cursor:
+                    photoLocked || activeSlide.bgStyle !== 'photo' ? 'default' : 'grab'
                 }}
               >
-                <img
-                  ref={imgRef}
-                  src={photoSrc}
-                  alt={selectedDog?.name || 'Puppy'}
-                  onLoad={(e) => {
-                    const im = e.currentTarget;
-                    setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
-                  }}
-                  style={{
-                    position: 'absolute',
-                    left: previewDrawX,
-                    top: previewDrawY,
-                    width: previewDrawW,
-                    height: previewDrawH,
-                    maxWidth: 'none',
-                    maxHeight: 'none',
-                    pointerEvents: 'none'
-                  }}
-                />
+                {activeSlide.bgStyle === 'photo' ? (
+                  <>
+                    {activeSlide.photoSrc && (
+                      <img
+                        src={activeSlide.photoSrc}
+                        alt={selectedDog?.name || 'Card'}
+                        onLoad={(e) => {
+                          const im = e.currentTarget;
+                          setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
+                        }}
+                        style={{
+                          position: 'absolute',
+                          left: previewDrawX,
+                          top: previewDrawY,
+                          width: previewDrawW,
+                          height: previewDrawH,
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    )}
+                    {activeSlide.photoDim > 0 && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: `rgba(20, 28, 24, ${activeSlide.photoDim})`,
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 42,
+                      top: 42,
+                      right: 42,
+                      bottom: 42,
+                      borderRadius: '220px 220px 36px 36px',
+                      border: `3px solid ${
+                        BG_STYLES[activeSlide.bgStyle].darkText
+                          ? 'rgba(46,90,68,0.16)'
+                          : 'rgba(244,211,126,0.24)'
+                      }`,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
               </div>
 
-              {/* Center Snap Guideline */}
-              {snapCenterLine && (
+              {/* Center Snap Guides */}
+              {snapVertical && (
                 <div
                   style={{
                     position: 'absolute',
@@ -1044,21 +2308,60 @@ const SocialStudio: React.FC = () => {
                   }}
                 />
               )}
+              {snapHorizontal && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: Math.round(canvasH / 2) - 1,
+                    width: 1080,
+                    height: 2,
+                    background: '#D46A4E',
+                    zIndex: 40,
+                    pointerEvents: 'none'
+                  }}
+                />
+              )}
 
-              {/* Freeform Draggable & Resizable Layers */}
-              {layers.map((layer) => {
+              {/* Freeform Pills with Explicit Width/Padding & 4-Way Handles */}
+              {activeSlide.layers.map((layer) => {
                 if (!layer.visible) return null;
                 const isSel = selectedLayerId === layer.id;
                 const isEditing = editingLayerId === layer.id;
                 const pal = PILL_PALETTE[layer.pill];
-                const fontSize = Math.round(layer.baseSize * layer.scale);
+                const fontSize = layer.fontSize;
+                const padX = pal.hasBg ? 26 : 8;
+
+                const startHandle = (
+                  handleType:
+                    | 'handle-left'
+                    | 'handle-right'
+                    | 'handle-top'
+                    | 'handle-bottom',
+                  e: React.PointerEvent
+                ) => {
+                  e.stopPropagation();
+                  dragModeRef.current = {
+                    type: handleType,
+                    layerId: layer.id,
+                    sx: e.clientX,
+                    sy: e.clientY,
+                    bx: layer.x,
+                    by: layer.y,
+                    bWidth: layer.pillWidth,
+                    bPadY: layer.padY,
+                    moved: false,
+                    recordedUndo: false
+                  };
+                  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                };
 
                 return (
                   <div
                     key={layer.id}
                     onPointerDown={(e) => {
                       e.stopPropagation();
-                      if (isEditing) return;
+                      if (!e.isPrimary || pinchRef.current.active || isEditing) return;
                       setSelectedLayerId(layer.id);
                       dragModeRef.current = {
                         type: 'layer',
@@ -1067,7 +2370,10 @@ const SocialStudio: React.FC = () => {
                         sy: e.clientY,
                         bx: layer.x,
                         by: layer.y,
-                        bScale: layer.scale
+                        bWidth: layer.pillWidth,
+                        bPadY: layer.padY,
+                        moved: false,
+                        recordedUndo: false
                       };
                       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                     }}
@@ -1081,93 +2387,207 @@ const SocialStudio: React.FC = () => {
                       left: layer.x,
                       top: layer.y,
                       transform: 'translate(-50%, -50%)',
-                      background: pal.bg,
-                      color: pal.text,
-                      border: pal.hasBg ? `2px solid ${pal.border}` : 'none',
-                      padding: pal.hasBg
-                        ? `${Math.round(fontSize * 0.42)}px ${Math.round(fontSize * 0.92)}px`
-                        : '6px 10px',
-                      borderRadius: 999,
-                      boxShadow: pal.shadow ? '0 10px 26px rgba(0,0,0,0.18)' : 'none',
-                      textShadow:
-                        layer.pill === 'none-light' ? '0 4px 16px rgba(0,0,0,0.5)' : 'none',
-                      fontFamily:
-                        layer.font === 'sans'
-                          ? "'DM Sans', sans-serif"
-                          : "'Playfair Display', serif",
-                      fontStyle: layer.font === 'serif-italic' ? 'italic' : 'normal',
-                      fontWeight: layer.font === 'serif-italic' ? 600 : 800,
-                      fontSize,
-                      lineHeight: 1.2,
-                      textAlign: 'center',
-                      maxWidth: 940,
-                      whiteSpace: 'pre-wrap',
-                      cursor: isEditing ? 'text' : 'move',
-                      outline: isSel ? '3px dashed #D46A4E' : 'none',
-                      outlineOffset: 8,
-                      zIndex: isSel ? 30 : 20
+                      padding: 22,
+                      zIndex: isSel ? 30 : 20,
+                      cursor: isEditing ? 'text' : 'move'
                     }}
                   >
-                    {isEditing ? (
-                      <input
-                        autoFocus
-                        value={layer.text}
-                        onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
-                        onBlur={() => setEditingLayerId(null)}
-                        onKeyDown={(e) => e.key === 'Enter' && setEditingLayerId(null)}
-                        style={{
-                          background: 'transparent',
-                          color: 'inherit',
-                          font: 'inherit',
-                          textAlign: 'center',
-                          outline: 'none',
-                          minWidth: 260,
-                          width: Math.min(880, Math.max(260, layer.text.length * fontSize * 0.6))
-                        }}
-                      />
-                    ) : (
-                      layer.text
-                    )}
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: layer.pillWidth,
+                        paddingTop: layer.padY,
+                        paddingBottom: layer.padY,
+                        paddingLeft: padX,
+                        paddingRight: padX,
+                        background: pal.bg,
+                        color: pal.text,
+                        border: pal.hasBg ? `2px solid ${pal.border}` : 'none',
+                        borderRadius:
+                          layer.padY > 28 || layer.text.includes('\n') ? 32 : 999,
+                        boxShadow: pal.shadow ? '0 10px 26px rgba(0,0,0,0.18)' : 'none',
+                        textShadow:
+                          layer.pill === 'none-light' ? '0 4px 16px rgba(0,0,0,0.5)' : 'none',
+                        fontFamily:
+                          layer.font === 'sans'
+                            ? "'DM Sans', sans-serif"
+                            : "'Playfair Display', serif",
+                        fontStyle: layer.font === 'serif-italic' ? 'italic' : 'normal',
+                        fontWeight: layer.font === 'serif-italic' ? 600 : 800,
+                        fontSize,
+                        lineHeight: 1.24,
+                        textAlign: 'center',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        outline: isSel ? '3px dashed #D46A4E' : 'none',
+                        outlineOffset: 6
+                      }}
+                    >
+                      {isEditing ? (
+                        <textarea
+                          autoFocus
+                          rows={3}
+                          value={layer.text}
+                          onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
+                          onBlur={() => setEditingLayerId(null)}
+                          style={{
+                            width: '100%',
+                            background: 'transparent',
+                            color: 'inherit',
+                            font: 'inherit',
+                            textAlign: 'center',
+                            outline: 'none',
+                            resize: 'none'
+                          }}
+                        />
+                      ) : (
+                        layer.text
+                      )}
 
-                    {/* Corner Drag-to-Resize Handle */}
-                    {isSel && !isEditing && (
-                      <div
-                        onPointerDown={(e) => {
-                          e.stopPropagation();
-                          dragModeRef.current = {
-                            type: 'resize',
-                            layerId: layer.id,
-                            sx: e.clientX,
-                            sy: e.clientY,
-                            bx: layer.x,
-                            by: layer.y,
-                            bScale: layer.scale
-                          };
-                          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-                        }}
-                        title="Drag to resize"
-                        style={{
-                          position: 'absolute',
-                          right: -18,
-                          bottom: -18,
-                          width: 38,
-                          height: 38,
-                          borderRadius: 999,
-                          background: '#D46A4E',
-                          color: '#FFFFFF',
-                          border: '4px solid #FFFFFF',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 20,
-                          fontWeight: 900,
-                          cursor: 'nwse-resize',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                        }}
-                      >
-                        ↘
-                      </div>
-                    )}
+                      {isSel && !isEditing && (
+                        <>
+                          <div
+                            onPointerDown={(e) => startHandle('handle-left', e)}
+                            style={{
+                              position: 'absolute',
+                              left: -34,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ew-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#D46A4E',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ◀
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startHandle('handle-right', e)}
+                            style={{
+                              position: 'absolute',
+                              right: -34,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ew-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#D46A4E',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▶
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startHandle('handle-top', e)}
+                            style={{
+                              position: 'absolute',
+                              top: -34,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ns-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 999,
+                                background: '#2E5A44',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 15,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▲
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startHandle('handle-bottom', e)}
+                            style={{
+                              position: 'absolute',
+                              bottom: -34,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ns-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 999,
+                                background: '#2E5A44',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 15,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▼
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -1175,16 +2595,15 @@ const SocialStudio: React.FC = () => {
           </div>
         </main>
 
-        {/* RIGHT / BOTTOM: Compact Tabbed Control Panel (Independent Scroll on Desktop) */}
-        <aside className="bg-white border border-[#EAE5D9] rounded-3xl p-4 sm:p-5 shadow-sm lg:h-[calc(100vh-105px)] lg:overflow-y-auto order-2 space-y-4">
-          {/* Tab Switcher (Makes iPhone super compact with zero long page scrolling!) */}
-          <div className="grid grid-cols-4 gap-1.5 bg-[#F6F4EE] p-1 rounded-2xl border border-[#EAE5D9]">
+        {/* RIGHT / BOTTOM: Compact Tabbed Control Panel */}
+        <aside className="bg-white border border-[#EAE5D9] rounded-3xl p-4 sm:p-5 shadow-sm lg:h-[calc(100vh-118px)] lg:overflow-y-auto order-2 space-y-4">
+          <div className="grid grid-cols-4 gap-1 bg-[#F6F4EE] p-1 rounded-2xl border border-[#EAE5D9]">
             {(
               [
-                ['fields', '✨ Fields'],
-                ['puppy', '🐶 Puppy'],
-                ['style', '🖼️ Frame'],
-                ['caption', '📝 Caption']
+                ['source', contentMode === 'puppies' ? '🐶 Dog' : contentMode === 'studs' ? '👑 Sire' : '📚 Topic'],
+                ['fields', '✨ Pills'],
+                ['style', '🖼️ Theme'],
+                ['caption', '🤖 Caption']
               ] as const
             ).map(([tab, label]) => (
               <button
@@ -1202,30 +2621,327 @@ const SocialStudio: React.FC = () => {
             ))}
           </div>
 
-          {/* TAB 1: ADD / REMOVE / EDIT FIELDS */}
+          {/* TAB 1: SOURCE CONTENT (PUPPIES / STUDS / GLOSSARY / STANDARDS / AI DID-YOU-KNOW) */}
+          {mobileTab === 'source' && (
+            <div className="space-y-4">
+              {(contentMode === 'puppies' || contentMode === 'studs') && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      {contentMode === 'studs' ? 'Select Sire / Stud' : 'Select Puppy'}
+                    </span>
+                    {contentMode === 'puppies' && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFilterMode(filterMode === 'available' ? 'all' : 'available')
+                        }
+                        className="text-xs font-bold text-[#D46A4E] underline"
+                      >
+                        {filterMode === 'available' ? 'Show Past Litters Too' : 'Available Only'}
+                      </button>
+                    )}
+                  </div>
+
+                  <select
+                    value={selectedDog?.id || ''}
+                    onChange={(e) => {
+                      const found = visibleDogs.find((d) => d.id === e.target.value);
+                      setSelectedDogId(e.target.value);
+                      if (found) loadDogIntoCard(found);
+                    }}
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
+                  >
+                    {visibleDogs.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.status || d.category})
+                      </option>
+                    ))}
+                  </select>
+
+                  {galleryPhotos.length > 0 && (
+                    <div>
+                      <div className="text-xs font-bold text-[#3E4D45] mb-2">
+                        Tap Photo to Swap (Slide {activeSlideIdx + 1})
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {galleryPhotos.map((url) => (
+                          <img
+                            key={url}
+                            src={url}
+                            alt={selectedDog?.name}
+                            onClick={() =>
+                              updateActiveSlide(
+                                { bgStyle: 'photo', photoSrc: url, panX: 0, panY: 0 },
+                                true
+                              )
+                            }
+                            className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
+                              activeSlide.photoSrc === url && activeSlide.bgStyle === 'photo'
+                                ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                : 'border-[#DDD6C7]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {contentMode === 'glossary' && (
+                <div className="space-y-3">
+                  <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    🧬 17 Coat &amp; DNA Glossary Terms (From Your Website)
+                  </div>
+                  <select
+                    value={selectedGlossaryId}
+                    onChange={(e) => {
+                      setSelectedGlossaryId(e.target.value);
+                      const item = GLOSSARY_ITEMS.find((g) => g.id === e.target.value);
+                      if (item) loadTopicIntoCard(item);
+                    }}
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
+                  >
+                    {GLOSSARY_ITEMS.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.title} ({g.badge.replace('🧬 ', '')})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {contentMode === 'standards' && (
+                <div className="space-y-3">
+                  <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    🏡 OKC Standards, Care Rules &amp; Blog Guides
+                  </div>
+                  <select
+                    value={selectedStandardId}
+                    onChange={(e) => {
+                      setSelectedStandardId(e.target.value);
+                      const item = STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === e.target.value);
+                      if (item) loadTopicIntoCard(item);
+                    }}
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
+                  >
+                    {STANDARDS_AND_BLOG_ITEMS.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {contentMode === 'didyouknow' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      💡 Ready-to-Post Facts &amp; Polls
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nextIdx = (selectedDykIndex + 1) % DID_YOU_KNOW_ITEMS.length;
+                        setSelectedDykIndex(nextIdx);
+                        loadTopicIntoCard(DID_YOU_KNOW_ITEMS[nextIdx]);
+                      }}
+                      className="px-3 py-1 rounded-full bg-[#F4D37E] text-[#1C2621] text-xs font-extrabold"
+                    >
+                      🎲 Shuffle Idea
+                    </button>
+                  </div>
+
+                  <select
+                    value={selectedDykIndex}
+                    onChange={(e) => {
+                      const idx = Number(e.target.value);
+                      setSelectedDykIndex(idx);
+                      loadTopicIntoCard(DID_YOU_KNOW_ITEMS[idx]);
+                    }}
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-bold"
+                  >
+                    {DID_YOU_KNOW_ITEMS.map((item, i) => (
+                      <option key={item.id} value={i}>
+                        {item.badge} — {item.title}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="border-t border-[#EAE5D9] pt-3 space-y-2">
+                    <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
+                      🤖 Generate Brand-New AI Card + Caption
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        ['did-you-know', '💡 Did You Know'],
+                        ['myth-vs-fact', '🧐 Myth vs Fact'],
+                        ['care-tip', '🩺 Care Tip'],
+                        ['comment-game', '💬 Comment Game'],
+                        ['this-or-that', '⚖️ This or That']
+                      ].map(([catKey, catLabel]) => (
+                        <button
+                          key={catKey}
+                          type="button"
+                          onClick={() => setAiCategory(catKey)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                            aiCategory === catKey
+                              ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                              : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7]'
+                          }`}
+                        >
+                          {catLabel}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      placeholder="Optional topic (e.g. 'potty training stubborn Frenchies', 'why raw food shines coats')..."
+                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
+                    />
+                    <button
+                      type="button"
+                      disabled={aiLoading}
+                      onClick={() => handleGenerateAiCardAndCaption()}
+                      className="w-full py-2.5 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
+                    >
+                      {aiLoading ? '✨ Creating Card & Caption...' : '✨ Generate New Card + Caption with AI'}
+                    </button>
+                    {aiError && (
+                      <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
+                        {aiError}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Camera Roll Upload & Photo Controls (Available in ALL modes!) */}
+              <div className="border-t border-[#F0ECE1] pt-3 space-y-3">
+                <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold cursor-pointer hover:bg-[#EFECE3]">
+                  📷 Upload Custom Photo from Camera Roll
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        if (typeof ev.target?.result === 'string') {
+                          updateActiveSlide(
+                            {
+                              bgStyle: 'photo',
+                              photoSrc: ev.target.result,
+                              panX: 0,
+                              panY: 0
+                            },
+                            true
+                          );
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+
+                {activeSlide.bgStyle === 'photo' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="block text-xs font-bold text-[#3E4D45]">
+                      <div className="flex justify-between mb-1">
+                        <span>Photo Zoom</span>
+                        <span className="text-[#D46A4E]">{activeSlide.zoom.toFixed(2)}×</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.6}
+                        max={3.0}
+                        step={0.02}
+                        value={activeSlide.zoom}
+                        onChange={(e) => updateActiveSlide({ zoom: Number(e.target.value) })}
+                        className="w-full accent-[#2E5A44]"
+                      />
+                    </label>
+                    <label className="block text-xs font-bold text-[#3E4D45]">
+                      <div className="flex justify-between mb-1">
+                        <span>Photo Dim</span>
+                        <span className="text-[#D46A4E]">{Math.round(activeSlide.photoDim * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={0.7}
+                        step={0.02}
+                        value={activeSlide.photoDim}
+                        onChange={(e) => updateActiveSlide({ photoDim: Number(e.target.value) })}
+                        className="w-full accent-[#2E5A44]"
+                      />
+                    </label>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(directShareUrl);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold"
+                >
+                  {copiedLink ? '✓ Direct Preview Link Copied!' : '🔗 Copy Direct Website Link (For DMs / Stories)'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: PILLS & 1-TAP STATUS STAMPS */}
           {mobileTab === 'fields' && (
             <div className="space-y-4">
               <div>
+                <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E] mb-2">
+                  🏷️ 1-Tap Status Stamps &amp; Comment Stickers
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {STAMP_BADGES.map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => applyStampBadge(st)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] hover:bg-[#E4EFE8] transition"
+                    >
+                      {st.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0ECE1] pt-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    Tap to Add / Remove on Image
+                    Show / Hide Card Pills
                   </span>
                   <button
                     type="button"
                     onClick={addCustomText}
                     className="text-xs font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-1 rounded-full border border-[#E2DCCD]"
                   >
-                    + Add Custom Text
+                    + Custom Pill
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {layers.map((layer) => (
+                <div className="flex flex-wrap gap-1.5">
+                  {activeSlide.layers.map((layer) => (
                     <button
                       key={layer.id}
                       type="button"
                       onClick={() => {
                         const nextVis = !layer.visible;
-                        updateLayer(layer.id, { visible: nextVis });
+                        updateLayer(layer.id, { visible: nextVis }, true);
                         setSelectedLayerId(nextVis ? layer.id : null);
                       }}
                       className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
@@ -1241,12 +2957,11 @@ const SocialStudio: React.FC = () => {
                 </div>
               </div>
 
-              {/* Quick Text Inputs for Active Fields */}
-              <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+              <div className="border-t border-[#F0ECE1] pt-3 space-y-2">
                 <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                  Active Field Text
+                  Edit Visible Text (Slide {activeSlideIdx + 1})
                 </div>
-                {layers
+                {activeSlide.layers
                   .filter((l) => l.visible)
                   .map((layer) => (
                     <div key={layer.id} className="flex items-center gap-2">
@@ -1255,13 +2970,16 @@ const SocialStudio: React.FC = () => {
                         value={layer.text}
                         onFocus={() => setSelectedLayerId(layer.id)}
                         onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
-                        className="flex-1 rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-sm font-medium"
+                        className={`flex-1 rounded-xl border px-3 py-2 text-xs sm:text-sm font-medium ${
+                          selectedLayerId === layer.id
+                            ? 'border-[#D46A4E] bg-white ring-2 ring-[#D46A4E]/20'
+                            : 'border-[#DDD6C7] bg-[#FCFBF8]'
+                        }`}
                       />
                       <button
                         type="button"
-                        onClick={() => updateLayer(layer.id, { visible: false })}
+                        onClick={() => updateLayer(layer.id, { visible: false }, true)}
                         className="px-2.5 py-2 rounded-xl bg-[#F6F4EE] text-xs font-bold text-[#5C6B63] hover:text-[#991B1B]"
-                        title="Remove from image"
                       >
                         ✕
                       </button>
@@ -1271,124 +2989,41 @@ const SocialStudio: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: PUPPY & PHOTO GALLERY */}
-          {mobileTab === 'puppy' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                  Select Dog
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFilterMode(filterMode === 'available' ? 'all' : 'available')}
-                  className="text-xs font-bold text-[#D46A4E] underline"
-                >
-                  {filterMode === 'available' ? 'Show All Dogs & Studs' : 'Show Available Only'}
-                </button>
-              </div>
-
-              <select
-                value={selectedDog?.id || ''}
-                onChange={(e) => setSelectedId(e.target.value)}
-                className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
-              >
-                {filteredDogs.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.status || d.category})
-                  </option>
-                ))}
-              </select>
-
-              {galleryPhotos.length > 0 && (
-                <div>
-                  <div className="text-xs font-bold text-[#3E4D45] mb-2">
-                    Tap a Photo to Swap
-                  </div>
-                  <div className="flex flex-wrap gap-2.5">
-                    {galleryPhotos.map((url) => (
-                      <img
-                        key={url}
-                        src={url}
-                        alt={selectedDog?.name}
-                        onClick={() => {
-                          setPhotoSrc(url);
-                          setPanX(0);
-                          setPanY(0);
-                        }}
-                        className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
-                          photoSrc === url
-                            ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
-                            : 'border-[#DDD6C7]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-3 rounded-2xl text-sm font-bold cursor-pointer hover:bg-[#EFECE3]">
-                📷 Choose Photo from Camera Roll / Files
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      if (typeof ev.target?.result === 'string') {
-                        setPhotoSrc(ev.target.result);
-                        setPanX(0);
-                        setPanY(0);
-                      }
-                    };
-                    reader.readAsDataURL(file);
-                  }}
-                  className="hidden"
-                />
-              </label>
-
-              <label className="block text-xs font-bold text-[#3E4D45] pt-2">
-                <div className="flex justify-between mb-1">
-                  <span>Photo Zoom (or 2-finger pinch)</span>
-                  <span className="text-[#D46A4E]">{zoom.toFixed(2)}×</span>
-                </div>
-                <input
-                  type="range"
-                  min={0.6}
-                  max={3.0}
-                  step={0.02}
-                  value={zoom}
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  className="w-full accent-[#2E5A44]"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setPanX(0);
-                  setPanY(0);
-                  setZoom(1);
-                }}
-                className="w-full py-2 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-xs font-bold"
-              >
-                Reset Photo Position &amp; Zoom
-              </button>
-            </div>
-          )}
-
-          {/* TAB 3: TEMPLATE & FRAME */}
+          {/* TAB 3: THEME, GRAPHIC BACKGROUNDS & SAVED LAYOUTS */}
           {mobileTab === 'style' && (
             <div className="space-y-4">
               <div>
                 <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-2">
-                  Theme Template
+                  Card Background (Photo vs. No-Photo Graphic)
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                    ([bgKey, bgMeta]) => (
+                      <button
+                        key={bgKey}
+                        type="button"
+                        onClick={() => updateActiveSlide({ bgStyle: bgKey }, true)}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
+                          activeSlide.bgStyle === bgKey
+                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
+                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                        }`}
+                      >
+                        {bgMeta.label}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-[#F0ECE1] pt-3">
+                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-2">
+                  Frame Template
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      ['minimal', '✨ Minimal Full Photo'],
+                      ['minimal', '✨ Full Bleed Minimal'],
                       ['arch', '🌿 Botanical Arch'],
                       ['editorial', '🖼️ Editorial Card'],
                       ['sage', '🌲 Sage Mat Frame']
@@ -1397,9 +3032,9 @@ const SocialStudio: React.FC = () => {
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setPreset(key)}
-                      className={`py-3 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
-                        preset === key
+                      onClick={() => handleSwitchPreset(key)}
+                      className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
+                        activeSlide.preset === key
                           ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
                           : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
                       }`}
@@ -1408,65 +3043,165 @@ const SocialStudio: React.FC = () => {
                     </button>
                   ))}
                 </div>
+
+                {activeSlide.preset !== 'minimal' && (
+                  <label className="block text-xs font-bold text-[#3E4D45] pt-3">
+                    <div className="flex justify-between mb-1">
+                      <span>Window Height</span>
+                      <span className="text-[#D46A4E]">{activeSlide.archHeight}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={480}
+                      max={ratio === 'story' ? 1480 : ratio === 'square' ? 720 : 1020}
+                      value={activeSlide.archHeight}
+                      onChange={(e) => updateActiveSlide({ archHeight: Number(e.target.value) })}
+                      className="w-full accent-[#2E5A44]"
+                    />
+                  </label>
+                )}
               </div>
 
-              {preset !== 'minimal' && (
-                <label className="block text-xs font-bold text-[#3E4D45] pt-2">
-                  <div className="flex justify-between mb-1">
-                    <span>Photo Window Height</span>
-                    <span className="text-[#D46A4E]">{archHeight}px</span>
-                  </div>
+              {/* Save My Custom Layout Presets */}
+              <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
+                  💾 Save My Go-To Layout
+                </div>
+                <p className="text-[11px] text-[#5C6B63]">
+                  Save your exact pill positions, sizes &amp; colors so you can apply them to any future puppy in 1 tap!
+                </p>
+                <div className="flex gap-2">
                   <input
-                    type="range"
-                    min={560}
-                    max={ratio === 'story' ? 1480 : 1020}
-                    value={archHeight}
-                    onChange={(e) => setArchHeight(Number(e.target.value))}
-                    className="w-full accent-[#2E5A44]"
+                    type="text"
+                    value={newPresetName}
+                    onChange={(e) => setNewPresetName(e.target.value)}
+                    placeholder="e.g. Lindsey's Go-To Minimal"
+                    className="flex-1 rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
                   />
-                </label>
-              )}
+                  <button
+                    type="button"
+                    onClick={handleSaveLayoutPreset}
+                    className="px-3.5 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
+                  >
+                    💾 Save
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedDog) {
-                    setLayers(buildLayersForPreset(selectedDog, preset, canvasH, archHeight));
-                  }
-                }}
-                className="w-full py-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-xs font-bold"
-              >
-                Reset Default Text Layout for Template
-              </button>
+                {savedLayouts.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {savedLayouts.map((sl) => (
+                      <div
+                        key={sl.id}
+                        className="flex items-center justify-between bg-[#F6F4EE] border border-[#E2DCCD] rounded-xl px-3 py-2"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleApplySavedLayout(sl)}
+                          className="text-xs font-extrabold text-[#1C2621] text-left flex-1 hover:text-[#2E5A44]"
+                        >
+                          ✨ {sl.name}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSavedLayout(sl.id)}
+                          className="text-xs font-bold text-[#991B1B] px-2"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          {/* TAB 4: ONE-TAP INSTAGRAM CAPTION */}
+          {/* TAB 4: AI CAPTION & DIRECT LINK */}
           {mobileTab === 'caption' && (
             <div className="space-y-3">
               <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                Ready-to-Paste Instagram Caption
+                ✨ AI Caption Generator
               </div>
-              <p className="text-xs text-[#5C6B63]">
-                Keep the photo clean for higher engagement, then paste all DNA &amp; contact details in the caption!
-              </p>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateAiCaption()}
+                  placeholder="Tell AI what to say (e.g., 'ask followers to guess coat color', 'cozy weekend vibe')..."
+                  className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
+                />
+
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Ask a fun question for comments',
+                    'Sweet & cuddly personality',
+                    'Spotlight rare DNA & structure',
+                    'Mention Flight Nanny & FaceTime',
+                    'Short 2-line punchy hook'
+                  ].map((presetIdea) => (
+                    <button
+                      key={presetIdea}
+                      type="button"
+                      onClick={() => {
+                        setAiPrompt(presetIdea);
+                        handleGenerateAiCaption(presetIdea);
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-[#F6F4EE] border border-[#E2DCCD] text-[11px] font-bold text-[#3E4D45] hover:bg-[#E4EFE8]"
+                    >
+                      {presetIdea}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={aiLoading}
+                  onClick={() => handleGenerateAiCaption()}
+                  className="w-full py-2.5 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
+                >
+                  {aiLoading ? '✨ Writing Caption...' : '✨ Generate New Caption with AI'}
+                </button>
+
+                {aiError && (
+                  <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
+                    {aiError}
+                  </div>
+                )}
+              </div>
+
               <textarea
-                rows={10}
-                readOnly
-                value={generatedCaption}
+                rows={8}
+                value={captionText}
+                onChange={(e) => setCaptionText(e.target.value)}
                 className="w-full rounded-2xl border border-[#DDD6C7] bg-[#FCFBF8] p-3 text-xs font-medium leading-relaxed"
               />
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(generatedCaption);
-                  setCopiedCaption(true);
-                  setTimeout(() => setCopiedCaption(false), 2000);
-                }}
-                className="w-full py-3 rounded-full bg-[#2E5A44] text-white text-sm font-extrabold shadow-sm"
-              >
-                {copiedCaption ? '✓ Copied to Clipboard!' : '📋 Copy Instagram Caption'}
-              </button>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(captionText);
+                    setCopiedCaption(true);
+                    setTimeout(() => setCopiedCaption(false), 2000);
+                  }}
+                  className="py-3 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+                >
+                  {copiedCaption ? '✓ Copied Caption!' : '📋 Copy Caption'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(directShareUrl);
+                    setCopiedLink(true);
+                    setTimeout(() => setCopiedLink(false), 2000);
+                  }}
+                  className="py-3 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-xs font-extrabold"
+                >
+                  {copiedLink ? '✓ Copied Link!' : '🔗 Copy Direct Link'}
+                </button>
+              </div>
             </div>
           )}
         </aside>
