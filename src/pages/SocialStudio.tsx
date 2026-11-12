@@ -141,16 +141,48 @@ const loadImageElement = (src: string): Promise<HTMLImageElement | null> =>
     img.src = src;
   });
 
-const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) => {
+const getFrameGeometry = (
+  preset: FramePreset,
+  canvasH: number,
+  archH: number,
+  bgStyle: BgStyle = 'cream-editorial'
+) => {
+  const theme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
+
+  if (preset === 'no-photo') {
+    return {
+      outerBg1: theme.bg1,
+      outerBg2: theme.bg2,
+      hasCard: false,
+      hasPhoto: false,
+      cardX: 0,
+      cardY: 0,
+      cardW: 1080,
+      cardH: canvasH,
+      cardBg: theme.cardBg,
+      cardBorder: theme.border,
+      cardTopR: 0,
+      photoX: 0,
+      photoY: 0,
+      photoW: 0,
+      photoH: 0,
+      photoTopR: 0,
+      photoBottomR: 0
+    };
+  }
+
   if (preset === 'minimal') {
     return {
-      outerBg: '#EFECE4',
+      outerBg1: theme.bg1,
+      outerBg2: theme.bg2,
       hasCard: false,
+      hasPhoto: true,
       cardX: 0,
       cardY: 0,
       cardW: 1080,
       cardH: canvasH,
       cardBg: 'transparent',
+      cardBorder: 'transparent',
       cardTopR: 0,
       photoX: 0,
       photoY: 0,
@@ -160,7 +192,8 @@ const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) =
       photoBottomR: 0
     };
   }
-  const pad = preset === 'sage' ? 36 : 26;
+
+  const pad = preset === 'sage' ? 38 : 26;
   const cardW = 1080 - pad * 2;
   const cardH = canvasH - pad * 2;
   const photoX = pad + 26;
@@ -168,13 +201,16 @@ const getFrameGeometry = (preset: FramePreset, canvasH: number, archH: number) =
   const photoW = cardW - 52;
   const clampedArch = Math.min(archH, canvasH - 360);
   return {
-    outerBg: preset === 'sage' ? '#2E5A44' : '#F6F4EE',
+    outerBg1: preset === 'sage' ? theme.matOuter : theme.bg1,
+    outerBg2: preset === 'sage' ? theme.matOuter : theme.bg2,
     hasCard: true,
+    hasPhoto: true,
     cardX: pad,
     cardY: pad,
     cardW,
     cardH,
-    cardBg: preset === 'sage' ? '#F6F4EE' : '#FFFFFF',
+    cardBg: preset === 'sage' ? theme.bg1 : theme.cardBg,
+    cardBorder: theme.border,
     cardTopR: preset === 'arch' ? 230 : 38,
     photoX,
     photoY,
@@ -189,8 +225,11 @@ const buildLayersForDog = (
   dog: DogRecord,
   preset: FramePreset,
   canvasH: number,
-  archH: number
+  archH: number,
+  bgStyle: BgStyle = 'cream-editorial'
 ): TextLayer[] => {
+  const theme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
+  const baseTextPill: PillStyle = theme.darkText ? 'none-dark' : 'none-light';
   const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const age = extractAge(dog);
   const isStud = dog.category === 'Stud';
@@ -217,7 +256,9 @@ const buildLayersForDog = (
   const quoteStr =
     DEFAULT_QUOTES[slug] || '"Raised in our OKC home with love, structure & health first."';
 
-  if (preset === 'minimal') {
+  if (preset === 'minimal' || preset === 'no-photo') {
+    const topTextPill: PillStyle =
+      preset === 'no-photo' ? baseTextPill : 'none-light';
     return [
       {
         id: 'breedAge',
@@ -248,11 +289,11 @@ const buildLayersForDog = (
       {
         id: 'coat',
         label: 'Coat / DNA',
-        visible: isStud,
+        visible: isStud || preset === 'no-photo',
         text: coatStr,
         x: 540,
-        y: 95,
-        fontSize: 24,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.48) : 95,
+        fontSize: 26,
         pillWidth: 680,
         padY: 13,
         pill: 'frosted',
@@ -261,7 +302,7 @@ const buildLayersForDog = (
       {
         id: 'handle',
         label: '@okcfrenchies',
-        visible: false,
+        visible: preset === 'no-photo',
         text: '@okcfrenchies',
         x: 540,
         y: 80,
@@ -274,7 +315,7 @@ const buildLayersForDog = (
       {
         id: 'status',
         label: 'Status Pill',
-        visible: false,
+        visible: preset === 'no-photo',
         text: statusStr,
         x: 540,
         y: 165,
@@ -287,14 +328,14 @@ const buildLayersForDog = (
       {
         id: 'name',
         label: 'Meet Name',
-        visible: false,
+        visible: preset === 'no-photo',
         text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
         x: 540,
-        y: canvasH - 285,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.34) : canvasH - 285,
         fontSize: 64,
         pillWidth: 720,
         padY: 10,
-        pill: 'none-light',
+        pill: topTextPill,
         font: 'serif'
       },
       {
@@ -313,10 +354,10 @@ const buildLayersForDog = (
       {
         id: 'quote',
         label: 'Sweet Quote',
-        visible: false,
+        visible: preset === 'no-photo',
         text: quoteStr,
         x: 540,
-        y: 325,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.62) : 325,
         fontSize: 27,
         pillWidth: 820,
         padY: 16,
@@ -339,7 +380,7 @@ const buildLayersForDog = (
     ];
   }
 
-  const geom = getFrameGeometry(preset, canvasH, archH);
+  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle);
   const photoBottom = geom.photoY + geom.photoH;
 
   return [
@@ -379,7 +420,7 @@ const buildLayersForDog = (
       fontSize: 22,
       pillWidth: 230,
       padY: 8,
-      pill: 'none-dark',
+      pill: baseTextPill,
       font: 'sans'
     },
     {
@@ -392,7 +433,7 @@ const buildLayersForDog = (
       fontSize: 58,
       pillWidth: 780,
       padY: 8,
-      pill: 'none-dark',
+      pill: baseTextPill,
       font: 'serif'
     },
     {
@@ -405,7 +446,7 @@ const buildLayersForDog = (
       fontSize: 22,
       pillWidth: 800,
       padY: 6,
-      pill: 'none-dark',
+      pill: baseTextPill,
       font: 'sans'
     },
     {
@@ -418,7 +459,7 @@ const buildLayersForDog = (
       fontSize: 25,
       pillWidth: 840,
       padY: 8,
-      pill: 'none-dark',
+      pill: baseTextPill,
       font: 'sans'
     },
     {
@@ -444,7 +485,7 @@ const buildLayersForDog = (
       fontSize: 25,
       pillWidth: 840,
       padY: 10,
-      pill: 'none-dark',
+      pill: baseTextPill,
       font: 'serif-italic'
     },
     {
@@ -457,7 +498,7 @@ const buildLayersForDog = (
       fontSize: 21,
       pillWidth: 650,
       padY: 12,
-      pill: 'sage',
+      pill: theme.darkText ? 'sage' : 'gold',
       font: 'sans'
     }
   ];
@@ -517,14 +558,14 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
   return {
     id: 'slide-1',
     preset: 'minimal',
-    bgStyle: 'photo',
+    bgStyle: 'cream-editorial',
     photoSrc: dog.image || '',
     photoDim: 0,
     panX: 0,
     panY: 0,
     zoom: 1,
     archHeight: archH,
-    layers: buildLayersForDog(dog, 'minimal', ch, archH)
+    layers: buildLayersForDog(dog, 'minimal', ch, archH, 'cream-editorial')
   };
 };
 
@@ -646,10 +687,12 @@ const SocialStudio: React.FC = () => {
   // Direct Share URL (matches api/page.mjs Open Graph link preview routes!)
   const directShareUrl = useMemo(() => {
     if (contentMode === 'puppies' && selectedDog) {
-      return `https://okcfrenchies.com/french-bulldog-puppies-for-sale?dog=${encodeURIComponent(selectedDog.name)}`;
+      const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return `https://okcfrenchies.com/puppies/${slug}`;
     }
     if (contentMode === 'studs' && selectedDog) {
-      return `https://okcfrenchies.com/french-bulldog-stud-service?dog=${encodeURIComponent(selectedDog.name)}`;
+      const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      return `https://okcfrenchies.com/studs/${slug}`;
     }
     return activeTopicItem?.shareUrl || 'https://okcfrenchies.com';
   }, [contentMode, selectedDog, activeTopicItem]);
@@ -735,21 +778,28 @@ const SocialStudio: React.FC = () => {
   const loadDogIntoCard = (dog: DogRecord, targetPreset?: FramePreset, targetRatio?: CanvasRatio) => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
-    const pr = targetPreset || activeSlide.preset || 'minimal';
+    const pr =
+      targetPreset ||
+      (activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset) ||
+      'minimal';
+    const currentBg: BgStyle =
+      activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+        ? activeSlide.bgStyle
+        : 'cream-editorial';
     const defaultArch = r === 'story' ? 1180 : r === 'square' ? 580 : pr === 'sage' ? 740 : 800;
     pushHistory(slides);
     setSlides([
       {
         id: 'slide-1',
         preset: pr,
-        bgStyle: 'photo',
+        bgStyle: currentBg,
         photoSrc: dog.image || '',
         photoDim: 0,
         panX: 0,
         panY: 0,
         zoom: 1,
         archHeight: defaultArch,
-        layers: buildLayersForDog(dog, pr, ch, defaultArch)
+        layers: buildLayersForDog(dog, pr, ch, defaultArch, currentBg)
       }
     ]);
     setActiveSlideIdx(0);
@@ -761,14 +811,15 @@ const SocialStudio: React.FC = () => {
   const loadTopicIntoCard = (item: TopicCardItem, targetRatio?: CanvasRatio) => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
+    const hasImg = Boolean(item.image);
     pushHistory(slides);
     setSlides([
       {
         id: 'slide-1',
-        preset: 'minimal',
+        preset: hasImg ? 'minimal' : 'no-photo',
         bgStyle: item.bgStyle,
         photoSrc: item.image || selectedDog?.image || '',
-        photoDim: item.bgStyle === 'photo' ? 0.48 : 0,
+        photoDim: hasImg ? 0.5 : 0,
         panX: 0,
         panY: 0,
         zoom: 1,
@@ -803,23 +854,46 @@ const SocialStudio: React.FC = () => {
     );
   };
 
-  // Handle Template Preset Switch on Active Slide
+  // Handle Template Preset Switch on Active Slide (Works over ANY Color Theme!)
   const handleSwitchPreset = (nextPreset: FramePreset) => {
     const defaultArch =
       ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
+    const currentBg: BgStyle =
+      activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+        ? activeSlide.bgStyle
+        : 'cream-editorial';
     if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog) {
       updateActiveSlide(
         {
           preset: nextPreset,
-          bgStyle: 'photo',
+          bgStyle: currentBg,
+          photoSrc: activeSlide.photoSrc || selectedDog.image || '',
           archHeight: defaultArch,
-          layers: buildLayersForDog(selectedDog, nextPreset, canvasH, defaultArch)
+          layers: buildLayersForDog(selectedDog, nextPreset, canvasH, defaultArch, currentBg)
         },
         true
       );
     } else {
-      updateActiveSlide({ preset: nextPreset, archHeight: defaultArch }, true);
+      updateActiveSlide(
+        {
+          preset: nextPreset,
+          photoSrc: activeSlide.photoSrc || selectedDog?.image || '',
+          archHeight: defaultArch
+        },
+        true
+      );
     }
+  };
+
+  const handleSwitchBgTheme = (nextBg: BgStyle) => {
+    const dark = BG_STYLES[nextBg].darkText;
+    const updatedLayers = activeSlide.layers.map((l) => {
+      if (activeSlide.preset === 'minimal') return l;
+      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      return l;
+    });
+    updateActiveSlide({ bgStyle: nextBg, layers: updatedLayers }, true);
   };
 
   // Multi-Slide Carousel Builder
@@ -954,7 +1028,7 @@ const SocialStudio: React.FC = () => {
         {
           id: 'slide-1',
           preset: 'minimal',
-          bgStyle: 'photo',
+          bgStyle: activeSlide.bgStyle || 'cream-editorial',
           photoSrc: photo1,
           photoDim: 0,
           panX: 0,
@@ -965,20 +1039,20 @@ const SocialStudio: React.FC = () => {
         },
         {
           id: 'slide-2',
-          preset: 'minimal',
-          bgStyle: 'photo',
+          preset: 'arch',
+          bgStyle: activeSlide.bgStyle || 'cream-editorial',
           photoSrc: photo2,
-          photoDim: 0.12,
+          photoDim: 0,
           panX: 0,
           panY: 0,
-          zoom: 1.05,
+          zoom: 1.02,
           archHeight: 800,
           layers: slide2Layers
         },
         {
           id: 'slide-3',
-          preset: 'minimal',
-          bgStyle: photo3 ? 'photo' : 'forest-luxe',
+          preset: photo3 ? 'minimal' : 'no-photo',
+          bgStyle: 'forest-luxe',
           photoSrc: photo3,
           photoDim: 0.58,
           panX: 0,
@@ -993,10 +1067,10 @@ const SocialStudio: React.FC = () => {
       setSlides([
         {
           id: 'slide-1',
-          preset: 'minimal',
+          preset: activeTopicItem.image ? 'minimal' : 'no-photo',
           bgStyle: activeTopicItem.bgStyle,
           photoSrc: activeTopicItem.image || selectedDog?.image || '',
-          photoDim: activeTopicItem.bgStyle === 'photo' ? 0.5 : 0,
+          photoDim: activeTopicItem.image ? 0.5 : 0,
           panX: 0,
           panY: 0,
           zoom: 1,
@@ -1045,7 +1119,7 @@ const SocialStudio: React.FC = () => {
         },
         {
           id: 'slide-2',
-          preset: 'minimal',
+          preset: 'no-photo',
           bgStyle: 'cream-editorial',
           photoSrc: '',
           photoDim: 0,
@@ -1097,7 +1171,7 @@ const SocialStudio: React.FC = () => {
         },
         {
           id: 'slide-3',
-          preset: 'minimal',
+          preset: 'no-photo',
           bgStyle: 'forest-luxe',
           photoSrc: '',
           photoDim: 0,
@@ -1361,7 +1435,7 @@ const SocialStudio: React.FC = () => {
           Math.max(15, Math.min(120, pinchRef.current.baseFontSize * ratioDist))
         );
         updateLayer(pinchRef.current.targetLayerId, { fontSize: nextFont });
-      } else if (!photoLocked && activeSlide.bgStyle === 'photo') {
+      } else if (!photoLocked && activeSlide.preset !== 'no-photo') {
         const nextZoom = Math.max(0.6, Math.min(3.2, pinchRef.current.baseZoom * ratioDist));
         updateActiveSlide({ zoom: nextZoom });
       }
@@ -1488,9 +1562,9 @@ const SocialStudio: React.FC = () => {
         'sage-mist'
       ];
       const chosenBg =
-        activeSlide.bgStyle === 'photo'
-          ? bgChoices[Math.floor(Math.random() * bgChoices.length)]
-          : activeSlide.bgStyle;
+        activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+          ? activeSlide.bgStyle
+          : bgChoices[Math.floor(Math.random() * bgChoices.length)];
 
       const generatedItem: TopicCardItem = {
         id: `ai-${Date.now()}`,
@@ -1506,7 +1580,7 @@ const SocialStudio: React.FC = () => {
       setSlides([
         {
           id: 'slide-1',
-          preset: 'minimal',
+          preset: 'no-photo',
           bgStyle: chosenBg,
           photoSrc: activeSlide.photoSrc,
           photoDim: 0,
@@ -1537,13 +1611,16 @@ const SocialStudio: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    const geom = getFrameGeometry(slide.preset, canvasH, slide.archHeight);
-    ctx.fillStyle = geom.outerBg;
+    const geom = getFrameGeometry(slide.preset, canvasH, slide.archHeight, slide.bgStyle);
+    const outerGrad = ctx.createLinearGradient(0, 0, 1080, canvasH);
+    outerGrad.addColorStop(0, geom.outerBg1);
+    outerGrad.addColorStop(1, geom.outerBg2);
+    ctx.fillStyle = outerGrad;
     ctx.fillRect(0, 0, 1080, canvasH);
 
     if (geom.hasCard) {
       ctx.save();
-      ctx.shadowColor = 'rgba(28,38,33,0.08)';
+      ctx.shadowColor = 'rgba(28,38,33,0.12)';
       ctx.shadowBlur = 50;
       ctx.shadowOffsetY = 20;
       roundRectPath(
@@ -1561,64 +1638,44 @@ const SocialStudio: React.FC = () => {
       ctx.fill();
       ctx.restore();
 
-      if (slide.preset !== 'sage') {
-        roundRectPath(
-          ctx,
-          geom.cardX,
-          geom.cardY,
-          geom.cardW,
-          geom.cardH,
-          geom.cardTopR,
-          geom.cardTopR,
-          40,
-          40
-        );
-        ctx.strokeStyle = '#EAE5D9';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-    }
-
-    ctx.save();
-    roundRectPath(
-      ctx,
-      geom.photoX,
-      geom.photoY,
-      geom.photoW,
-      geom.photoH,
-      geom.photoTopR,
-      geom.photoTopR,
-      geom.photoBottomR,
-      geom.photoBottomR
-    );
-    ctx.clip();
-
-    if (slide.bgStyle !== 'photo') {
-      const bgTheme = BG_STYLES[slide.bgStyle];
-      const grad = ctx.createLinearGradient(0, geom.photoY, geom.photoW, geom.photoY + geom.photoH);
-      grad.addColorStop(0, bgTheme.bg1);
-      grad.addColorStop(1, bgTheme.bg2);
-      ctx.fillStyle = grad;
-      ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
-
-      // Subtle editorial arch border decoration
-      ctx.save();
       roundRectPath(
         ctx,
-        geom.photoX + 42,
-        geom.photoY + 42,
-        geom.photoW - 84,
-        geom.photoH - 84,
-        220,
-        220,
-        36,
-        36
+        geom.cardX,
+        geom.cardY,
+        geom.cardW,
+        geom.cardH,
+        geom.cardTopR,
+        geom.cardTopR,
+        40,
+        40
       );
-      ctx.strokeStyle = bgTheme.darkText ? 'rgba(46,90,68,0.16)' : 'rgba(244,211,126,0.24)';
+      ctx.strokeStyle = geom.cardBorder;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    if (!geom.hasPhoto) {
+      const bgTheme = BG_STYLES[slide.bgStyle] || BG_STYLES['cream-editorial'];
+      ctx.save();
+      roundRectPath(ctx, 42, 42, 1080 - 84, canvasH - 84, 220, 220, 36, 36);
+      ctx.strokeStyle = bgTheme.darkText ? 'rgba(46,90,68,0.18)' : 'rgba(244,211,126,0.28)';
       ctx.lineWidth = 3;
       ctx.stroke();
       ctx.restore();
     } else {
+      ctx.save();
+      roundRectPath(
+        ctx,
+        geom.photoX,
+        geom.photoY,
+        geom.photoW,
+        geom.photoH,
+        geom.photoTopR,
+        geom.photoTopR,
+        geom.photoBottomR,
+        geom.photoBottomR
+      );
+      ctx.clip();
       ctx.fillStyle = '#EFECE4';
       ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
       const loadedImg = await loadImageElement(slide.photoSrc);
@@ -1636,8 +1693,8 @@ const SocialStudio: React.FC = () => {
         ctx.fillStyle = `rgba(20, 28, 24, ${slide.photoDim})`;
         ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
       }
+      ctx.restore();
     }
-    ctx.restore();
 
     for (const layer of slide.layers) {
       if (!layer.visible || !layer.text.trim()) continue;
@@ -1744,9 +1801,14 @@ const SocialStudio: React.FC = () => {
     });
   };
 
-  const geom = getFrameGeometry(activeSlide.preset, canvasH, activeSlide.archHeight);
+  const geom = getFrameGeometry(
+    activeSlide.preset,
+    canvasH,
+    activeSlide.archHeight,
+    activeSlide.bgStyle
+  );
   const previewScale =
-    imgNat.w > 0 && imgNat.h > 0
+    geom.hasPhoto && imgNat.w > 0 && imgNat.h > 0
       ? Math.max(geom.photoW / imgNat.w, geom.photoH / imgNat.h) * activeSlide.zoom
       : 1;
   const previewDrawW = imgNat.w > 0 ? imgNat.w * previewScale : geom.photoW;
@@ -1805,7 +1867,7 @@ const SocialStudio: React.FC = () => {
             >
               ↩ Undo
             </button>
-            {activeSlide.bgStyle === 'photo' && (
+            {geom.hasPhoto && (
               <button
                 type="button"
                 onClick={() => setPhotoLocked((v) => !v)}
@@ -1962,7 +2024,7 @@ const SocialStudio: React.FC = () => {
                   : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
               }`}
             >
-              {activeSlide.bgStyle === 'photo' ? '🖼️ Photo' : '🎨 Card Bg'}
+              {geom.hasPhoto ? '🖼️ Photo' : '🎨 Card Bg'}
             </button>
             {activeSlide.layers
               .filter((l) => l.visible)
@@ -2136,7 +2198,7 @@ const SocialStudio: React.FC = () => {
                 }
 
                 if (dm.type === 'photo') {
-                  if (!photoLocked && activeSlide.bgStyle === 'photo') {
+                  if (!photoLocked && geom.hasPhoto) {
                     updateActiveSlide({ panX: dm.bx + dx, panY: dm.by + dy });
                   }
                 } else if (dm.type === 'layer' && dm.layerId) {
@@ -2187,7 +2249,7 @@ const SocialStudio: React.FC = () => {
                 height: canvasH,
                 transform: `scale(${stageScale})`,
                 transformOrigin: 'top left',
-                background: geom.outerBg,
+                background: `linear-gradient(155deg, ${geom.outerBg1}, ${geom.outerBg2})`,
                 position: 'relative'
               }}
             >
@@ -2200,98 +2262,95 @@ const SocialStudio: React.FC = () => {
                     width: geom.cardW,
                     height: geom.cardH,
                     background: geom.cardBg,
-                    border: activeSlide.preset === 'sage' ? 'none' : '2px solid #EAE5D9',
+                    border: `2px solid ${geom.cardBorder}`,
                     borderRadius: `${geom.cardTopR}px ${geom.cardTopR}px 40px 40px`,
-                    boxShadow: '0 24px 60px rgba(28,38,33,0.08)'
+                    boxShadow: '0 24px 60px rgba(28,38,33,0.12)'
                   }}
                 />
               )}
 
-              {/* Photo or Editorial Graphic Background Area */}
-              <div
-                onPointerDown={(e) => {
-                  if (!e.isPrimary || pinchRef.current.active) return;
-                  dragModeRef.current = {
-                    type: 'photo',
-                    sx: e.clientX,
-                    sy: e.clientY,
-                    bx: activeSlide.panX,
-                    by: activeSlide.panY,
-                    bWidth: 0,
-                    bPadY: 0,
-                    moved: false,
-                    recordedUndo: false
-                  };
-                  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-                }}
-                style={{
-                  position: 'absolute',
-                  left: geom.photoX,
-                  top: geom.photoY,
-                  width: geom.photoW,
-                  height: geom.photoH,
-                  borderRadius: `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
-                  overflow: 'hidden',
-                  background:
-                    activeSlide.bgStyle === 'photo'
-                      ? '#EFECE4'
-                      : `linear-gradient(155deg, ${BG_STYLES[activeSlide.bgStyle].bg1}, ${BG_STYLES[activeSlide.bgStyle].bg2})`,
-                  cursor:
-                    photoLocked || activeSlide.bgStyle !== 'photo' ? 'default' : 'grab'
-                }}
-              >
-                {activeSlide.bgStyle === 'photo' ? (
-                  <>
-                    {activeSlide.photoSrc && (
-                      <img
-                        src={activeSlide.photoSrc}
-                        alt={selectedDog?.name || 'Card'}
-                        onLoad={(e) => {
-                          const im = e.currentTarget;
-                          setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
-                        }}
-                        style={{
-                          position: 'absolute',
-                          left: previewDrawX,
-                          top: previewDrawY,
-                          width: previewDrawW,
-                          height: previewDrawH,
-                          maxWidth: 'none',
-                          maxHeight: 'none',
-                          pointerEvents: 'none'
-                        }}
-                      />
-                    )}
-                    {activeSlide.photoDim > 0 && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          background: `rgba(20, 28, 24, ${activeSlide.photoDim})`,
-                          pointerEvents: 'none'
-                        }}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: 42,
-                      top: 42,
-                      right: 42,
-                      bottom: 42,
-                      borderRadius: '220px 220px 36px 36px',
-                      border: `3px solid ${
-                        BG_STYLES[activeSlide.bgStyle].darkText
-                          ? 'rgba(46,90,68,0.16)'
-                          : 'rgba(244,211,126,0.24)'
-                      }`,
-                      pointerEvents: 'none'
-                    }}
-                  />
-                )}
-              </div>
+              {/* Photo Window or No-Photo Decorative Arch Outline */}
+              {!geom.hasPhoto ? (
+                <div
+                  onPointerDown={() => {
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    left: 42,
+                    top: 42,
+                    right: 42,
+                    bottom: 42,
+                    borderRadius: '220px 220px 36px 36px',
+                    border: `3px solid ${
+                      (BG_STYLES[activeSlide.bgStyle] || BG_STYLES['cream-editorial']).darkText
+                        ? 'rgba(46,90,68,0.18)'
+                        : 'rgba(244,211,126,0.28)'
+                    }`
+                  }}
+                />
+              ) : (
+                <div
+                  onPointerDown={(e) => {
+                    if (!e.isPrimary || pinchRef.current.active) return;
+                    dragModeRef.current = {
+                      type: 'photo',
+                      sx: e.clientX,
+                      sy: e.clientY,
+                      bx: activeSlide.panX,
+                      by: activeSlide.panY,
+                      bWidth: 0,
+                      bPadY: 0,
+                      moved: false,
+                      recordedUndo: false
+                    };
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    left: geom.photoX,
+                    top: geom.photoY,
+                    width: geom.photoW,
+                    height: geom.photoH,
+                    borderRadius: `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
+                    overflow: 'hidden',
+                    background: '#EFECE4',
+                    cursor: photoLocked ? 'default' : 'grab'
+                  }}
+                >
+                  {activeSlide.photoSrc && (
+                    <img
+                      src={activeSlide.photoSrc}
+                      alt={selectedDog?.name || 'Card'}
+                      onLoad={(e) => {
+                        const im = e.currentTarget;
+                        setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
+                      }}
+                      style={{
+                        position: 'absolute',
+                        left: previewDrawX,
+                        top: previewDrawY,
+                        width: previewDrawW,
+                        height: previewDrawH,
+                        maxWidth: 'none',
+                        maxHeight: 'none',
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  {activeSlide.photoDim > 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: `rgba(20, 28, 24, ${activeSlide.photoDim})`,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Center Snap Guides */}
               {snapVertical && (
@@ -2672,12 +2731,17 @@ const SocialStudio: React.FC = () => {
                             alt={selectedDog?.name}
                             onClick={() =>
                               updateActiveSlide(
-                                { bgStyle: 'photo', photoSrc: url, panX: 0, panY: 0 },
+                                {
+                                  preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
+                                  photoSrc: url,
+                                  panX: 0,
+                                  panY: 0
+                                },
                                 true
                               )
                             }
                             className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
-                              activeSlide.photoSrc === url && activeSlide.bgStyle === 'photo'
+                              activeSlide.photoSrc === url && geom.hasPhoto
                                 ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
                                 : 'border-[#DDD6C7]'
                             }`}
@@ -2835,7 +2899,7 @@ const SocialStudio: React.FC = () => {
                         if (typeof ev.target?.result === 'string') {
                           updateActiveSlide(
                             {
-                              bgStyle: 'photo',
+                              preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
                               photoSrc: ev.target.result,
                               panX: 0,
                               panY: 0
@@ -2850,7 +2914,7 @@ const SocialStudio: React.FC = () => {
                   />
                 </label>
 
-                {activeSlide.bgStyle === 'photo' && (
+                {geom.hasPhoto && (
                   <div className="grid grid-cols-2 gap-3">
                     <label className="block text-xs font-bold text-[#3E4D45]">
                       <div className="flex justify-between mb-1">
@@ -2993,16 +3057,19 @@ const SocialStudio: React.FC = () => {
           {mobileTab === 'style' && (
             <div className="space-y-4">
               <div>
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-2">
-                  Card Background (Photo vs. No-Photo Graphic)
+                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1">
+                  Whole-Card Color Theme
                 </div>
+                <p className="text-[11px] text-[#5C6B63] mb-2">
+                  Colors the background &amp; frame across all templates below:
+                </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
                     ([bgKey, bgMeta]) => (
                       <button
                         key={bgKey}
                         type="button"
-                        onClick={() => updateActiveSlide({ bgStyle: bgKey }, true)}
+                        onClick={() => handleSwitchBgTheme(bgKey)}
                         className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
                           activeSlide.bgStyle === bgKey
                             ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
@@ -3018,15 +3085,16 @@ const SocialStudio: React.FC = () => {
 
               <div className="border-t border-[#F0ECE1] pt-3">
                 <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-2">
-                  Frame Template
+                  Frame &amp; Layout Template
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {(
                     [
-                      ['minimal', '✨ Full Bleed Minimal'],
+                      ['minimal', '✨ Full Bleed Photo'],
                       ['arch', '🌿 Botanical Arch'],
                       ['editorial', '🖼️ Editorial Card'],
-                      ['sage', '🌲 Sage Mat Frame']
+                      ['sage', '🌲 Classic Mat Frame'],
+                      ['no-photo', '📝 No-Photo Graphic Card']
                     ] as const
                   ).map(([key, label]) => (
                     <button
@@ -3044,7 +3112,7 @@ const SocialStudio: React.FC = () => {
                   ))}
                 </div>
 
-                {activeSlide.preset !== 'minimal' && (
+                {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
                   <label className="block text-xs font-bold text-[#3E4D45] pt-3">
                     <div className="flex justify-between mb-1">
                       <span>Window Height</span>

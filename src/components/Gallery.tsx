@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowUpRight,
   ShieldCheck,
@@ -12,7 +12,8 @@ import {
   Image as ImageIcon,
   AlertTriangle,
   RefreshCw,
-  FileText
+  FileText,
+  Share2
 } from 'lucide-react';
 import SEO from './SEO';
 import studsData from '../data/studs.json';
@@ -89,6 +90,7 @@ const getGardenPill = (dog: DogData): string => {
 
 const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetName }) => {
   const navigate = useNavigate();
+  const { dogSlug } = useParams<{ dogSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [dogs, setDogs] = useState<DogData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +99,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [activeBreedFilter, setActiveBreedFilter] = useState<string>('All');
   const [cardPhotoIndex, setCardPhotoIndex] = useState<Record<string, number>>({});
+  const [copiedDogLink, setCopiedDogLink] = useState<boolean>(false);
 
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [modalImageError, setModalImageError] = useState(false);
@@ -131,10 +134,12 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
     setActiveMediaIndex(initialIdx);
     setModalImageError(false);
     setRefreshKey(0);
+    setCopiedDogLink(false);
     setSelectedDog(dog);
     if (updateUrl) {
+      const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const newParams = new URLSearchParams(searchParams);
-      newParams.set('dog', dog.name.toLowerCase());
+      newParams.set('dog', slug);
       setSearchParams(newParams);
     }
   };
@@ -143,21 +148,30 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
     setSelectedDog(null);
     const newParams = new URLSearchParams(searchParams);
     newParams.delete('dog');
-    setSearchParams(newParams, { replace: true });
+    if (dogSlug) {
+      navigate(filterType === 'Stud' ? '/french-bulldog-stud-service' : '/french-bulldog-puppies-for-sale', { replace: true });
+    } else {
+      setSearchParams(newParams, { replace: true });
+    }
   };
 
   useEffect(() => {
-    const dogParam = searchParams.get('dog');
-    if (dogs.length > 0 && dogParam) {
-      const dogName = dogParam.toLowerCase();
-      const foundDog = dogs.find((d) => d.name.toLowerCase() === dogName || d.id.toLowerCase() === dogName);
+    const rawTarget = dogSlug || searchParams.get('dog');
+    if (dogs.length > 0 && rawTarget) {
+      const dogName = rawTarget.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const foundDog = dogs.find(
+        (d) =>
+          d.name.toLowerCase() === rawTarget.toLowerCase() ||
+          d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === dogName ||
+          d.id.toLowerCase() === rawTarget.toLowerCase()
+      );
       if (foundDog && (!selectedDog || selectedDog.id !== foundDog.id)) {
         openModal(foundDog, 0, false);
       }
-    } else if (!dogParam && selectedDog) {
+    } else if (!rawTarget && selectedDog) {
       setSelectedDog(null);
     }
-  }, [dogs, searchParams]);
+  }, [dogs, searchParams, dogSlug]);
 
   const handleInquiry = () => {
     if (!selectedDog) return;
@@ -725,6 +739,26 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                 >
                   {sheetName === 'Studs' ? 'Lock In Stud Service' : `Ask About ${selectedDog.name}`}{' '}
                   <ArrowUpRight size={18} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    const shareUrl =
+                      selectedDog.type === 'Stud'
+                        ? `https://okcfrenchies.com/studs/${slug}`
+                        : `https://okcfrenchies.com/puppies/${slug}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    setCopiedDogLink(true);
+                    setTimeout(() => setCopiedDogLink(false), 2200);
+                  }}
+                  className="w-full py-3 px-6 bg-[#F6F4EE] border border-[#DCD6C8] hover:border-[#2E5A44] text-[#1C2621] rounded-full uppercase tracking-wider text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Share2 size={14} className="text-[#2E5A44]" />
+                  {copiedDogLink
+                    ? `✓ Copied ${selectedDog.name}'s Direct Link!`
+                    : `Copy Direct Link to ${selectedDog.name}`}
                 </button>
 
                 {selectedDog.pedigreeLink && (

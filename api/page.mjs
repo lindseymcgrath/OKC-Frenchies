@@ -6,6 +6,8 @@ import {
   SEO_DATA
 } from './_htmlTemplate.mjs';
 
+const OG_VER = 'v=3';
+
 const slugify = (s) =>
   String(s || '')
     .toLowerCase()
@@ -23,82 +25,82 @@ const ROUTE_META = {
   '/': {
     title: SEO_DATA.Home.title,
     description: SEO_DATA.Home.description,
-    image: 'https://okcfrenchies.com/og/home.jpg'
+    image: `https://okcfrenchies.com/og/home.jpg?${OG_VER}`
   },
   '/french-bulldog-puppies-for-sale': {
     title: SEO_DATA.Puppies.title,
     description: SEO_DATA.Puppies.description,
-    image: 'https://okcfrenchies.com/og/puppies.jpg'
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`
   },
   '/puppies': {
     title: SEO_DATA.Puppies.title,
     description: SEO_DATA.Puppies.description,
-    image: 'https://okcfrenchies.com/og/puppies.jpg'
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`
   },
   '/french-bulldog-stud-service': {
     title: SEO_DATA.Studs.title,
     description: SEO_DATA.Studs.description,
-    image: 'https://okcfrenchies.com/og/studs.jpg'
+    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`
   },
   '/studs': {
     title: SEO_DATA.Studs.title,
     description: SEO_DATA.Studs.description,
-    image: 'https://okcfrenchies.com/og/studs.jpg'
+    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`
   },
   '/french-bulldog-coat-color-genetics': {
     title: SEO_DATA.Genetics.title,
     description: SEO_DATA.Genetics.description,
-    image: 'https://okcfrenchies.com/og/genetics.jpg'
+    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`
   },
   '/genetics': {
     title: SEO_DATA.Genetics.title,
     description: SEO_DATA.Genetics.description,
-    image: 'https://okcfrenchies.com/og/genetics.jpg'
+    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`
   },
   '/french-bulldog-breeding-blog': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: 'https://okcfrenchies.com/og/blog.jpg'
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
   },
   '/blog': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: 'https://okcfrenchies.com/og/blog.jpg'
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
   },
   '/journal': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: 'https://okcfrenchies.com/og/blog.jpg'
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
   },
   '/french-bulldog-breeding-protocol': {
     title: SEO_DATA.Protocol.title,
     description: SEO_DATA.Protocol.description,
-    image: 'https://okcfrenchies.com/og/protocol.jpg'
+    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`
   },
   '/protocol': {
     title: SEO_DATA.Protocol.title,
     description: SEO_DATA.Protocol.description,
-    image: 'https://okcfrenchies.com/og/protocol.jpg'
+    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`
   },
   '/buyer-education': {
     title: SEO_DATA.BuyerEducation.title,
     description: SEO_DATA.BuyerEducation.description,
-    image: 'https://okcfrenchies.com/og/buyer-education.jpg'
+    image: `https://okcfrenchies.com/og/buyer-education.jpg?${OG_VER}`
   },
   '/puppy-inquiry-form': {
     title: SEO_DATA.Inquiry.title,
     description: SEO_DATA.Inquiry.description,
-    image: 'https://okcfrenchies.com/og/inquiry.jpg'
+    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`
   },
   '/inquiry': {
     title: SEO_DATA.Inquiry.title,
     description: SEO_DATA.Inquiry.description,
-    image: 'https://okcfrenchies.com/og/inquiry.jpg'
+    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`
   },
   '/application': {
     title: SEO_DATA.Application.title,
     description: SEO_DATA.Application.description,
-    image: 'https://okcfrenchies.com/og/application.jpg'
+    image: `https://okcfrenchies.com/og/application.jpg?${OG_VER}`
   }
 };
 
@@ -114,7 +116,10 @@ export default function handler(req, res) {
     let image = meta.image;
     const pageUrl = `https://okcfrenchies.com${pathname}${parsed.search}`;
 
-    const dogQuery = parsed.searchParams.get('dog');
+    // Support both /puppies/:slug, /studs/:slug AND ?dog=Name
+    const pathDogMatch = pathname.match(/^\/(?:puppies|studs|french-bulldog-puppies-for-sale|french-bulldog-stud-service)\/([^/]+)$/i);
+    const dogQuery = pathDogMatch ? decodeURIComponent(pathDogMatch[1]) : parsed.searchParams.get('dog');
+
     if (dogQuery) {
       const q = dogQuery.toLowerCase();
       const allDogs = [...PUPPIES_DATA, ...STUDS_DATA];
@@ -125,9 +130,9 @@ export default function handler(req, res) {
           String(d.id || '').toLowerCase() === q
       );
       if (match) {
-        title = `${match.name} (${match.breed}) | OKC Frenchies`;
-        description = `${match.status || match.type} • ${match.dna} • ${match.price}. ${match.description || ''}`.trim();
-        image = `https://okcfrenchies.com/og/dogs/${slugify(match.name)}.jpg`;
+        title = `Meet ${match.name} (${match.breed}) | OKC Frenchies`;
+        description = `${match.status || match.type} • ${match.gender || ''} • ${match.dna}. ${match.description || 'Raised in-home in Oklahoma City. Text 405.300.8482.'}`.trim();
+        image = `https://okcfrenchies.com/og/dogs/${slugify(match.name)}.jpg?${OG_VER}`;
       }
     }
 
@@ -154,15 +159,17 @@ export default function handler(req, res) {
     html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`);
     html = html.replace(/<meta name="title" content="[^"]*">/, `<meta name="title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escapeHtml(description)}">`);
+    html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${escapeHtml(pageUrl)}">`);
     html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${escapeHtml(description)}">`);
-    html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${escapeHtml(image)}">\n    <meta property="og:url" content="${escapeHtml(pageUrl)}">`);
+    html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${escapeHtml(image)}">`);
+    html = html.replace(/<meta property="og:image:secure_url" content="[^"]*">/, `<meta property="og:image:secure_url" content="${escapeHtml(image)}">`);
     html = html.replace(/<meta property="twitter:title" content="[^"]*">/, `<meta property="twitter:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta property="twitter:description" content="[^"]*">/, `<meta property="twitter:description" content="${escapeHtml(description)}">`);
     html = html.replace(/<meta property="twitter:image" content="[^"]*">/, `<meta property="twitter:image" content="${escapeHtml(image)}">`);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.status(200).send(html);
   } catch (err) {
     console.error('api/page error:', err);
@@ -170,4 +177,3 @@ export default function handler(req, res) {
     res.status(200).send(INDEX_HTML);
   }
 }
-

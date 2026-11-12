@@ -9,6 +9,8 @@ const AnalyticsTracker = () => {
   const location = useLocation();
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+  useEffect(() => {
     ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
   }, [location.pathname, location.search]);
   return null;
@@ -71,9 +73,13 @@ const App: React.FC = () => {
             <Route path="/social-studio" element={<SocialStudio />} />
             <Route path="/admin/social-studio" element={<SocialStudio />} />
 
-            {/* 🔗 Legacy Redirects */}
+            {/* 🔗 Legacy Redirects & Direct Dog Modal Links */}
             <Route path="/puppies" element={<Puppies />} />
+            <Route path="/puppies/:dogSlug" element={<Puppies />} />
+            <Route path="/french-bulldog-puppies-for-sale/:dogSlug" element={<Puppies />} />
             <Route path="/studs" element={<Studs />} />
+            <Route path="/studs/:dogSlug" element={<Studs />} />
+            <Route path="/french-bulldog-stud-service/:dogSlug" element={<Studs />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/journal" element={<Blog />} />
             <Route path="/protocol" element={<Protocol />} />

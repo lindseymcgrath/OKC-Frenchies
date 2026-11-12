@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { X, ChevronLeft, ChevronRight, ArrowUpRight, Dna, ShieldCheck, FileText, Play } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { X, ChevronLeft, ChevronRight, ArrowUpRight, Dna, ShieldCheck, FileText, Play, Share2 } from 'lucide-react';
 import puppiesData from '../data/puppies.json';
 import studsData from '../data/studs.json';
 
@@ -53,10 +53,12 @@ const FEATURED_ORDER = ['alice', 'arya', 'brew', 'bean', 'biscotti', 'alex', 'sh
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeBreed, setActiveBreed] = useState<string>('All');
   const [cardPhotoIndex, setCardPhotoIndex] = useState<Record<string, number>>({});
   const [selectedDog, setSelectedDog] = useState<DogItem | null>(null);
   const [modalMediaIndex, setModalMediaIndex] = useState<number>(0);
+  const [copiedDogLink, setCopiedDogLink] = useState<boolean>(false);
 
   // Filter active puppies directly from src/data/puppies.json
   const activePuppies = useMemo(() => {
@@ -91,9 +93,59 @@ const Hero: React.FC = () => {
 
   const studs = useMemo(() => (studsData as DogItem[]).slice(0, 4), []);
 
-  const openDogModal = (dog: DogItem, initialPhotoIdx = 0) => {
+  const openDogModal = (dog: DogItem, initialPhotoIdx = 0, syncUrl = true) => {
     setSelectedDog(dog);
     setModalMediaIndex(initialPhotoIdx);
+    setCopiedDogLink(false);
+    if (syncUrl) {
+      const next = new URLSearchParams(searchParams);
+      next.set('dog', dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+      setSearchParams(next);
+    }
+  };
+
+  const closeDogModal = () => {
+    setSelectedDog(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('dog');
+    setSearchParams(next, { replace: true });
+  };
+
+  useEffect(() => {
+    const q = searchParams.get('dog');
+    if (q) {
+      const clean = q.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const all = [...(puppiesData as DogItem[]), ...(studsData as DogItem[])];
+      const match = all.find(
+        (d) =>
+          d.name.toLowerCase() === q.toLowerCase() ||
+          d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === clean ||
+          d.id.toLowerCase() === q.toLowerCase()
+      );
+      if (match && (!selectedDog || selectedDog.id !== match.id)) {
+        openDogModal(match, 0, false);
+      }
+    } else if (selectedDog) {
+      setSelectedDog(null);
+    }
+  }, [searchParams]);
+
+  const getDirectDogShareUrl = (dog: DogItem) => {
+    const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return dog.type === 'Stud'
+      ? `https://okcfrenchies.com/studs/${slug}`
+      : `https://okcfrenchies.com/puppies/${slug}`;
+  };
+
+  const handleCopyOrShareDogLink = async (dog: DogItem) => {
+    const url = getDirectDogShareUrl(dog);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedDogLink(true);
+      setTimeout(() => setCopiedDogLink(false), 2200);
+    } catch {
+      // ignore
+    }
   };
 
   const handleInquire = (dog: DogItem) => {
@@ -357,14 +409,14 @@ const Hero: React.FC = () => {
       {selectedDog && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-[#1C2621]/60 backdrop-blur-sm"
-          onClick={() => setSelectedDog(null)}
+          onClick={closeDogModal}
         >
           <div
             className="relative w-full max-w-5xl max-h-[90vh] bg-[#F6F4EE] border border-[#DCD6C8] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
             onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={() => setSelectedDog(null)}
+              onClick={closeDogModal}
               className="absolute top-4 right-4 z-50 p-2.5 bg-white/90 hover:bg-white text-[#1C2621] rounded-full shadow-md cursor-pointer"
               aria-label="Close"
             >
@@ -515,6 +567,17 @@ const Hero: React.FC = () => {
                     ? `Book Stud Service with ${selectedDog.name}`
                     : `Ask About ${selectedDog.name}`}{' '}
                   <ArrowUpRight size={18} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyOrShareDogLink(selectedDog)}
+                  className="w-full py-3 px-6 bg-[#F6F4EE] border border-[#DCD6C8] hover:border-[#2E5A44] text-[#1C2621] font-sans font-bold text-xs uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Share2 size={14} className="text-[#2E5A44]" />
+                  {copiedDogLink
+                    ? `✓ Copied ${selectedDog.name}'s Direct Link!`
+                    : `Copy Direct Link to ${selectedDog.name}`}
                 </button>
 
                 {selectedDog.pedigreeLink && (

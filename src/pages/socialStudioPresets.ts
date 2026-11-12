@@ -2,10 +2,9 @@ import glossaryData from '../data/glossary.json';
 import blogData from '../data/blog.json';
 
 export type ContentMode = 'puppies' | 'studs' | 'glossary' | 'standards' | 'didyouknow';
-export type FramePreset = 'minimal' | 'arch' | 'editorial' | 'sage';
+export type FramePreset = 'minimal' | 'arch' | 'editorial' | 'sage' | 'no-photo';
 export type CanvasRatio = 'feed' | 'story' | 'square';
 export type BgStyle =
-  | 'photo'
   | 'cream-editorial'
   | 'forest-luxe'
   | 'blush-botanical'
@@ -86,13 +85,24 @@ export interface TopicCardItem {
 
 export const BG_STYLES: Record<
   BgStyle,
-  { label: string; bg1: string; bg2: string; accent: string; darkText: boolean }
+  {
+    label: string;
+    bg1: string;
+    bg2: string;
+    cardBg: string;
+    matOuter: string;
+    border: string;
+    accent: string;
+    darkText: boolean;
+  }
 > = {
-  photo: { label: '📷 Photo Background', bg1: '#EFECE4', bg2: '#EFECE4', accent: '#2E5A44', darkText: true },
   'cream-editorial': {
     label: '🌿 Botanical Cream',
     bg1: '#FBF9F4',
     bg2: '#EFEAE0',
+    cardBg: '#FFFFFF',
+    matOuter: '#EAE3D5',
+    border: '#E2DCCD',
     accent: '#2E5A44',
     darkText: true
   },
@@ -100,13 +110,19 @@ export const BG_STYLES: Record<
     label: '🌲 Deep Forest',
     bg1: '#244736',
     bg2: '#172E23',
+    cardBg: '#1E3B2D',
+    matOuter: '#14291E',
+    border: 'rgba(244,211,126,0.32)',
     accent: '#F4D37E',
     darkText: false
   },
   'blush-botanical': {
-    label: '🌸 Soft Rose Editorial',
+    label: '🌸 Soft Rose',
     bg1: '#FDF3F2',
     bg2: '#F5DFDC',
+    cardBg: '#FFF9F8',
+    matOuter: '#EED0CC',
+    border: '#EBC6C2',
     accent: '#8C2F2B',
     darkText: true
   },
@@ -114,6 +130,9 @@ export const BG_STYLES: Record<
     label: '☀️ Sunlit Champagne',
     bg1: '#FAF3E3',
     bg2: '#EFE2C6',
+    cardBg: '#FFFDF7',
+    matOuter: '#E5D3AE',
+    border: '#E2CFA8',
     accent: '#D46A4E',
     darkText: true
   },
@@ -121,6 +140,9 @@ export const BG_STYLES: Record<
     label: '🍃 Sage Mist',
     bg1: '#EAF2ED',
     bg2: '#D5E5DC',
+    cardBg: '#F6FAF7',
+    matOuter: '#2E5A44',
+    border: '#C6DBD0',
     accent: '#2E5A44',
     darkText: true
   }
@@ -206,14 +228,14 @@ export const STANDARDS_AND_BLOG_ITEMS: TopicCardItem[] = [
     bgStyle: 'cream-editorial',
     shareUrl: 'https://okcfrenchies.com/buyer-education'
   },
-  ...(blogData as any[]).map((b) => ({
+  ...(blogData as any[]).map((b, idx) => ({
     id: `blog-${b.id}`,
     badge: `📖 JOURNAL • ${String(b.category || 'BREEDER NOTES').toUpperCase()}`,
     title: b.title,
     body:
       (b.summary || '').length > 155 ? `${b.summary.slice(0, 152).trim()}...` : b.summary || '',
     footer: 'Read Full Guide at OKCFrenchies.com',
-    bgStyle: b.image ? ('photo' as BgStyle) : ('forest-luxe' as BgStyle),
+    bgStyle: (['forest-luxe', 'cream-editorial', 'sage-mist'] as BgStyle[])[idx % 3],
     image: b.image || '',
     shareUrl: `https://okcfrenchies.com/french-bulldog-breeding-blog?post=${encodeURIComponent(b.id)}`
   }))
