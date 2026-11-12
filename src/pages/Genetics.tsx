@@ -24,7 +24,7 @@ const Genetics: React.FC = () => {
   };
 
   return (
-    <div className="pt-20">
+    <div>
       <SEO 
         title={seoData.Genetics.title}
         description={seoData.Genetics.description}
