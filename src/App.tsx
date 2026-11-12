@@ -46,7 +46,7 @@ const App: React.FC = () => {
         }
       `}</style>
 
-      <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-luxury-teal selection:text-black font-sans">
+      <div className="min-h-screen bg-[#F6F4EE] text-[#1C2621] selection:bg-[#2E5A44] selection:text-white font-sans">
         <Navbar />
         <main className="min-h-screen">
           <Routes>

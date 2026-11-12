@@ -1,270 +1,542 @@
-import React, { useEffect, useRef } from 'react';
-import { ArrowDown } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { X, ChevronLeft, ChevronRight, ArrowUpRight, Dna, ShieldCheck, FileText, Play } from 'lucide-react';
+import puppiesData from '../data/puppies.json';
+import studsData from '../data/studs.json';
+
+interface MediaItem {
+  type: 'image' | 'video';
+  url: string;
+}
+
+interface DogItem {
+  id: string;
+  name: string;
+  status: string;
+  dna: string;
+  dna_technical: string;
+  price: string;
+  description: string;
+  altText: string;
+  videoUrl: string;
+  breed: string;
+  pedigreeLink: string;
+  type: string;
+  gender: string;
+  image: string;
+  media: MediaItem[];
+}
+
+// Helper to give each puppy a warm badge without altering src/data/puppies.json
+const getGardenBadge = (dog: DogItem): string => {
+  if (dog.status && dog.status.toLowerCase() === 'pending') {
+    return '⏳ Pending / Reserved';
+  }
+  const nameLower = dog.name.toLowerCase();
+  if (nameLower === 'alice') return '✨ Super Tiny Pocket Princess';
+  if (nameLower === 'arya') return '✨ Compact Wrinkle Queen';
+  if (nameLower === 'brew') return '✨ Sleepy Sweetheart • Merle';
+  if (nameLower === 'bean') return '✨ Lilac Tri Cuddle Bug';
+  if (nameLower === 'biscotti') return '✨ Sweet Chocolate Tri';
+  if (nameLower === 'alex') return '✨ Visual Fluffy Gentleman';
+  if (nameLower === 'shuffin') return '✨ One-of-a-Kind Floodle';
+
+  const dna = (dog.dna || '').toLowerCase();
+  if (dna.includes('floodle')) return '✨ Rare Floodle';
+  if (dna.includes('big rope')) return '✨ Big Rope • Rare Carries';
+  if (dna.includes('merle')) return '✨ Rare Merle Coat';
+  if (dna.includes('fluffy')) return '✨ Fluffy Coat';
+  return `✨ Available ${dog.gender || 'Puppy'}`;
+};
+
+const FEATURED_ORDER = ['alice', 'arya', 'brew', 'bean', 'biscotti', 'alex', 'shuffin', 'brulee'];
 
 const Hero: React.FC = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const navigate = useNavigate();
+  const [activeBreed, setActiveBreed] = useState<string>('All');
+  const [cardPhotoIndex, setCardPhotoIndex] = useState<Record<string, number>>({});
+  const [selectedDog, setSelectedDog] = useState<DogItem | null>(null);
+  const [modalMediaIndex, setModalMediaIndex] = useState<number>(0);
 
-  const scrollToGenetics = () => {
-    const element = document.getElementById('genetics');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  // Filter active puppies directly from src/data/puppies.json
+  const activePuppies = useMemo(() => {
+    const available = (puppiesData as DogItem[]).filter((d) => {
+      const s = (d.status || 'available').toLowerCase();
+      return s === 'available' || s === 'pending';
+    });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let width = canvas.width = window.innerWidth;
-    let height = canvas.height = window.innerHeight;
-    
-    // Parallax State
-    let mouseX = width / 2;
-    let mouseY = height / 2;
-    let targetX = width / 2;
-    let targetY = height / 2;
-
-    const handleMouseMove = (e: MouseEvent) => {
-        targetX = e.clientX;
-        targetY = e.clientY;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    // Animation constants
-    let time = 0;
-
-    const drawGrid = (vpX: number, vpY: number) => {
-        ctx.strokeStyle = 'rgba(45, 212, 191, 0.1)'; // Faint Teal
-        ctx.lineWidth = 1;
-
-        // Draw Vertical Lines converging to vanishing point
-        const numLines = 40;
-        for (let i = 0; i <= numLines; i++) {
-            const x = (width / numLines) * i;
-            // Introduce parallax offset to x based on mouse
-            const offsetX = (x - width/2) * 1.5; 
-            
-            ctx.beginPath();
-            // Start at bottom/top edges
-            ctx.moveTo(x, height);
-            ctx.lineTo(vpX + offsetX * 0.1, vpY);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(vpX + offsetX * 0.1, vpY);
-            ctx.stroke();
-        }
-
-        // Draw Horizontal Lines (simulating depth)
-        const horizon = vpY;
-        const floorHeight = height - horizon;
-        
-        for (let i = 1; i < 20; i++) {
-            const d = i / 20;
-            const yOffset = Math.pow(d, 3) * floorHeight; 
-            
-            const y = horizon + yOffset;
-            
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-
-            // Ceiling mirror
-            const yCeil = horizon - yOffset;
-            ctx.beginPath();
-            ctx.moveTo(0, yCeil);
-            ctx.lineTo(width, yCeil);
-            ctx.stroke();
-        }
-    };
-
-    const drawDNA = (t: number) => {
-        // Dynamic positioning: 80% to the right to sit next to centered text
-        const helixX = width * 0.80; 
-        
-        const amplitude = 40;
-        const frequency = 0.02;
-        const gap = 200; // Height of strand
-        const strandYStart = height * 0.2;
-        const strandYEnd = height * 0.8;
-        const step = 10;
-        
-        // Pulse logic: travels down every 5 seconds
-        const pulseSpeed = 0.0005; 
-        const pulsePos = (Date.now() * pulseSpeed) % 1; 
-        const pulseY = strandYStart + pulsePos * (strandYEnd - strandYStart);
-
-        ctx.lineWidth = 2;
-
-        for (let y = strandYStart; y < strandYEnd; y += step) {
-            // Helix Math
-            const yOffset = y - strandYStart;
-            const x1 = helixX + Math.sin(yOffset * frequency + t * 0.02) * amplitude;
-            const x2 = helixX + Math.sin(yOffset * frequency + t * 0.02 + Math.PI) * amplitude;
-
-            // Base opacity
-            let opacity = 0.2;
-            let color = '45, 212, 191'; // Teal
-
-            // Pulse Glow Effect
-            const distToPulse = Math.abs(y - pulseY);
-            if (distToPulse < 80) {
-                opacity = 0.2 + (1 - distToPulse / 80) * 0.8;
-                // Add Magenta tint near pulse
-                if (distToPulse < 30) color = '255, 0, 255'; 
-            }
-
-            // Draw Rungs
-            if (y % (step * 2) === 0) {
-                ctx.strokeStyle = `rgba(${color}, ${opacity * 0.5})`;
-                ctx.beginPath();
-                ctx.moveTo(x1, y);
-                ctx.lineTo(x2, y);
-                ctx.stroke();
-            }
-
-            // Draw Nodes
-            ctx.fillStyle = `rgba(${color}, ${opacity})`;
-            
-            ctx.beginPath();
-            ctx.arc(x1, y, 3, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(x2, y, 3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    };
-
-    const animate = () => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Smooth parallax
-      const dx = targetX - mouseX;
-      const dy = targetY - mouseY;
-      mouseX += dx * 0.05;
-      mouseY += dy * 0.05;
-
-      const vpX = width / 2 - (mouseX - width / 2) * 0.1;
-      const vpY = height / 2 - (mouseY - height / 2) * 0.1;
-
-      drawGrid(vpX, vpY);
-      drawDNA(time);
-
-      time++;
-      requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    const handleResize = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-        window.removeEventListener('resize', handleResize);
-        window.removeEventListener('mousemove', handleMouseMove);
-    };
+    return [...available].sort((a, b) => {
+      const idxA = FEATURED_ORDER.indexOf(a.name.toLowerCase());
+      const idxB = FEATURED_ORDER.indexOf(b.name.toLowerCase());
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return 0;
+    });
   }, []);
 
+  const breeds = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of activePuppies) {
+      const b = p.breed || 'French Bulldog';
+      counts[b] = (counts[b] || 0) + 1;
+    }
+    return counts;
+  }, [activePuppies]);
+
+  const filteredPuppies = useMemo(() => {
+    if (activeBreed === 'All') return activePuppies;
+    return activePuppies.filter((p) => (p.breed || 'French Bulldog') === activeBreed);
+  }, [activePuppies, activeBreed]);
+
+  const studs = useMemo(() => (studsData as DogItem[]).slice(0, 4), []);
+
+  const openDogModal = (dog: DogItem, initialPhotoIdx = 0) => {
+    setSelectedDog(dog);
+    setModalMediaIndex(initialPhotoIdx);
+  };
+
+  const handleInquire = (dog: DogItem) => {
+    const interest = dog.type === 'Stud' ? 'Stud Service' : 'Puppy Acquisition';
+    navigate(`/inquiry?dog=${encodeURIComponent(dog.name)}&interest=${encodeURIComponent(interest)}`);
+  };
+
   return (
-    <section id="hero" className="relative w-full h-screen flex flex-col items-center justify-center overflow-hidden bg-[#020617] selection:bg-luxury-teal selection:text-black border-b border-slate-900">
-      
-      {/* Canvas Background (Grid & DNA) */}
-      <canvas 
-        ref={canvasRef} 
-        className="absolute inset-0 z-0 pointer-events-none opacity-50"
-      />
-      
-      {/* --- Ambient Aurora Effects (Symmetry: Magenta Left / Teal Center / Gold Right) --- */}
-      
-      {/* 1. Magenta Nebula (Left Center) - Directly behind "ELITE" start for symmetry with DNA Helix */}
-      <div className="absolute top-1/2 left-[10%] -translate-y-1/2 w-[600px] h-[600px] bg-fuchsia-600/10 rounded-full blur-[140px] animate-pulse-slow pointer-events-none mix-blend-screen z-0" />
-      
-      {/* 2. Central Teal Glow (Deep) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(45,212,191,0.08)_0%,transparent_70%)] pointer-events-none z-0" />
-      
-      {/* 3. Gold/Purple Subtle Nebula (Bottom Right) */}
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-indigo-900/30 rounded-full blur-[100px] animate-pulse pointer-events-none mix-blend-screen z-0" />
-
-      {/* Noise Texture Overlay */}
-      <div className="absolute inset-0 bg-noise opacity-30 mix-blend-overlay pointer-events-none z-0"></div>
-
-      {/* Main Content */}
-      <div className="relative z-10 max-w-7xl w-full mx-auto px-6 flex flex-col items-center justify-center h-full">
-        
-        <div className="text-center relative">
-            <span className="inline-block font-sans text-luxury-teal text-[10px] md:text-xs tracking-widest md:tracking-[0.5em] uppercase mb-6 px-4 text-center leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                A Private Study in Rare Canine Genetics
+    <section className="bg-[#F6F4EE] text-[#1C2621] pt-8 pb-24">
+      <div className="max-w-[1340px] mx-auto px-6">
+        {/* Sunlit Garden Intro Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end mb-10">
+          <div className="lg:col-span-7">
+            <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-[13px] px-4 py-1.5 rounded-full mb-4">
+              🏡 Oklahoma City Family Breeder • Available Right Now
             </span>
-            
-            <h1 className="flex flex-col items-center justify-center font-serif font-bold tracking-tight leading-none mb-8">
-                <span className="text-5xl md:text-8xl lg:text-9xl text-transparent bg-clip-text bg-gradient-to-r from-slate-200 via-white to-slate-200 bg-[length:200%_auto] animate-shine drop-shadow-2xl">
-                    ELITE
-                </span>
-                
-                {/* DNA Text: Embossed Glass with Metallic Sweep */}
-                <div className="relative inline-block mt-[-0.1em]">
-                    {/* Base Text */}
-                    <span 
-                        className="relative z-10 text-6xl md:text-9xl lg:text-[11rem] tracking-[0.05em] font-black text-transparent bg-clip-text bg-gradient-to-b from-slate-300 via-slate-500 to-slate-700" 
-                        style={{ 
-                            textShadow: '0px 2px 4px rgba(0,0,0,0.9), 0px -1px 0px rgba(255,255,255,0.4)',
-                            WebkitTextStroke: '1px rgba(255,255,255,0.1)' 
-                        }}
-                    >
-                        DNA
-                    </span>
-                    
-                    {/* Metallic Beam Overlay (Sweep Animation) - Speed set to 3s via animate-shine */}
-                    <span 
-                        className="absolute inset-0 z-20 text-6xl md:text-9xl lg:text-[11rem] tracking-[0.05em] font-black text-transparent bg-clip-text bg-gradient-to-r from-transparent via-white/80 to-transparent bg-[length:200%_auto] animate-shine pointer-events-none"
-                        style={{ mixBlendMode: 'overlay' }}
-                    >
-                        DNA
-                    </span>
-                </div>
+            <h1 className="font-display font-bold text-4xl sm:text-5xl lg:text-[56px] leading-[1.06] tracking-tight text-[#1C2621]">
+              Raised in the sunlight,{' '}
+              <em className="italic font-semibold text-[#D46A4E]">ready for your couch.</em>
             </h1>
-            
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 w-full px-4">
-                <div className="hidden md:block h-px w-12 md:w-24 bg-gradient-to-r from-transparent to-luxury-teal/50" />
-                <p className="font-serif text-slate-400 text-xs md:text-lg tracking-widest uppercase text-center leading-relaxed">
-                    Specializing in Rare Loci and Structural Excellence
-                </p>
-                <div className="hidden md:block h-px w-12 md:w-24 bg-gradient-to-l from-transparent to-luxury-teal/50" />
-            </div>
+          </div>
 
-            <div className="mt-12 flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-1000 delay-500">
-                <button 
-                    onClick={scrollToGenetics}
-                    className="group relative px-8 py-4 bg-transparent border border-luxury-teal/30 text-white font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-luxury-teal/10 hover:border-luxury-teal transition-all duration-500 overflow-hidden"
+          <div className="lg:col-span-5 flex flex-col lg:items-end gap-4">
+            <p className="font-sans text-[#5C6B63] text-[15px] lg:text-right max-w-md leading-relaxed">
+              Every available puppy is right here on the front page — click the photo numbers on any card to flip through their newest portraits, or tap a puppy for full DNA details.
+            </p>
+
+            {/* Breed Filter Pills */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveBreed('All')}
+                className={`px-5 py-2.5 rounded-full font-sans text-sm font-bold border transition-all cursor-pointer ${
+                  activeBreed === 'All'
+                    ? 'bg-[#2E5A44] text-white border-[#2E5A44] shadow-sm'
+                    : 'bg-white text-[#1C2621] border-[#DCD6C8] hover:border-[#2E5A44]'
+                }`}
+              >
+                All Puppies ({activePuppies.length})
+              </button>
+              {Object.entries(breeds).map(([breedName, count]) => (
+                <button
+                  key={breedName}
+                  onClick={() => setActiveBreed(breedName)}
+                  className={`px-5 py-2.5 rounded-full font-sans text-sm font-bold border transition-all cursor-pointer ${
+                    activeBreed === breedName
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44] shadow-sm'
+                      : 'bg-white text-[#1C2621] border-[#DCD6C8] hover:border-[#2E5A44]'
+                  }`}
                 >
-                    <span className="relative z-10">Explore Genetics</span>
-                    {/* Automated Sweep */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent w-1/2 skew-x-[-20deg] animate-button-sweep" />
+                  {breedName === 'French Bulldog'
+                    ? `Frenchies (${count})`
+                    : breedName === 'Mini English Bulldog'
+                    ? `Mini English (${count})`
+                    : `${breedName} (${count})`}
                 </button>
+              ))}
             </div>
+          </div>
         </div>
 
+        {/* Arched Botanical Nursery Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredPuppies.map((dog) => {
+            const imageMedia = (dog.media || []).filter((m) => m.type === 'image');
+            const photos = imageMedia.length > 0 ? imageMedia.map((m) => m.url) : [dog.image];
+            const currentIdx = cardPhotoIndex[dog.id] || 0;
+            const currentSrc = photos[currentIdx] || dog.image;
+            const isPending = dog.status && dog.status.toLowerCase() === 'pending';
+
+            return (
+              <div
+                key={dog.id}
+                onClick={() => openDogModal(dog, currentIdx)}
+                className="group bg-white rounded-[140px_140px_26px_26px] p-3.5 pb-5 border border-[#EAE5D9] shadow-[0_12px_30px_rgba(28,38,33,0.06)] hover:-translate-y-1.5 hover:shadow-[0_18px_38px_rgba(28,38,33,0.1)] transition-all duration-300 text-center flex flex-col cursor-pointer"
+              >
+                {/* Arched Portrait Frame */}
+                <div className="relative rounded-[130px_130px_18px_18px] overflow-hidden aspect-[4/4.35] bg-[#EFECE4]">
+                  <img
+                    src={currentSrc}
+                    alt={dog.altText || `${dog.name} - ${dog.dna} ${dog.breed}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+
+                  {/* Multi-Photo Numbered Dots */}
+                  {photos.length > 1 && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-sm z-10"
+                    >
+                      {photos.map((_, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() =>
+                            setCardPhotoIndex((prev) => ({
+                              ...prev,
+                              [dog.id]: idx
+                            }))
+                          }
+                          className={`w-6 h-6 rounded-full text-[11px] font-bold transition-colors cursor-pointer ${
+                            currentIdx === idx
+                              ? 'bg-[#2E5A44] text-white'
+                              : 'bg-[#E2DDD2] text-[#1C2621] hover:bg-[#d2cbbd]'
+                          }`}
+                        >
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Golden Personality / Status Pill */}
+                <div className="relative z-10 -mt-3.5 mb-1">
+                  <span
+                    className={`inline-block font-sans font-bold text-[12px] px-3.5 py-1 rounded-full shadow-xs ${
+                      isPending
+                        ? 'bg-[#E8DFC8] text-[#5C533E]'
+                        : 'bg-[#F4D37E] text-[#1C2621]'
+                    }`}
+                  >
+                    {getGardenBadge(dog)}
+                  </span>
+                </div>
+
+                {/* Name & Gender */}
+                <h2 className="font-display font-bold text-[26px] text-[#1C2621] mt-1 flex items-center justify-center gap-1.5">
+                  {dog.name}
+                  {dog.gender === 'Male' && (
+                    <span className="text-[#2B6CB0] text-lg font-sans" title="Male">
+                      ♂
+                    </span>
+                  )}
+                  {dog.gender === 'Female' && (
+                    <span className="text-[#C5306C] text-lg font-sans" title="Female">
+                      ♀
+                    </span>
+                  )}
+                </h2>
+
+                <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-[#2E5A44]/80 mt-0.5">
+                  {dog.breed} • {dog.gender}
+                </span>
+
+                {/* DNA Line */}
+                <p className="font-sans text-[#5C6B63] text-[13px] leading-snug mt-2 mb-4 px-2 min-h-[36px] flex items-center justify-center">
+                  {dog.dna}
+                </p>
+
+                {/* Price & Action Footer */}
+                <div className="mt-auto pt-3 px-2 border-t border-[#F0ECE1] flex items-center justify-between">
+                  <span className="font-sans font-extrabold text-[18px] text-[#D46A4E]">
+                    {dog.price}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDogModal(dog, currentIdx);
+                    }}
+                    className="bg-[#E3EFE8] hover:bg-[#2E5A44] text-[#2E5A44] hover:text-white font-sans font-bold text-[13px] px-4 py-2 rounded-full transition-colors cursor-pointer"
+                  >
+                    Inquire →
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Secondary CTA bar to see Past Litters / Coat Calculator */}
+        <div className="mt-12 bg-white border border-[#EAE5D9] rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xs">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-[#2E5A44]">
+              🧬 Health Tested &amp; Color Verified
+            </span>
+            <h3 className="font-display text-2xl sm:text-3xl font-bold text-[#1C2621] mt-1">
+              Curious about our rare Pink, Fluffy &amp; Floodle genetics?
+            </h3>
+            <p className="font-sans text-sm text-[#5C6B63] mt-1">
+              Explore our interactive Coat Color Genetics guide or browse previously placed puppies from our program.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 shrink-0">
+            <Link
+              to="/french-bulldog-puppies-for-sale"
+              className="px-5 py-3 rounded-full border border-[#DCD6C8] hover:border-[#2E5A44] font-sans text-sm font-bold text-[#1C2621] transition-colors"
+            >
+              View Previously Sold Pups
+            </Link>
+            <Link
+              to="/french-bulldog-coat-color-genetics"
+              className="px-5 py-3 rounded-full bg-[#2E5A44] hover:bg-[#234735] text-white font-sans text-sm font-bold transition-colors"
+            >
+              Explore Coat Genetics →
+            </Link>
+          </div>
+        </div>
+
+        {/* Proven Studs Preview Section */}
+        {studs.length > 0 && (
+          <div className="mt-20 pt-16 border-t border-[#E2DDD2]">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+              <div>
+                <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3.5 py-1 rounded-full mb-3">
+                  👑 Proven Producers • Worldwide Shipping
+                </span>
+                <h2 className="font-display text-3xl sm:text-4xl font-bold text-[#1C2621]">
+                  Meet Our Stud Lineup
+                </h2>
+              </div>
+              <Link
+                to="/french-bulldog-stud-service"
+                className="inline-flex items-center gap-1.5 font-sans font-bold text-sm text-[#2E5A44] hover:text-[#D46A4E] transition-colors"
+              >
+                View Full Stud Gallery <ArrowUpRight size={18} />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {studs.map((stud) => (
+                <div
+                  key={stud.id}
+                  onClick={() => openDogModal(stud, 0)}
+                  className="group bg-white rounded-[120px_120px_24px_24px] p-3.5 pb-5 border border-[#EAE5D9] shadow-xs hover:-translate-y-1 transition-all duration-300 text-center flex flex-col cursor-pointer"
+                >
+                  <div className="relative rounded-[110px_110px_16px_16px] overflow-hidden aspect-[4/4.2] bg-[#EFECE4]">
+                    <img
+                      src={stud.image}
+                      alt={stud.altText || stud.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="relative z-10 -mt-3 mb-1">
+                    <span className="inline-block bg-[#2E5A44] text-white font-sans font-bold text-[11px] px-3 py-1 rounded-full">
+                      🧬 Proven Stud
+                    </span>
+                  </div>
+                  <h3 className="font-display font-bold text-2xl text-[#1C2621] mt-1">
+                    {stud.name}
+                  </h3>
+                  <p className="font-sans text-[#5C6B63] text-xs mt-1 mb-3 px-2 line-clamp-2">
+                    {stud.dna}
+                  </p>
+                  <div className="mt-auto pt-3 px-2 border-t border-[#F0ECE1] flex items-center justify-between">
+                    <span className="font-sans font-extrabold text-base text-[#D46A4E]">
+                      {stud.price}
+                    </span>
+                    <span className="text-xs font-bold text-[#2E5A44] group-hover:underline">
+                      Stud Info →
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Scroll Indicator */}
-      <button 
-        onClick={scrollToGenetics}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 text-luxury-teal/50 hover:text-luxury-teal transition-colors animate-bounce cursor-pointer z-20"
-      >
-        <ArrowDown size={24} />
-      </button>
-      
-      {/* Bottom Gradient Fade */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[#020617] to-transparent pointer-events-none z-20" />
+      {/* Sunlit Garden Detail Modal */}
+      {selectedDog && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-[#1C2621]/60 backdrop-blur-sm"
+          onClick={() => setSelectedDog(null)}
+        >
+          <div
+            className="relative w-full max-w-5xl max-h-[90vh] bg-[#F6F4EE] border border-[#DCD6C8] rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedDog(null)}
+              className="absolute top-4 right-4 z-50 p-2.5 bg-white/90 hover:bg-white text-[#1C2621] rounded-full shadow-md cursor-pointer"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Left: Photo / Media Viewer */}
+            <div className="w-full md:w-3/5 bg-[#EFECE4] flex flex-col justify-between relative min-h-[340px] md:min-h-[540px]">
+              {(() => {
+                const mediaList =
+                  selectedDog.media && selectedDog.media.length > 0
+                    ? selectedDog.media
+                    : [{ type: 'image' as const, url: selectedDog.image }];
+                const currentMedia = mediaList[modalMediaIndex] || mediaList[0];
+
+                return (
+                  <>
+                    <div className="flex-1 relative flex items-center justify-center overflow-hidden p-4">
+                      {currentMedia.type === 'video' ? (
+                        <video
+                          src={currentMedia.url}
+                          controls
+                          autoPlay
+                          className="max-h-[65vh] w-auto rounded-2xl"
+                        />
+                      ) : (
+                        <img
+                          src={currentMedia.url}
+                          alt={selectedDog.altText || selectedDog.name}
+                          className="max-h-[65vh] w-auto object-contain rounded-2xl shadow-sm"
+                        />
+                      )}
+
+                      {mediaList.length > 1 && (
+                        <>
+                          <button
+                            onClick={() =>
+                              setModalMediaIndex(
+                                (prev) => (prev - 1 + mediaList.length) % mediaList.length
+                              )
+                            }
+                            className="absolute left-4 p-2.5 rounded-full bg-white/90 hover:bg-white text-[#1C2621] shadow-md cursor-pointer"
+                          >
+                            <ChevronLeft size={22} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setModalMediaIndex((prev) => (prev + 1) % mediaList.length)
+                            }
+                            className="absolute right-4 p-2.5 rounded-full bg-white/90 hover:bg-white text-[#1C2621] shadow-md cursor-pointer"
+                          >
+                            <ChevronRight size={22} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {mediaList.length > 1 && (
+                      <div className="p-3 bg-white border-t border-[#E2DDD2] flex items-center justify-center gap-3">
+                        {mediaList.map((item, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setModalMediaIndex(idx)}
+                            className={`w-16 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                              modalMediaIndex === idx
+                                ? 'border-[#2E5A44] scale-105 shadow-xs'
+                                : 'border-transparent opacity-60 hover:opacity-100'
+                            }`}
+                          >
+                            {item.type === 'video' ? (
+                              <div className="w-full h-full bg-[#1C2621] flex items-center justify-center">
+                                <Play size={16} className="text-white" />
+                              </div>
+                            ) : (
+                              <img src={item.url} alt="" className="w-full h-full object-cover" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Right: Puppy Details & Inquiry Button */}
+            <div className="w-full md:w-2/5 p-6 sm:p-8 overflow-y-auto flex flex-col bg-white">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3 py-1 rounded-full">
+                  {selectedDog.status || selectedDog.type}
+                </span>
+                <span className="text-xs font-bold text-[#5C6B63] uppercase tracking-wider">
+                  {selectedDog.breed}
+                </span>
+              </div>
+
+              <h2 className="font-display text-4xl font-bold text-[#1C2621] flex items-center gap-2">
+                {selectedDog.name}
+                {selectedDog.gender === 'Male' && (
+                  <span className="text-[#2B6CB0] text-2xl font-sans">♂</span>
+                )}
+                {selectedDog.gender === 'Female' && (
+                  <span className="text-[#C5306C] text-2xl font-sans">♀</span>
+                )}
+              </h2>
+
+              <p className="font-sans text-[#5C6B63] text-sm leading-relaxed mt-3 mb-6">
+                {selectedDog.description || `${selectedDog.name} is an adorable ${selectedDog.dna} ${selectedDog.breed}.`}
+              </p>
+
+              <div className="space-y-3 bg-[#F6F4EE] p-4 rounded-2xl border border-[#EAE5D9] mb-6">
+                <div>
+                  <span className="block text-[11px] font-bold uppercase tracking-wider text-[#5C6B63]">
+                    Coat &amp; Phenotype
+                  </span>
+                  <span className="font-sans font-bold text-sm text-[#2E5A44]">
+                    {selectedDog.dna}
+                  </span>
+                </div>
+
+                {selectedDog.dna_technical && (
+                  <div className="pt-2 border-t border-[#E2DDD2]">
+                    <span className="block text-[11px] font-bold uppercase tracking-wider text-[#5C6B63]">
+                      DNA Loci Sequence
+                    </span>
+                    <span className="font-mono text-xs text-[#1C2621]">
+                      {selectedDog.dna_technical}
+                    </span>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-[#E2DDD2] flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#5C6B63]">
+                    {selectedDog.type === 'Stud' ? 'Stud Fee' : 'Price'}
+                  </span>
+                  <span className="font-display font-bold text-2xl text-[#D46A4E]">
+                    {selectedDog.price}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-auto space-y-3">
+                <button
+                  onClick={() => handleInquire(selectedDog)}
+                  className="w-full py-4 px-6 bg-[#2E5A44] hover:bg-[#234735] text-white font-sans font-bold text-sm rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {selectedDog.type === 'Stud'
+                    ? `Book Stud Service with ${selectedDog.name}`
+                    : `Ask About ${selectedDog.name}`}{' '}
+                  <ArrowUpRight size={18} />
+                </button>
+
+                {selectedDog.pedigreeLink && (
+                  <a
+                    href={selectedDog.pedigreeLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-6 border border-[#DCD6C8] hover:border-[#2E5A44] text-[#1C2621] font-sans font-bold text-xs uppercase tracking-wider rounded-full transition-all flex items-center justify-center gap-2"
+                  >
+                    <FileText size={14} /> View Pedigree
+                  </a>
+                )}
+
+                <div className="flex items-center justify-center gap-2 pt-2 text-xs text-[#5C6B63]">
+                  <ShieldCheck size={15} className="text-[#2E5A44]" />
+                  <span>Health Tested • OKC Pickup or Flight Nanny Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
