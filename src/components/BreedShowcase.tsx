@@ -145,7 +145,6 @@ const BreedShowcase: React.FC = () => {
                             src={dog.image} 
                             alt={dog.name}
                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 grayscale group-hover:grayscale-0"
-                            crossOrigin="anonymous"
                             onError={() => handleImageError(dog.id)}
                         />
                     )}

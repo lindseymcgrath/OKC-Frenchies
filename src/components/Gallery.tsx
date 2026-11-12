@@ -335,7 +335,6 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                                             src={dog.image}
                                                             alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog Stud Service OKC`}
                                                             className="w-full h-full object-cover opacity-100 group-hover:scale-105 transition-all duration-700"
-                                                            crossOrigin="anonymous"
                                                             onError={() => handleImageError(dog.id)}
                                                         />
                                                     )}
@@ -418,7 +417,6 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                                             src={dog.image}
                                                             alt={dog.altText || `${dog.name} - ${dog.dna} French Bulldog`}
                                                             className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-all duration-700 grayscale hover:grayscale-0"
-                                                            crossOrigin="anonymous"
                                                             onError={() => handleImageError(dog.id)}
                                                         />
                                                     )}
@@ -515,7 +513,6 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                                         src={`${currentMedia.url}`}
                                                         className="w-full h-full object-contain"
                                                         alt={selectedDog.altText || `${selectedDog.name} French Bulldog Stud genetics`}
-                                                        crossOrigin="anonymous"
                                                         onError={() => setModalImageError(true)}
                                                     />
                                                 )}
@@ -565,7 +562,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                                                 <Play size={20} className="text-white fill-white" />
                                             </div>
                                         ) : (
-                                            <img src={item.url} alt="" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                            <img src={item.url} alt="" className="w-full h-full object-cover" />
                                         )}
                                     </button>
                                 ))}

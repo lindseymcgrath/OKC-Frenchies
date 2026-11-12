@@ -1,4 +1,23 @@
 {
+  "redirects": [
+    { "source": "/images/data/puppies_1_main.webp", "destination": "/images/puppies/shuffin.webp", "permanent": true },
+    { "source": "/images/data/puppies_2_main.webp", "destination": "/images/puppies/alex.webp", "permanent": true },
+    { "source": "/images/data/puppies_3_main.webp", "destination": "/images/puppies/andrew.webp", "permanent": true },
+    { "source": "/images/data/puppies_6_main.webp", "destination": "/images/puppies/brew-1.webp", "permanent": true },
+    { "source": "/images/data/puppies_7_main.webp", "destination": "/images/puppies/bean-1.webp", "permanent": true },
+    { "source": "/images/data/puppies_8_main.webp", "destination": "/images/puppies/biscotti.webp", "permanent": true },
+    { "source": "/images/data/puppies_9_main.webp", "destination": "/images/puppies/brulee.webp", "permanent": true },
+    { "source": "/images/data/puppies_10_main.webp", "destination": "/images/puppies/six-figures-1.webp", "permanent": true },
+    { "source": "/images/data/puppies_10_img1.webp", "destination": "/images/puppies/six-figures-2.webp", "permanent": true },
+    { "source": "/images/data/puppies_10_img2.webp", "destination": "/images/puppies/six-figures-3.webp", "permanent": true },
+    { "source": "/images/data/puppies_11_main.webp", "destination": "/images/puppies/scrappy.webp", "permanent": true },
+    { "source": "/images/data/puppies_12_main.webp", "destination": "/images/puppies/scooby.webp", "permanent": true },
+    { "source": "/images/data/puppies_13_main.webp", "destination": "/images/puppies/polar.webp", "permanent": true },
+    { "source": "/images/data/studs_1_main.webp", "destination": "/images/studs/ghost.webp", "permanent": true },
+    { "source": "/images/data/studs_2_main.webp", "destination": "/images/studs/everest.webp", "permanent": true },
+    { "source": "/images/data/studs_3_main.webp", "destination": "/images/studs/shifu.webp", "permanent": true },
+    { "source": "/images/data/studs_4_main.webp", "destination": "/images/studs/denali.webp", "permanent": true }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
