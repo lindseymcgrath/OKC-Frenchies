@@ -13,11 +13,11 @@
     "pedigreeLink": "",
     "type": "Stud",
     "gender": "Male",
-    "image": "/images/data/studs_1_main.webp",
+    "image": "/images/studs/ghost.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/studs_1_main.webp"
+        "url": "/images/studs/ghost.webp"
       }
     ]
   },
@@ -35,11 +35,11 @@
     "pedigreeLink": "",
     "type": "Stud",
     "gender": "Male",
-    "image": "/images/data/studs_2_main.webp",
+    "image": "/images/studs/everest.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/studs_2_main.webp"
+        "url": "/images/studs/everest.webp"
       }
     ]
   },
@@ -57,11 +57,11 @@
     "pedigreeLink": "",
     "type": "Stud",
     "gender": "Male",
-    "image": "/images/data/studs_3_main.webp",
+    "image": "/images/studs/shifu.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/studs_3_main.webp"
+        "url": "/images/studs/shifu.webp"
       }
     ]
   },
@@ -79,11 +79,11 @@
     "pedigreeLink": "",
     "type": "Stud",
     "gender": "Male",
-    "image": "/images/data/studs_4_main.webp",
+    "image": "/images/studs/denali.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/studs_4_main.webp"
+        "url": "/images/studs/denali.webp"
       }
     ]
   }

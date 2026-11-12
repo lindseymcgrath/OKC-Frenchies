@@ -1,0 +1,138 @@
+[
+  {
+    "id": "term-0",
+    "term": "Pink",
+    "locus": "caL (SLC45A2)",
+    "category": "Pigmentation",
+    "definition": "A rare mutation on the SLC45A2 gene that removes all eumelanin, resulting in pink skin, light eyes, and a signature 'glow'.",
+    "moreInfo": "<h2>Understanding the Pink Gene (CAL / HPS3)</h2>\n    <p>The \"Pink\" French Bulldog is one of the most unique and sought-after color variations in the breed today. This phenotype is governed by the <strong>HPS3 gene</strong>, commonly referred to in the breeding community as the <strong>CAL gene</strong> (Coat Color and Light). Unlike standard colors, Pink provides a distinct rosy, translucent glow to the skin and coat.</p>\n\n    <hr>\n\n    <h3>The Genetics: n/A vs. A/A</h3>\n    <p>The Pink gene is <strong>autosomal recessive</strong>. This means a dog must inherit the mutation from both parents to express the physical \"Pink\" characteristics. Using the nomenclature provided by labs like Animal Genetics, the results are broken down as follows:</p>\n    \n    <ul>\n        <li><strong>n/n:</strong> The dog is negative for the Pink mutation and cannot pass it to offspring.</li>\n        <li><strong>n/A (Carrier):</strong> The dog carries one copy of the Pink gene. The dog will appear as a standard color but can pass the gene to 50% of its puppies.</li>\n        <li><strong>A/A (Full Pink):</strong> The dog has two copies of the Pink mutation and will visually express the Pink phenotype.</li>\n    </ul>\n\n    <h3>Physical Characteristics</h3>\n    <p>A \"Full Pink\" Frenchie (A/A) is easily distinguished by its lack of heavy surface melanin. Key traits include:</p>\n    <ul>\n        <li><strong>The \"Rosy\" Glow:</strong> A soft, peach-to-pink hue on the skin, most visible around the muzzle, eyes, and paw pads.</li>\n        <li><strong>Lighter Pigmentation:</strong> Even on dogs that would otherwise be dark, the Pink gene dilutes the pigment, often resulting in a \"warm\" or \"shimmering\" coat.</li>\n        <li><strong>Eye Color:</strong> Pink Frenchies often possess lighter eye colors, ranging from golden amber to soft aqua tones.</li>\n    </ul>\n\n    <h3>Pink vs. Cream (The Masking Effect)</h3>\n    <p>It is a common misconception that Pink and Cream are the same. While both can result in a light-colored dog, they are genetically distinct. <strong>Cream (the e-locus)</strong> is epistatic, meaning it can \"hide\" the Pink gene. A dog can be genetically A/A but appear to be a standard Cream. DNA testing is the only way to confirm the presence of the HPS3 mutation.</p>\n\n    <blockquote>\n        <strong>Breeder's Note:</strong> The Pink gene is not a form of Albinism. It is a specific pigment transport mutation (HPS3) that creates a beautiful, healthy dilution without the health risks associated with true albino traits.\n    </blockquote>"
+  },
+  {
+    "id": "term-1",
+    "term": "Ancient Red (eA)",
+    "locus": "eA",
+    "category": "Pattern",
+    "definition": "Also known as 'Domino'. An ancestral variant of the E-locus that creates a textured, two-toned gradient on each hair strand.",
+    "moreInfo": "<h2>Understanding the e<sup>A</sup> Gene: The \"Husky\" Domino</h2>\n<p>The <strong>e<sup>A</sup></strong> allele (Ancient Domino) is part of the E-Locus series. While it has existed in dogs for thousands of years, it has recently become a sensation in French Bulldogs due to its ability to create a \"Husky-like\" appearance. This gene works by reducing the production of dark pigment (eumelanin), allowing the lighter base colors to \"creep\" up the body.</p>\n\n<hr>\n\n<h3>The \"Visual Domino\" (e<sup>A</sup>/e)</h3>\n<p>In French Bulldogs, the <strong>e<sup>A</sup></strong> gene is most dramatic when paired with a copy of recessive cream. Breeders typically refer to a dog as a <strong>\"Visual e<sup>A</sup> Husky\"</strong> when the genotype is <strong>e<sup>A</sup>/e</strong>. The presence of the single 'e' copy clears the coat just enough to make the Domino patterns \"pop.\"</p>\n\n<h3>Key Visual Indicators</h3>\n<ul>\n    <li><strong>The Widow’s Peak:</strong> One of the most iconic traits of a Domino Frenchie is a clear, pointed \"peak\" of darker hair on the forehead that mimics the look of a Siberian Husky.</li>\n    <li><strong>Facial Mask Reduction:</strong> Even if a dog is genetically <strong>Em</strong> (Melanistic Mask), the <strong>e<sup>A</sup></strong> gene can shrink or completely remove the black mask, often leaving \"goggles\" around the eyes.</li>\n    <li><strong>Hair Strand Gradients:</strong> Unlike standard colors where a hair is one solid shade, Domino hairs are often bi-colored or \"banded.\" The base of the hair is usually much lighter, while the tip retains the darker pigment.</li>\n    <li><strong>The Gradient Effect:</strong> The dog will often show a \"wrap-around\" effect where the color is darkest on the spine and fades into a pale or white underbelly, chest, and legs.</li>\n</ul>\n\n\n\n<h3>Genetic Combinations</h3>\n<p>The <strong>e<sup>A</sup></strong> gene interacts differently depending on its partner at the E-Locus:</p>\n<ul>\n    <li><strong>e<sup>A</sup>/e<sup>A</sup>:</strong> A \"Double Domino.\" These dogs are typically very light, often appearing almost like a cream but with \"ghost\" patterns of their base color (Blue, Cocoa, etc.).</li>\n    <li><strong>e<sup>A</sup>/e:</strong> The preferred \"Visual Husky\" look. This provides the best contrast for the widow's peak and body gradients.</li>\n    <li><strong>E/e<sup>A</sup>:</strong> The dog may show a slight \"creeping\" of tan or a small widow's peak, but the standard dominant black (E) usually hides the most dramatic Domino effects.</li>\n</ul>\n\n<blockquote>\n    <strong>Webmaster Note:</strong> Because the e<sup>A</sup> gene affects how <strong>Tan Points (a<sup>t</sup>)</strong> are expressed, it can actually make a \"Trindle\" dog look like a clean \"Tan Point\" by suppressing the visible brindle stripping!\n</blockquote>"
+  },
+  {
+    "id": "term-2",
+    "term": "Floodle",
+    "locus": "FGF5 + RSPO2",
+    "category": "Texture",
+    "definition": "The 'Teddy Bear' phenotype. Requires two copies of the Fluffy gene (L/L) combined with at least one copy of Furnishings.",
+    "moreInfo": "<p>The <b>Floodle</b> (or 'Visual Teddy Bear') is a precise architectural intersection of two distinct genetic markers: <b>FGF5 (The L-Locus)</b> and <b>RSPO2 (Furnishings)</b>.</p>\n\n<h2>The RSPO2 Dominance</h2>\n<p>Unlike the Fluffy gene, which is recessive, <b>Furnishings (F)</b> is a dominant trait. This means a dog only needs one copy (n/F) to display the phenotype. Even in short-haired dogs, one copy of the F-gene creates the 'Wire-hair' texture and facial 'furniture' (mustache and eyebrows).</p>\n\n\n\n<h2>The 'Producer' vs. The 'Visual'</h2>\n<ul>\n  <li><b>The Teddy Bear Producer (Sh/L + n/F):</b> This dog carries one copy of the Fluffy gene. Visually, they often appear as 'Wire-hair' or 'Scruffy' textures. They are elite assets for programs looking to 'unlock' the Floodle look in the next generation.</li>\n  <li><b>The Visual Floodle (L/L + n/F):</b> The 'Gold Standard' aesthetic. This is achieved when two copies of the Fluffy gene (Length) are paired with the dominant Furnishings gene (Architecture).</li>\n</ul>\n\n\n\n<h2>The Science of Texture</h2>\n<p>In a true Floodle, the <b>FGF5</b> gene provides the coat length, while the <b>RSPO2</b> gene provides the 'lift' and wave. Without the furnishing gene, a long-haired dog is simply a 'Fluffy' with hair that lays flat and lacks the signature teddy-bear facial structure.</p>\n\n<p><i>Note: Because this coat is more complex than standard DNA, it requires the <b>OKC Omega Mania</b> protocol to maintain fiber elasticity and prevent breakage.</i></p>"
+  },
+  {
+    "id": "term-3",
+    "term": "Furnishings",
+    "locus": "RSPO2",
+    "category": "Texture",
+    "definition": "A dominant gene responsible for facial hair (mustache/eyebrows) and wire-hair texture. The 'F' in our trait matrix.",
+    "moreInfo": "<article>\n    <h2>RSPO2: The Science of Furnishings</h2>\n    <p>In the world of canine genetics, the <b>RSPO2</b> gene is the primary architect of coat texture. While other genes determine length or color, RSPO2 determines the <i>growth pattern</i>—specifically the presence of facial hair (mustaches, eyebrows, and beards) and a specialized wiry coat texture.</p>\n\n    <div class=\"genetic-logic-box\" style=\"border: 1px solid #2dd4bf; padding: 20px; border-radius: 10px; background: rgba(0,0,0,0.3);\">\n        <h3>The n/F Marker: Dominance Defined</h3>\n        <p>Most genetic laboratories, such as Animal Genetics, mark a dog carrying this gene as <b>n/F</b>. It is critical to understand that unlike the 'Fluffy' gene (FGF5), <b>Furnishings is a Dominant trait</b>.</p>\n        \n        <ul>\n            <li><b>n/n (Negative):</b> The dog has a standard smooth coat and will never produce furnishings unless bred to an 'F' carrier.</li>\n            <li><b>n/F (Carrier/Visual):</b> Because the gene is dominant, a dog with only one copy <u>will</u> display facial furniture and a textured coat.</li>\n            <li><b>F/F (Double Copy):</b> The dog is 'Homozygous' for furnishings and will pass the trait to 100% of its offspring, regardless of the mate.</li>\n        </ul>\n    </div>\n\n    \n\n    <h2>The 'Hidden' Asset: Short-Haired Furnishings</h2>\n    <p>A dog can be <b>n/F</b> and still have a short coat (Sh/Sh or Sh/L). In these cases, the dog often displays a 'Wire-hair' or 'Scruffy' look. While they aren't 'Floodles' themselves, these are the <b>Elite Producers</b> of the program. When an n/F dog is bred to a Fluffy (L/L), you unlock the architectural 'Teddy Bear' facial structure in the offspring.</p>\n\n    \n\n    <h2>Maintenance of the 'F' Fiber</h2>\n    <p>The furnishings gene changes the physical structure of the hair shaft, making it more porous. To prevent the 'brittle' texture often found in lower-quality wire-coats, our <b>Raw & Paw Protocol</b> emphasizes <i>Omega Mania</i> and <i>Goat Brew</i> to provide the biotin and essential fatty acids needed to keep the furniture soft, elastic, and high-definition.</p>\n</article>"
+  },
+  {
+    "id": "term-4",
+    "term": "Fluffy",
+    "locus": "FGF5 (L-Locus)",
+    "category": "Texture",
+    "definition": "A recessive gene that determines coat length. 'L/L' results in a visual Fluffy; 'S/L' results in a short-coat carrier.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-5",
+    "term": "Cocoa",
+    "locus": "co",
+    "category": "Pigmentation",
+    "definition": "The specific gene responsible for the 'Dark Chocolate' Frenchie look. Distinct from the 'b' (testable chocolate) locus.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-6",
+    "term": "Testable Chocolate",
+    "locus": "B-Locus",
+    "category": "Pigmentation",
+    "definition": "The 'b' gene. When paired with Cocoa and Blue, it creates the highly sought-after 'Isabella' phenotype.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-7",
+    "term": "Blue",
+    "locus": "D-Locus",
+    "category": "Pigmentation",
+    "definition": "A recessive gene that dilutes black pigment to a slate grey or 'Blue' appearance. Genotype is 'd/d'.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-8",
+    "term": "Tan Points",
+    "locus": "at (A-Locus)",
+    "category": "Pattern",
+    "definition": "Part of the Agouti series. Responsible for the 'traditional' tan markings on the brows, cheeks, and paws.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-9",
+    "term": "Mask",
+    "locus": "Em (E-Locus)",
+    "category": "Pattern",
+    "definition": "The melanistic mask. A dominant trait that covers the face in black pigment; can hide the eA Domino effect.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-10",
+    "term": "Cream",
+    "locus": "e (E-Locus)",
+    "category": "Pigmentation",
+    "definition": "Recessive red. Two copies (e/e) turn the dog cream or apricot. It can 'mask' other colors like Blue or Chocolate.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-11",
+    "term": "Intensity",
+    "locus": "In-Locus",
+    "category": "Saturation",
+    "definition": "A modifier that determines how 'saturated' the red pigment is. High intensity results in deep mahogany; low intensity results in off-white.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-12",
+    "term": "Phaeomelanin",
+    "locus": "N/A",
+    "category": "Biological",
+    "definition": "The red/yellow pigment in a dog's coat. This is what the eA and Pink genes are actively modifying.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-13",
+    "term": "Eumelanin",
+    "locus": "N/A",
+    "category": "Biological",
+    "definition": "The black/brown pigment in a dog's coat. The 'caL' (Pink) gene is famous for completely suppressing this.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-14",
+    "term": "IVDD Clearance",
+    "locus": "Multi-Locus",
+    "category": "Structural",
+    "definition": "Screening for Intervertebral Disc Disease markers (CDDY/CDPA) to ensure long-term spinal health and mobility.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-15",
+    "term": "BOAS Testing",
+    "locus": "Phenotype",
+    "category": "Physiological",
+    "definition": "Respiratory function grading to ensure clear airways and high-stamina performance in short-muzzled breeds.",
+    "moreInfo": ""
+  },
+  {
+    "id": "term-16",
+    "term": "Patellar Stability",
+    "locus": "Physical",
+    "category": "Structural",
+    "definition": "Orthopedic evaluation of the knee joint to prevent luxation and ensure athletic durability.",
+    "moreInfo": ""
+  }
+]

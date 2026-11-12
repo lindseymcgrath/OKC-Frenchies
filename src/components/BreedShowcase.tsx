@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SHOWCASE } from '../constants';
 import { ArrowUpRight, ShieldCheck, Dna, Image as ImageIcon } from 'lucide-react';
+import puppiesData from '../data/puppies.json';
 
 // Helper for Google Drive Links - Uses robust lh3 domain to prevent production 403 errors
 const getDirectDriveLink = (url: string) => {
@@ -45,60 +46,41 @@ const BreedShowcase: React.FC = () => {
   };
 
   useEffect(() => {
-    const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
-    // Use gviz to fetch specific sheet
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Puppies`;
-
     const analyzeDNA = (dna: string): Badge[] => {
         if (!dna) return [];
         const cleanDna = dna.trim();
         const badges: Badge[] = [];
         
-        // --- PINK LOGIC ---
-        // Full Pink: A/A
         if (/\bA\/A\b/i.test(cleanDna)) {
             badges.push({ 
                 label: 'FULL PINK', 
                 color: 'bg-rose-500/20 text-rose-200 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.3)]' 
             });
-        }
-        // Pink Carrier: n/A or A/n
-        else if (/\b(n\/A|A\/n)\b/i.test(cleanDna)) {
+        } else if (/\b(n\/A|A\/n)\b/i.test(cleanDna)) {
             badges.push({
                 label: 'PINK CARRIER',
-                // Magenta
                 color: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40 shadow-[0_0_10px_rgba(217,70,239,0.2)]'
             });
         }
         
-        // --- FLOODLE LOGIC ---
-        // Furnishings: n/F or F/F or F/n
         const hasFurnishings = /\b(n\/F|F\/F|F\/n)\b/i.test(cleanDna);
-
-        // Visual Fluffy (2 copies): l1/l4, l1/l1, l4/l4, l/l
         const isVisualFluffy = /\b(l1\/l4|l4\/l1|l1\/l1|l4\/l4|l\/l)\b/i.test(cleanDna);
-        
-        // Fluffy Carrier (1 copy): L/l1, L/l4, L/l, n/l1, n/l4
         const isFluffyCarrier = /\b(L\/l1|L\/l4|n\/l1|n\/l4|L\/l|n\/l)\b/i.test(cleanDna);
 
         if (hasFurnishings) {
             if (isVisualFluffy) {
                 badges.push({ 
                     label: 'FLOODLE', 
-                    // Gold
                     color: 'bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-[0_0_15px_rgba(251,191,36,0.3)]' 
                 });
             } else if (isFluffyCarrier) {
                 badges.push({ 
                     label: 'FLOODLE PRODUCER', 
-                    // Royal Blue
                     color: 'bg-blue-900/40 text-blue-200 border-blue-700/50 shadow-[0_0_15px_rgba(30,64,175,0.3)]' 
                 });
             }
         }
 
-        // --- OTHER RARE TRAITS ---
-        // Visual eA
         if (/\beA\/eA\b/.test(cleanDna)) {
             badges.push({ 
                 label: 'VISUAL eA', 
@@ -109,66 +91,13 @@ const BreedShowcase: React.FC = () => {
         return badges;
     };
 
-    fetch(CSV_URL)
-      .then(response => response.text())
-      .then(csvText => {
-        if ((window as any).Papa) {
-          (window as any).Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results: any) => {
-              const fetchedDogs = results.data.map((row: any, index: number) => {
-                const technicalDNA = row['DNA_Technical'] || '';
-                const rawGender = row['Gender'] || '';
-                const badges = analyzeDNA(technicalDNA);
-                
-                const status = row['Status'] || 'Available';
-                const type = status.toLowerCase().includes('stud') ? 'Stud' : 'Puppy';
-                
-                // Breed Logic
-                const breed = row['Breed'] && row['Breed'].trim() !== '' ? row['Breed'] : 'French Bulldog';
+    const mappedDogs: DogData[] = (puppiesData as any[]).map((dog) => ({
+      ...dog,
+      badges: analyzeDNA(dog.dna_technical || '')
+    }));
 
-                // Normalize Gender
-                let gender = '';
-                const lowerGender = rawGender.toLowerCase();
-                if (lowerGender.startsWith('f') || lowerGender.includes('female')) gender = 'Female';
-                else if (lowerGender.startsWith('m') || lowerGender.includes('male')) gender = 'Male';
-                else if (status.toLowerCase().includes('female')) gender = 'Female';
-                else if (status.toLowerCase().includes('male')) gender = 'Male';
-
-                return {
-                  id: row['ID'] || `sheet-${index}`,
-                  name: row['Name'] || 'Frosty',
-                  breed: breed,
-                  gender: gender,
-                  dna: row['Visual_Description'] || '', 
-                  dna_technical: technicalDNA,
-                  description: row['Bio'] || 'No description available.',
-                  image: getDirectDriveLink(row['Image_URL']),
-                  price: row['Investment'] || 'Inquire',
-                  type: type,
-                  status: status,
-                  badges: badges
-                };
-              });
-              
-              setDogs(fetchedDogs.length > 0 ? fetchedDogs.slice(0, 3) : SHOWCASE as any);
-              setLoading(false);
-            },
-            error: (err: any) => {
-                setDogs(SHOWCASE as any);
-                setLoading(false);
-            }
-          });
-        } else {
-             setDogs(SHOWCASE as any);
-             setLoading(false);
-        }
-      })
-      .catch(err => {
-        setDogs(SHOWCASE as any);
-        setLoading(false);
-      });
+    setDogs(mappedDogs.length > 0 ? mappedDogs.slice(0, 3) : SHOWCASE as any);
+    setLoading(false);
   }, []);
 
   return (

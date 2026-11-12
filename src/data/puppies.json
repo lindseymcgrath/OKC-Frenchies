@@ -13,11 +13,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/data/puppies_1_main.webp",
+    "image": "/images/puppies/shuffin.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_1_main.webp"
+        "url": "/images/puppies/shuffin.webp"
       }
     ]
   },
@@ -35,33 +35,33 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_2_main.webp",
+    "image": "/images/puppies/alex.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_2_main.webp"
+        "url": "/images/puppies/alex.webp"
       }
     ]
   },
   {
     "id": "puppies-3",
     "name": "Andrew",
-    "status": "Available",
-    "dna": "Fluffy Lilan & Tan Pied Big Rope carrying Pink",
+    "status": "SOLD",
+    "dna": "Fluffy Lilac & Tan Pied Big Rope carrying Pink",
     "dna_technical": "n/A, at/at, B/b, co/co, d/d, Em/e, n/Int, S/S, l1/l4",
     "price": "$3,500",
-    "description": "Fluffy Lilan & Tan Pied Big Rope carrying Pink",
+    "description": "Fluffy Lilac & Tan Pied Big Rope carrying Pink",
     "altText": "",
     "videoUrl": "",
     "breed": "French Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_3_main.webp",
+    "image": "/images/puppies/andrew.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_3_main.webp"
+        "url": "/images/puppies/andrew.webp"
       }
     ]
   },
@@ -72,18 +72,22 @@
     "dna": "Lilac & Tan Big Rope carrying pink and fluffy",
     "dna_technical": "n/A, at/a, B/b, co/co, d/d, Em/e, Int/Int, n/S, L/l1",
     "price": "$4,000",
-    "description": "Lilac & Tan Big Rope carrying pink and fluffy",
-    "altText": "",
+    "description": "Super tiny 5-month-old female Lilac & Tan Big Rope carrying Pink and Fluffy.",
+    "altText": "Alice (Little Twin) - Super tiny 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy",
     "videoUrl": "",
     "breed": "French Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/data/puppies_4_main.webp",
+    "image": "/images/puppies/alice-1.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_4_main.webp"
+        "url": "/images/puppies/alice-1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/alice-2.webp"
       }
     ]
   },
@@ -94,18 +98,22 @@
     "dna": "Lilac & Tan Big Rope carrying pink and fluffy",
     "dna_technical": "n/A, at/at, B/b, co/co, d/d, Em/e, n/Int, n/S, L/l1",
     "price": "$4,000",
-    "description": "Lilac & Tan Big Rope carrying pink and fluffy",
-    "altText": "",
+    "description": "Compact 5-month-old female Lilac & Tan Big Rope carrying Pink and Fluffy.",
+    "altText": "Arya (Big Twin) - Compact 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy",
     "videoUrl": "",
     "breed": "French Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/data/puppies_5_main.webp",
+    "image": "/images/puppies/arya-1.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_5_main.webp"
+        "url": "/images/puppies/arya-1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/arya-2.webp"
       }
     ]
   },
@@ -117,17 +125,25 @@
     "dna_technical": "",
     "price": "$4,500",
     "description": "Lilac Tri Merle",
-    "altText": "",
+    "altText": "Brew - Available male Lilac Tri Merle Mini English Bulldog puppy",
     "videoUrl": "",
     "breed": "Mini English Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_6_main.webp",
+    "image": "/images/puppies/brew-1.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_6_main.webp"
+        "url": "/images/puppies/brew-1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/brew-2.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/brew-3.webp"
       }
     ]
   },
@@ -139,17 +155,25 @@
     "dna_technical": "",
     "price": "$4,000",
     "description": "Lilac Tri",
-    "altText": "",
+    "altText": "Bean - Available male Lilac Tri Mini English Bulldog puppy",
     "videoUrl": "",
     "breed": "Mini English Bulldog",
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_7_main.webp",
+    "image": "/images/puppies/bean-1.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_7_main.webp"
+        "url": "/images/puppies/bean-1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/bean-2.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/bean-3.webp"
       }
     ]
   },
@@ -167,18 +191,18 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/data/puppies_8_main.webp",
+    "image": "/images/puppies/biscotti.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_8_main.webp"
+        "url": "/images/puppies/biscotti.webp"
       }
     ]
   },
   {
     "id": "puppies-9",
     "name": "Brulee",
-    "status": "Available",
+    "status": "Pending",
     "dna": "Lilac Tri",
     "dna_technical": "",
     "price": "$5,000",
@@ -189,11 +213,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Female",
-    "image": "/images/data/puppies_9_main.webp",
+    "image": "/images/puppies/brulee.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_9_main.webp"
+        "url": "/images/puppies/brulee.webp"
       }
     ]
   },
@@ -211,19 +235,19 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_10_main.webp",
+    "image": "/images/puppies/six-figures-1.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_10_main.webp"
+        "url": "/images/puppies/six-figures-1.webp"
       },
       {
         "type": "image",
-        "url": "/images/data/puppies_10_img1.webp"
+        "url": "/images/puppies/six-figures-2.webp"
       },
       {
         "type": "image",
-        "url": "/images/data/puppies_10_img2.webp"
+        "url": "/images/puppies/six-figures-3.webp"
       }
     ]
   },
@@ -241,11 +265,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_11_main.webp",
+    "image": "/images/puppies/scrappy.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_11_main.webp"
+        "url": "/images/puppies/scrappy.webp"
       }
     ]
   },
@@ -263,11 +287,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_12_main.webp",
+    "image": "/images/puppies/scooby.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_12_main.webp"
+        "url": "/images/puppies/scooby.webp"
       }
     ]
   },
@@ -285,11 +309,11 @@
     "pedigreeLink": "",
     "type": "Puppy",
     "gender": "Male",
-    "image": "/images/data/puppies_13_main.webp",
+    "image": "/images/puppies/polar.webp",
     "media": [
       {
         "type": "image",
-        "url": "/images/data/puppies_13_main.webp"
+        "url": "/images/puppies/polar.webp"
       },
       {
         "type": "video",

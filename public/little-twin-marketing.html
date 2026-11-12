@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alice &amp; Arya (Twins) — Marketing Graphics Suite | OKC Frenchies</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Manrope:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      background: #070408;
+      color: #fff;
+      font-family: 'Manrope', sans-serif;
+      min-height: 100vh;
+      padding: 40px 24px 80px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background orbs */
+    .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: -1; }
+    .orb-gold { width: 50vw; height: 50vw; background: rgba(212,175,55,0.12); bottom: -10%; right: -10%; }
+    .orb-teal { width: 40vw; height: 40vw; background: rgba(45,212,191,0.08); top: -10%; left: -10%; }
+    .orb-pink { width: 35vw; height: 35vw; background: rgba(236,72,153,0.08); top: 40%; right: 20%; }
+
+    /* Page Header */
+    .header {
+      max-width: 1200px;
+      margin: 0 auto 44px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(212,175,55,0.12);
+      border: 1px solid rgba(212,175,55,0.4);
+      border-radius: 40px;
+      padding: 8px 22px;
+      font-size: 11px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #fef08a;
+    }
+    .brand-pill img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(30px, 5vw, 50px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #ffffff 20%, #fef08a 60%, #eab308 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: #94a3b8;
+      max-width: 680px;
+      line-height: 1.6;
+    }
+
+    .info-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .badge-item {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
+    /* Section Headers */
+    .section-title {
+      max-width: 1200px;
+      margin: 40px auto 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .section-title h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #fef08a;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+    }
+    .section-title span {
+      color: #2dd4bf;
+      font-size: 14px;
+      letter-spacing: 0.2em;
+      margin-left: 8px;
+    }
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(212,175,55,0.5), transparent);
+    }
+
+    /* Grid of Graphics */
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 36px;
+      align-items: start;
+    }
+
+    .graphic-card {
+      background: rgba(14, 10, 18, 0.75);
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 18px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .graphic-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(212, 175, 55, 0.65);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fef08a;
+      letter-spacing: 0.1em;
+    }
+    .card-ratio {
+      font-size: 11px;
+      font-weight: 700;
+      color: #2dd4bf;
+      background: rgba(45, 212, 191, 0.1);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .card-img-wrap {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .card-img-wrap:hover img {
+      transform: scale(1.02);
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #d4af37, #b45309);
+      color: #0b070e;
+      border: none;
+      font-weight: 800;
+    }
+    .btn-primary:hover {
+      filter: brightness(1.15);
+    }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+    }
+
+    /* Social Caption Box */
+    .caption-grid {
+      max-width: 1200px;
+      margin: 50px auto 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 36px;
+    }
+    .caption-box {
+      background: rgba(14, 10, 18, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.4);
+      border-radius: 18px;
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .caption-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fef08a;
+      letter-spacing: 0.1em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .copy-btn {
+      background: rgba(45, 212, 191, 0.15);
+      border: 1px solid rgba(45, 212, 191, 0.5);
+      color: #2dd4bf;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .copy-btn:hover {
+      background: rgba(45, 212, 191, 0.3);
+    }
+    .caption-content {
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.65;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-gold"></div>
+  <div class="orb orb-teal"></div>
+  <div class="orb orb-pink"></div>
+
+  <header class="header">
+    <div class="brand-pill">
+      <img src="okc-frenchies.png" alt="OKC Frenchies" />
+      <span>OKC Frenchies Boutique</span>
+    </div>
+    <h1>Alice &amp; Arya Marketing Graphics</h1>
+    <p class="subtitle">
+      Dual Showcase (4:5 Feed) and Story Flyer (9:16 Vertical) graphics for Alice (&ldquo;Little Twin&rdquo;) and Arya (&ldquo;Big Twin&rdquo;).
+    </p>
+    <div class="info-badges">
+      <span class="badge-item">💜 Lilac &amp; Tan</span>
+      <span class="badge-item">👑 Big Rope Muzzle</span>
+      <span class="badge-item">🌸 Carries Pink</span>
+      <span class="badge-item">☁️ Carries Fluffy</span>
+      <span class="badge-item">♀ 5 Months Old &bull; Females</span>
+    </div>
+  </header>
+
+  <!-- Section 1: Dual Showcases (4:5) -->
+  <div class="section-title">
+    <h2>Dual Showcases <span>4:5 Instagram Feed</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <main class="grid">
+
+    <!-- Alice Dual Showcase -->
+    <div class="graphic-card">
+      <div class="card-header">
+        <span class="card-title">Alice &ldquo;Little Twin&rdquo; &mdash; Dual Showcase</span>
+        <span class="card-ratio">4:5 &bull; 1080&times;1350</span>
+      </div>
+      <div class="card-img-wrap">
+        <a href="alice-dual-showcase.png" target="_blank">
+          <img src="alice-dual-showcase.png" alt="OKC Frenchies promotional graphic for Alice (Little Twin), a super tiny 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, featuring two side-by-side outdoor portraits on green grass with a white chest patch and bat ears." />
+        </a>
+      </div>
+      <p class="card-desc">
+        <strong>Alt Text:</strong> OKC Frenchies promotional graphic for Alice ("Little Twin"), a super tiny 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, featuring two side-by-side outdoor portraits on green grass with a white chest patch and bat ears.
+      </p>
+      <div class="card-actions">
+        <a href="alice-dual-showcase.png" download class="btn btn-primary">Download PNG</a>
+        <a href="alice-dual-showcase.png" target="_blank" class="btn btn-secondary">Full Res</a>
+      </div>
+    </div>
+
+    <!-- Arya Dual Showcase -->
+    <div class="graphic-card">
+      <div class="card-header">
+        <span class="card-title">Arya &ldquo;Big Twin&rdquo; &mdash; Dual Showcase</span>
+        <span class="card-ratio">4:5 &bull; 1080&times;1350</span>
+      </div>
+      <div class="card-img-wrap">
+        <a href="arya-dual-showcase.png" target="_blank">
+          <img src="arya-dual-showcase.png" alt="OKC Frenchies promotional graphic for Arya (Big Twin), a compact 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, featuring two side-by-side outdoor profile portraits on sunlit grass." />
+        </a>
+      </div>
+      <p class="card-desc">
+        <strong>Alt Text:</strong> OKC Frenchies promotional graphic for Arya ("Big Twin"), a compact 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, featuring two side-by-side outdoor profile portraits on sunlit grass.
+      </p>
+      <div class="card-actions">
+        <a href="arya-dual-showcase.png" download class="btn btn-primary">Download PNG</a>
+        <a href="arya-dual-showcase.png" target="_blank" class="btn btn-secondary">Full Res</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Section 2: Story Flyers (9:16) -->
+  <div class="section-title">
+    <h2>Story Flyers <span>9:16 Instagram &amp; TikTok Story</span></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Alice Story Flyer -->
+    <div class="graphic-card">
+      <div class="card-header">
+        <span class="card-title">Alice &ldquo;Little Twin&rdquo; &mdash; Story</span>
+        <span class="card-ratio">9:16 &bull; 1080&times;1920</span>
+      </div>
+      <div class="card-img-wrap" style="max-height: 720px;">
+        <a href="alice-story.png" target="_blank">
+          <img src="alice-story.png" alt="OKC Frenchies vertical story flyer for Alice (Little Twin), a super tiny 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, seated on sunny green grass with genetic trait badges below." style="object-fit: contain; max-height: 720px;" />
+        </a>
+      </div>
+      <p class="card-desc">
+        <strong>Alt Text:</strong> OKC Frenchies vertical story flyer for Alice ("Little Twin"), a super tiny 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, seated on sunny green grass with genetic trait badges below.
+      </p>
+      <div class="card-actions">
+        <a href="alice-story.png" download class="btn btn-primary">Download PNG</a>
+        <a href="little-twin-flyer.html" target="_blank" class="btn btn-secondary">Live HTML Flyer</a>
+      </div>
+    </div>
+
+    <!-- Arya Story Flyer -->
+    <div class="graphic-card">
+      <div class="card-header">
+        <span class="card-title">Arya &ldquo;Big Twin&rdquo; &mdash; Story</span>
+        <span class="card-ratio">9:16 &bull; 1080&times;1920</span>
+      </div>
+      <div class="card-img-wrap" style="max-height: 720px;">
+        <a href="arya-story.png" target="_blank">
+          <img src="arya-story.png" alt="OKC Frenchies vertical story flyer for Arya (Big Twin), a compact 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, showing her wrinkled big rope profile on green grass with genetic trait badges below." style="object-fit: contain; max-height: 720px;" />
+        </a>
+      </div>
+      <p class="card-desc">
+        <strong>Alt Text:</strong> OKC Frenchies vertical story flyer for Arya ("Big Twin"), a compact 5-month-old female Lilac and Tan Big Rope French Bulldog puppy carrying Pink and Fluffy, showing her wrinkled big rope profile on green grass with genetic trait badges below.
+      </p>
+      <div class="card-actions">
+        <a href="arya-story.png" download class="btn btn-primary">Download PNG</a>
+        <a href="big-twin-flyer.html" target="_blank" class="btn btn-secondary">Live HTML Flyer</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ready to Paste Captions -->
+  <section class="caption-grid">
+    <div class="caption-box">
+      <div class="caption-title">
+        <span>Alice &ldquo;Little Twin&rdquo; Caption</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('cap-alice').innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Caption',2000);">Copy Caption</button>
+      </div>
+      <div class="caption-content" id="cap-alice">👑 AVAILABLE NOW: MEET ALICE ("LITTLE TWIN") 💜✨
+
+Looking for elite genetics and extreme compact structure in one pocket-sized package? Meet Alice! 🐾
+
+✨ 5 Months Old • Female French Bulldog
+💜 Lilac & Tan Coat
+👑 Extreme Big Rope Muzzle
+🌸 Carries Pink
+☁️ Carries Fluffy
+✨ Super Tiny & Pocket-Sized Structure
+
+📍 OKC Frenchies — Oklahoma City & Nationwide Delivery
+🌐 www.okcfrenchies.com
+📩 DM @okcfrenchies to inquire!</div>
+    </div>
+
+    <div class="caption-box">
+      <div class="caption-title">
+        <span>Arya &ldquo;Big Twin&rdquo; Caption</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(document.getElementById('cap-arya').innerText); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Caption',2000);">Copy Caption</button>
+      </div>
+      <div class="caption-content" id="cap-arya">👑 AVAILABLE NOW: MEET ARYA ("BIG TWIN") 💜✨
+
+Incredible structure, heavy big rope profile, and unreal rare DNA! Meet Arya! 🐾
+
+✨ 5 Months Old • Female French Bulldog
+💜 Lilac & Tan Coat
+👑 Extreme Big Rope Muzzle
+🌸 Carries Pink
+☁️ Carries Fluffy
+✨ Petite & Compact Frame
+
+📍 OKC Frenchies — Oklahoma City & Nationwide Delivery
+🌐 www.okcfrenchies.com
+📩 DM @okcfrenchies to inquire!</div>
+    </div>
+  </section>
+
+</body>
+</html>

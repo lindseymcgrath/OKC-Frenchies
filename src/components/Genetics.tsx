@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dna, Loader2, AlertTriangle, Atom, X, FileText } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import SEO from './SEO';
+import glossaryData from '../data/glossary.json';
 
 interface GlossaryTerm {
   id: string;
@@ -13,8 +14,8 @@ interface GlossaryTerm {
 }
 
 const Genetics: React.FC = () => {
-  const [terms, setTerms] = useState<GlossaryTerm[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [terms, setTerms] = useState<GlossaryTerm[]>(glossaryData as GlossaryTerm[]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTerm, setSelectedTerm] = useState<GlossaryTerm | null>(null);
   const [activeFilter, setActiveFilter] = useState('All');
@@ -48,83 +49,7 @@ const Genetics: React.FC = () => {
     return () => { document.body.style.overflow = 'unset'; };
   }, [selectedTerm]);
 
-  // Fetch Data
-  useEffect(() => {
-    const SHEET_ID = '153OocA25gmPaynCxCjJQKVZa2abVJ44lsDZv25U0ul8';
-    const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Glossary`;
-
-    fetch(CSV_URL)
-      .then(r => {
-        if (!r.ok) throw new Error("Network response was not ok");
-        return r.text();
-      })
-      .then(csvText => {
-         if ((window as any).Papa) {
-            (window as any).Papa.parse(csvText, {
-                header: false, // switched to manual mapping for maximum robustness
-                skipEmptyLines: true,
-                complete: (results: any) => {
-                    const rows = results.data;
-                    if (!rows || rows.length < 2) {
-                        // Not enough data
-                        setLoading(false);
-                        return;
-                    }
-
-                    // 1. Clean and Map Headers (Row 0)
-                    // We normalize to lowercase to avoid case-sensitivity issues
-                    const headers = rows[0].map((h: any) => String(h).trim().toLowerCase().replace(/^[\uFEFF\uFFFE]/, ''));
-                    
-                    const termIdx = headers.indexOf('term');
-                    const defIdx = headers.indexOf('definition');
-                    const catIdx = headers.indexOf('category');
-                    const locIdx = headers.indexOf('locus');
-                    const infoIdx = headers.indexOf('more_info');
-
-                    if (termIdx === -1 || defIdx === -1) {
-                         console.error("Missing required columns: Term or Definition");
-                         setError("Database Schema Mismatch: Missing columns.");
-                         setLoading(false);
-                         return;
-                    }
-
-                    // 2. Process Data Rows (Row 1 -> End)
-                    const fetchedTerms = rows.slice(1).map((row: any[], idx: number) => {
-                        // Helper to safely get string at index
-                        const getVal = (index: number) => (index !== -1 && row[index]) ? String(row[index]).trim() : '';
-
-                        const term = getVal(termIdx);
-                        const definition = getVal(defIdx);
-
-                        // Skip rows that don't have the bare minimum
-                        if (!term || !definition) return null;
-
-                        return {
-                            id: `term-${idx}`,
-                            term: term,
-                            locus: getVal(locIdx),
-                            category: getVal(catIdx) || 'General',
-                            definition: definition,
-                            moreInfo: getVal(infoIdx)
-                        };
-                    }).filter((t: any) => t !== null);
-                    
-                    setTerms(fetchedTerms);
-                    setLoading(false);
-                },
-                error: (err: any) => {
-                    setError("Failed to parse genetic data.");
-                    setLoading(false);
-                }
-            });
-         }
-      })
-      .catch(err => {
-          console.error(err);
-          setError("Connection to genetic database failed.");
-          setLoading(false);
-      });
-  }, []);
+  // Glossary data is loaded directly from git (src/data/glossary.json)
 
   // Deep Link Logic: Auto-open modal if ?term=... matches
   useEffect(() => {

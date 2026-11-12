@@ -306,7 +306,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         {Array.from(new Set(dogs.map(d => d.breed || 'French Bulldog')))
                             .filter(breed => activeBreedFilter === 'All' || activeBreedFilter === breed)
                             .map(breed => {
-                            const availableForBreed = dogs.filter(d => (d.breed || 'French Bulldog') === breed && (!d.status || d.status.toLowerCase() === 'available' || d.status.toLowerCase() === 'stud'));
+                            const availableForBreed = dogs.filter(d => (d.breed || 'French Bulldog') === breed && (!d.status || ['available', 'stud', 'pending'].includes(d.status.toLowerCase())));
                             
                             if (availableForBreed.length === 0) return null;
 
@@ -390,7 +390,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                         {(() => {
                             const soldDogs = dogs.filter(d => 
                                 (activeBreedFilter === 'All' || (d.breed || 'French Bulldog') === activeBreedFilter) && 
-                                d.status && d.status.toLowerCase() !== 'available' && d.status.toLowerCase() !== 'stud'
+                                d.status && !['available', 'stud', 'pending'].includes(d.status.toLowerCase())
                             );
 
                             if (soldDogs.length === 0) return null;

@@ -4,10 +4,11 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "node ./scripts/sync-data.mjs && vite",
-    "build": "node ./scripts/sync-data.mjs && vite build",
+    "dev": "vite",
+    "build": "vite build",
     "postbuild": "node ./scripts/generate-sitemap.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "optimize-images": "node ./scripts/sync-data.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.40.0",
