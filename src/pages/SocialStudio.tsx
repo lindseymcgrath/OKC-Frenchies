@@ -1497,7 +1497,10 @@ const SocialStudio: React.FC = () => {
         }
       }
 
-      const clientKey = (process.env as any).GEMINI_API_KEY || (process.env as any).API_KEY;
+      const clientKey =
+        (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+        (process.env as any).GEMINI_API_KEY ||
+        (process.env as any).API_KEY;
       if (clientKey) {
         const ai = new GoogleGenAI({ apiKey: clientKey });
         const result = await ai.models.generateContent({
@@ -1538,7 +1541,10 @@ const SocialStudio: React.FC = () => {
       if (resp.ok) {
         cardData = await resp.json();
       } else {
-        const clientKey = (process.env as any).GEMINI_API_KEY || (process.env as any).API_KEY;
+        const clientKey =
+        (import.meta as any).env?.VITE_GEMINI_API_KEY ||
+        (process.env as any).GEMINI_API_KEY ||
+        (process.env as any).API_KEY;
         if (clientKey) {
           const ai = new GoogleGenAI({ apiKey: clientKey });
           const res = await ai.models.generateContent({
