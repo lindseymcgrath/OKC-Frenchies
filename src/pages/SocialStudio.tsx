@@ -132,6 +132,9 @@ const SocialStudio: React.FC = () => {
   const [h1Size, setH1Size] = useState<number>(62);
   const [bodySize, setBodySize] = useState<number>(27);
   const [quoteSize, setQuoteSize] = useState<number>(28);
+  const [textGap, setTextGap] = useState<number>(0.85);
+  const [textOffsetY, setTextOffsetY] = useState<number>(0);
+  const [imgNat, setImgNat] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
 
   const imgRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{ active: boolean; sx: number; sy: number; bx: number; by: number }>({
@@ -210,6 +213,9 @@ const SocialStudio: React.FC = () => {
     const cardW = 1080 - pad * 2;
     const cardH = 1350 - pad * 2;
     const topR = isEditorial || isSage ? 38 : 230;
+    const archX = pad + 26;
+    const archW = cardW - 52;
+    const archH = archHeight;
 
     ctx.save();
     ctx.shadowColor = 'rgba(28,38,33,0.08)';
@@ -228,9 +234,6 @@ const SocialStudio: React.FC = () => {
     }
 
     let archY = pad + 20;
-    const archX = pad + 26;
-    const archW = cardW - 52;
-    const archH = archHeight;
 
     if (isSage) {
       ctx.font = "800 21px 'DM Sans', sans-serif";
@@ -293,27 +296,28 @@ const SocialStudio: React.FC = () => {
 
     const textX = isEditorial ? archX : 540;
     ctx.textAlign = isEditorial ? 'left' : 'center';
+    curY += textOffsetY;
 
     ctx.font = "800 19px 'DM Sans', sans-serif";
     ctx.fillStyle = '#2E5A44';
     ctx.fillText('🌿 OKC FRENCHIES & MINI BULLDOGS', textX, curY);
 
-    curY += h1Size * 0.85;
+    curY += h1Size * (0.85 * textGap + 0.15);
     ctx.font = `700 ${h1Size}px 'Playfair Display', serif`;
     ctx.fillStyle = '#1C2621';
     ctx.fillText(headline, textX, curY);
 
-    curY += bodySize * 1.45;
+    curY += bodySize * (1.35 * textGap + 0.25);
     ctx.font = `800 ${Math.max(16, bodySize - 3)}px 'DM Sans', sans-serif`;
     ctx.fillStyle = '#D46A4E';
     ctx.fillText(metaRow, textX, curY);
 
-    curY += bodySize * 1.3;
+    curY += bodySize * (1.2 * textGap + 0.2);
     ctx.font = `700 ${bodySize}px 'DM Sans', sans-serif`;
     ctx.fillStyle = '#2F3E37';
     wrapLines(ctx, coatText, 900).forEach((line) => {
       ctx.fillText(line, textX, curY);
-      curY += bodySize * 1.24;
+      curY += bodySize * (1.15 * textGap + 0.15);
     });
 
     if (dnaText.trim()) {
@@ -322,7 +326,7 @@ const SocialStudio: React.FC = () => {
       const fullDna = `DNA: ${dnaText.trim()}`;
       const boxW = Math.min(940, ctx.measureText(fullDna).width + 44);
       const boxX = isEditorial ? archX : 540 - boxW / 2;
-      roundRectPath(ctx, boxX, curY - 12, boxW, dnaFont + 22, 14, 14, 14, 14);
+      roundRectPath(ctx, boxX, curY - 12, boxW, dnaFont + 20, 14, 14, 14, 14);
       ctx.fillStyle = isSage ? '#FFFFFF' : '#F6F4EE';
       ctx.fill();
       ctx.strokeStyle = '#E2DCCD';
@@ -330,17 +334,17 @@ const SocialStudio: React.FC = () => {
       ctx.stroke();
       ctx.fillStyle = '#2E5A44';
       ctx.textAlign = 'center';
-      ctx.fillText(fullDna, boxX + boxW / 2, curY + dnaFont / 2 - 1);
+      ctx.fillText(fullDna, boxX + boxW / 2, curY + dnaFont / 2 - 2);
       ctx.textAlign = isEditorial ? 'left' : 'center';
-      curY += dnaFont + 30;
+      curY += dnaFont + 24 * textGap + 6;
     }
 
     ctx.font = `italic 600 ${quoteSize}px 'Playfair Display', serif`;
     ctx.fillStyle = '#2E5A44';
-    curY += 6;
+    curY += 6 * textGap;
     wrapLines(ctx, quoteText, 880).forEach((line) => {
       ctx.fillText(line, textX, curY);
-      curY += quoteSize * 1.24;
+      curY += quoteSize * (1.15 * textGap + 0.15);
     });
 
     const footerY = 1350 - pad - 96;
@@ -376,8 +380,17 @@ const SocialStudio: React.FC = () => {
     a.click();
   };
 
-  const posX = Math.max(0, Math.min(100, 50 - panX * 0.15));
-  const posY = Math.max(0, Math.min(100, 35 - panY * 0.15));
+  const previewPad = template === 'sage' ? 36 : 26;
+  const previewArchW = 1080 - previewPad * 2 - 52;
+  const previewArchH = archHeight;
+  const previewScale =
+    imgNat.w > 0 && imgNat.h > 0
+      ? Math.max(previewArchW / imgNat.w, previewArchH / imgNat.h) * zoom
+      : 1;
+  const previewDrawW = imgNat.w > 0 ? imgNat.w * previewScale : previewArchW;
+  const previewDrawH = imgNat.h > 0 ? imgNat.h * previewScale : previewArchH;
+  const previewDrawX = (previewArchW - previewDrawW) / 2 + panX;
+  const previewDrawY = (previewArchH - previewDrawH) / 2 + panY;
 
   return (
     <div className="min-h-screen bg-[#EFECE3] text-[#1C2621] pb-16">
@@ -685,6 +698,35 @@ const SocialStudio: React.FC = () => {
                 className="w-full accent-[#2E5A44]"
               />
             </label>
+            <label className="block text-xs font-bold text-[#3E4D45]">
+              <div className="flex justify-between mb-1">
+                <span>Text Spacing (Tight / Loose)</span>
+                <span className="text-[#D46A4E]">{textGap.toFixed(2)}×</span>
+              </div>
+              <input
+                type="range"
+                min={0.35}
+                max={1.4}
+                step={0.05}
+                value={textGap}
+                onChange={(e) => setTextGap(Number(e.target.value))}
+                className="w-full accent-[#2E5A44]"
+              />
+            </label>
+            <label className="block text-xs font-bold text-[#3E4D45]">
+              <div className="flex justify-between mb-1">
+                <span>Move Text Block Up / Down</span>
+                <span className="text-[#D46A4E]">{textOffsetY}px</span>
+              </div>
+              <input
+                type="range"
+                min={-60}
+                max={60}
+                value={textOffsetY}
+                onChange={(e) => setTextOffsetY(Number(e.target.value))}
+                className="w-full accent-[#2E5A44]"
+              />
+            </label>
           </div>
         </aside>
 
@@ -714,6 +756,8 @@ const SocialStudio: React.FC = () => {
               <div
                 style={{
                   flex: 1,
+                  minHeight: 0,
+                  overflow: 'hidden',
                   background: template === 'sage' ? '#F6F4EE' : '#FFFFFF',
                   border: template === 'sage' ? 'none' : '2px solid #EAE5D9',
                   borderRadius:
@@ -782,6 +826,7 @@ const SocialStudio: React.FC = () => {
                     position: 'relative',
                     width: '100%',
                     height: archHeight,
+                    flexShrink: 0,
                     borderRadius:
                       template === 'arch' ? '210px 210px 26px 26px' : '28px',
                     overflow: 'hidden',
@@ -793,16 +838,18 @@ const SocialStudio: React.FC = () => {
                     ref={imgRef}
                     src={photoSrc}
                     alt={headline}
+                    onLoad={(e) => {
+                      const im = e.currentTarget;
+                      setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
+                    }}
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: `${posX}% ${posY}%`,
-                      transform:
-                        zoom > 1
-                          ? `translate(${panX * 0.5}px, ${panY * 0.5}px) scale(${zoom})`
-                          : `scale(${zoom})`,
-                      transformOrigin: 'center center',
+                      position: 'absolute',
+                      left: previewDrawX,
+                      top: previewDrawY,
+                      width: previewDrawW,
+                      height: previewDrawH,
+                      maxWidth: 'none',
+                      maxHeight: 'none',
                       pointerEvents: 'none'
                     }}
                   />
@@ -830,89 +877,101 @@ const SocialStudio: React.FC = () => {
 
                 <div
                   style={{
-                    marginTop: template === 'sage' ? 16 : 10,
-                    fontSize: 19,
-                    fontWeight: 800,
-                    color: '#2E5A44',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase'
+                    position: 'relative',
+                    zIndex: 3,
+                    transform: `translateY(${textOffsetY}px)`,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: template === 'editorial' ? 'flex-start' : 'center'
                   }}
                 >
-                  🌿 OKC Frenchies &amp; Mini Bulldogs
-                </div>
-
-                <div
-                  style={{
-                    fontFamily: "'Playfair Display', serif",
-                    fontSize: h1Size,
-                    fontWeight: 700,
-                    lineHeight: 1.03,
-                    marginTop: 4,
-                    color: '#1C2621'
-                  }}
-                >
-                  {headline}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 8,
-                    fontSize: Math.max(16, bodySize - 3),
-                    fontWeight: 800,
-                    color: '#D46A4E',
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase'
-                  }}
-                >
-                  {metaRow}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: bodySize,
-                    color: '#2F3E37',
-                    fontWeight: 700,
-                    marginTop: 6,
-                    maxWidth: 920,
-                    lineHeight: 1.24
-                  }}
-                >
-                  {coatText}
-                </div>
-
-                {dnaText.trim() && (
                   <div
                     style={{
-                      marginTop: 10,
-                      background: template === 'sage' ? '#FFFFFF' : '#F6F4EE',
-                      border: '1.5px solid #E2DCCD',
-                      borderRadius: 14,
-                      padding: '7px 20px',
-                      fontSize: Math.max(15, bodySize - 5),
-                      fontWeight: 700,
+                      marginTop: template === 'sage' ? 16 * textGap : 10 * textGap,
+                      fontSize: 19,
+                      fontWeight: 800,
                       color: '#2E5A44',
-                      maxWidth: 940,
-                      lineHeight: 1.3
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase'
                     }}
                   >
-                    <strong style={{ color: '#1C2621', marginRight: 6 }}>DNA:</strong>
-                    {dnaText}
+                    🌿 OKC Frenchies &amp; Mini Bulldogs
                   </div>
-                )}
 
-                <div
-                  style={{
-                    marginTop: 12,
-                    fontFamily: "'Playfair Display', serif",
-                    fontStyle: 'italic',
-                    fontWeight: 600,
-                    fontSize: quoteSize,
-                    color: '#2E5A44',
-                    maxWidth: 900,
-                    lineHeight: 1.24
-                  }}
-                >
-                  {quoteText}
+                  <div
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontSize: h1Size,
+                      fontWeight: 700,
+                      lineHeight: 1.03,
+                      marginTop: 4 * textGap,
+                      color: '#1C2621'
+                    }}
+                  >
+                    {headline}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 8 * textGap,
+                      fontSize: Math.max(16, bodySize - 3),
+                      fontWeight: 800,
+                      color: '#D46A4E',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase'
+                    }}
+                  >
+                    {metaRow}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: bodySize,
+                      color: '#2F3E37',
+                      fontWeight: 700,
+                      marginTop: 6 * textGap,
+                      maxWidth: 920,
+                      lineHeight: 1.24
+                    }}
+                  >
+                    {coatText}
+                  </div>
+
+                  {dnaText.trim() && (
+                    <div
+                      style={{
+                        marginTop: 10 * textGap,
+                        background: template === 'sage' ? '#FFFFFF' : '#F6F4EE',
+                        border: '1.5px solid #E2DCCD',
+                        borderRadius: 14,
+                        padding: '6px 20px',
+                        fontSize: Math.max(15, bodySize - 5),
+                        fontWeight: 700,
+                        color: '#2E5A44',
+                        maxWidth: 940,
+                        lineHeight: 1.3
+                      }}
+                    >
+                      <strong style={{ color: '#1C2621', marginRight: 6 }}>DNA:</strong>
+                      {dnaText}
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      marginTop: 12 * textGap,
+                      fontFamily: "'Playfair Display', serif",
+                      fontStyle: 'italic',
+                      fontWeight: 600,
+                      fontSize: quoteSize,
+                      color: '#2E5A44',
+                      maxWidth: 900,
+                      lineHeight: 1.22
+                    }}
+                  >
+                    {quoteText}
+                  </div>
                 </div>
 
                 <div
