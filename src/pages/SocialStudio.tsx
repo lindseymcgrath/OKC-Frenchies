@@ -6,7 +6,11 @@ import puppiesData from '../data/puppies.json';
 import studsData from '../data/studs.json';
 import {
   BG_STYLES,
+  BRAND_PRODUCT_CATALOG,
+  BUILT_IN_BRAND_THEMES,
   BgStyle,
+  BrandThemeId,
+  BrandThemeKit,
   CanvasRatio,
   ContentMode,
   DID_YOU_KNOW_ITEMS,
@@ -16,6 +20,7 @@ import {
   OverlayShape,
   PhotoOverlayLayer,
   PillStyle,
+  ProductShowcaseItem,
   STAMP_BADGES,
   STANDARDS_AND_BLOG_ITEMS,
   SavedLayoutPreset,
@@ -60,6 +65,21 @@ const PILL_PALETTE: Record<
   terracotta: { label: 'Warm Terracotta', shortLabel: 'Terracotta', swatch: '#D46A4E', bg: '#D46A4E', text: '#FFFFFF', border: '#D46A4E', hasBg: true, shadow: true },
   blush: { label: 'Soft Rose', shortLabel: 'Soft Rose', swatch: '#F9E4E2', bg: '#F9E4E2', text: '#8C2F2B', border: '#EBC6C2', hasBg: true, shadow: true },
   berry: { label: 'Deep Berry', shortLabel: 'Berry', swatch: '#8C2F2B', bg: '#8C2F2B', text: '#F9E4E2', border: '#A33E39', hasBg: true, shadow: true },
+  coastal: { label: 'Coastal Navy', shortLabel: 'Coastal', swatch: '#234152', bg: '#234152', text: '#FFFFFF', border: '#365B70', hasBg: true, shadow: true },
+  kraft: { label: 'Raw Parchment', shortLabel: 'Kraft', swatch: '#EFE3CE', bg: '#EFE3CE', text: '#2B1B12', border: '#CBB594', hasBg: true, shadow: true },
+  crimson: { label: 'Butcher Crimson', shortLabel: 'Crimson', swatch: '#7A231D', bg: '#7A231D', text: '#EFE3CE', border: '#9E332B', hasBg: true, shadow: true },
+  amber: { label: 'Marrow Amber', shortLabel: 'Amber', swatch: '#D8973C', bg: '#D8973C', text: '#2B1B12', border: '#B97A24', hasBg: true, shadow: true },
+  pasture: { label: 'Pasture Herb', shortLabel: 'Pasture', swatch: '#2D4C39', bg: '#2D4C39', text: '#EFE3CE', border: '#466E56', hasBg: true, shadow: true },
+  obsidian: { label: 'Obsidian Carbon', shortLabel: 'Obsidian', swatch: '#11161B', bg: '#11161B', text: '#F5B841', border: '#0EA5E9', hasBg: true, shadow: true },
+  'cyber-teal': { label: 'Bio-Teal', shortLabel: 'Bio-Teal', swatch: '#0F766E', bg: '#0F766E', text: '#FFFFFF', border: '#F5B841', hasBg: true, shadow: true },
+  titanium: { label: 'Lab Titanium', shortLabel: 'Titanium', swatch: '#EDF2F7', bg: '#EDF2F7', text: '#11161B', border: '#B8C6D6', hasBg: true, shadow: true },
+  'igniter-red': { label: 'Igniter Red', shortLabel: 'Igniter', swatch: '#B91C1C', bg: '#B91C1C', text: '#FFFFFF', border: '#F5B841', hasBg: true, shadow: true },
+  'trophy-gold': { label: 'Trophy Gold', shortLabel: 'Trophy Gold', swatch: '#F5B841', bg: '#F5B841', text: '#11161B', border: '#B07914', hasBg: true, shadow: true },
+  'rp-hotspot': { label: 'Hotspot White/Orange', shortLabel: 'Hotspot', swatch: '#FF8A00', bg: '#FFFFFF', text: '#111317', border: '#FF8A00', hasBg: true, shadow: true },
+  'rp-clinical': { label: 'Clinical Teal', shortLabel: 'Clinical Teal', swatch: '#00ADC7', bg: '#14161B', text: '#00E5FF', border: '#00ADC7', hasBg: true, shadow: true },
+  'rp-orange': { label: 'Championship Orange', shortLabel: 'R&P Orange', swatch: '#FF8A00', bg: '#FF8A00', text: '#111317', border: '#FF8A00', hasBg: true, shadow: true },
+  'k9ss-crimson': { label: 'K9SS Crimson', shortLabel: 'K9SS Red', swatch: '#D32F2F', bg: '#D32F2F', text: '#FFFFFF', border: '#EF4444', hasBg: true, shadow: true },
+  'k9ss-hotspot': { label: 'K9SS Spec Pill', shortLabel: 'K9SS Spec', swatch: '#14171E', bg: '#14171E', text: '#FFFFFF', border: '#D32F2F', hasBg: true, shadow: true },
   frosted: {
     label: 'Dark Glass',
     shortLabel: 'Glass',
@@ -87,7 +107,14 @@ const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
   { value: '#1C2621', label: 'Charcoal', hex: '#1C2621' },
   { value: '#D46A4E', label: 'Terracotta', hex: '#D46A4E' },
   { value: '#F9E4E2', label: 'Soft Rose', hex: '#F9E4E2' },
-  { value: '#8C2F2B', label: 'Berry', hex: '#8C2F2B' }
+  { value: '#8C2F2B', label: 'Berry', hex: '#8C2F2B' },
+  { value: '#234152', label: 'Coastal Navy', hex: '#234152' },
+  { value: '#7A231D', label: 'Crimson', hex: '#7A231D' },
+  { value: '#D8973C', label: 'Amber', hex: '#D8973C' },
+  { value: '#EFE3CE', label: 'Kraft', hex: '#EFE3CE' },
+  { value: '#0F766E', label: 'Bio-Teal', hex: '#0F766E' },
+  { value: '#F5B841', label: 'Trophy Gold', hex: '#F5B841' },
+  { value: '#11161B', label: 'Obsidian', hex: '#11161B' }
 ];
 
 const SAVED_PRESETS_KEY = 'okcfrenchies_studio_saved_layouts_v1';
@@ -95,12 +122,30 @@ const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v3';
 const SAVED_AI_CARDS_KEY = 'okcfrenchies_studio_ai_history_v1';
 const CUSTOM_DOGS_KEY = 'okcfrenchies_studio_custom_dogs_v1';
 const CUSTOM_PHOTOS_KEY = 'okcfrenchies_studio_custom_photos_v1';
+const CUSTOM_THEMES_KEY = 'okcfrenchies_studio_custom_themes_v1';
 
 const FRAME_PRESET_OPTIONS: { key: FramePreset; label: string }[] = [
   { key: 'arch', label: '🌿 Botanical Arch' },
   { key: 'cameo', label: '🪞 Oval Cameo' },
-  { key: 'editorial', label: '🖼️ Editorial Polaroid' },
+  { key: 'editorial', label: '📸 Classic Polaroid' },
   { key: 'sage', label: '🌲 Gallery Mat' },
+  { key: 'stud-crest', label: '🏆 Royal Crest' },
+  { key: 'filmstrip', label: '🎞️ 35mm Filmstrip' },
+  { key: 'lookbook', label: '🖼️ Boutique Collage' },
+  { key: 'apothecary', label: '🏷️ Apothecary Label' },
+  { key: 'split-header', label: '🌅 Split Editorial' },
+  { key: 'magazine', label: '📰 Magazine Cover' },
+  { key: 'coastal', label: '🪪 Coastal Passport' },
+  { key: 'rp-showroom', label: '🏟️ Showroom Stage' },
+  { key: 'rp-product-spotlight', label: '🛍️ Product Pedestal' },
+  { key: 'rp-protocol-stack', label: '⚡ Protocol Stack' },
+  { key: 'rp-naturals-pedestal', label: '🍊 Naturals Pedestal' },
+  { key: 'rp-clinical-dossier', label: '🧬 80/10/10 Dossier' },
+  { key: 'rp-bento-grid', label: '📦 Pack Drop Bento' },
+  { key: 'k9ss-athlete-stage', label: '🔥 Athlete Stage' },
+  { key: 'k9ss-red-brutalist', label: '🚨 Red Brutalist' },
+  { key: 'k9ss-titanium-pedestal', label: '🛡️ Titanium Pedestal' },
+  { key: 'k9ss-lineup-bento', label: '💪 Pro Lineup Bento' },
   { key: 'minimal', label: '✨ Full Bleed' },
   { key: 'no-photo', label: '📝 Text Card' }
 ];
@@ -115,6 +160,7 @@ const TEXT_CARD_THEME_OPTIONS: { key: TextCardTheme; label: string }[] = [
 ];
 
 const OVERLAY_SHAPE_OPTIONS: { key: OverlayShape; label: string }[] = [
+  { key: 'cutout', label: '🛍️ Product Cutout' },
   { key: 'circle', label: '⭕ Circle' },
   { key: 'rounded', label: '▢ Rounded' },
   { key: 'arch', label: '🏛️ Arch' },
@@ -136,6 +182,31 @@ const OVERLAY_BORDER_SWATCHES: { value: string; label: string }[] = [
   { value: '#B59E99', label: 'Lilac Taupe' },
   { value: '#8C2F2B', label: 'Berry' }
 ];
+
+const isHexDark = (hex: string): boolean => {
+  if (!hex) return false;
+  const clean = hex.replace('#', '').trim();
+  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
+  if (!/^[0-9a-f]{6}$/i.test(full)) return false;
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.54;
+};
+
+const resolvePillAppearance = (layer: TextLayer) => {
+  const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
+  if (layer.customPillColor && pal.hasBg) {
+    const dark = isHexDark(layer.customPillColor);
+    return {
+      ...pal,
+      bg: layer.customPillColor,
+      border: layer.customPillColor,
+      text: dark ? '#FFFFFF' : '#1C2621'
+    };
+  }
+  return pal;
+};
 
 const applyColorAlpha = (color: string, opacity?: number): string => {
   if (opacity === undefined || opacity >= 0.999) return color;
@@ -164,6 +235,7 @@ const applyColorAlpha = (color: string, opacity?: number): string => {
 
 interface BrandRemixRecipe {
   name: string;
+  brandTheme?: BrandThemeId;
   preset: FramePreset;
   bgStyle: BgStyle;
   windowStyle: BgStyle;
@@ -695,6 +767,241 @@ const BRAND_REMIX_RECIPES: BrandRemixRecipe[] = [
     },
     textColors: { name: '#F4D37E' },
     visibleIds: ['status', 'name', 'coat', 'contact']
+  },
+  {
+    name: 'Cinema 35mm Filmstrip',
+    brandTheme: 'sunlit-garden',
+    preset: 'filmstrip',
+    bgStyle: 'espresso-mocha',
+    windowStyle: 'oat-latte',
+    pills: {
+      status: 'terracotta',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark',
+      contact: 'sage'
+    },
+    textColors: { name: '#1E1815', breedAge: '#D46A4E', coat: '#3B2B23' },
+    visibleIds: ['status', 'name', 'breedAge', 'coat', 'quote', 'contact']
+  },
+  {
+    name: 'Official Coastal Passport',
+    brandTheme: 'sunlit-garden',
+    preset: 'coastal',
+    bgStyle: 'coastal-sky',
+    windowStyle: 'cream-editorial',
+    pills: {
+      status: 'coastal',
+      sex: 'white',
+      name: 'none-dark',
+      breedAge: 'white',
+      coat: 'oat',
+      quote: 'none-dark',
+      contact: 'coastal'
+    },
+    textColors: { name: '#1C2621', breedAge: '#234152', coat: '#1C2621' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'coat', 'quote', 'contact']
+  },
+  {
+    name: 'Boutique Collage Sidebar',
+    brandTheme: 'sunlit-garden',
+    preset: 'lookbook',
+    bgStyle: 'blush-botanical',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'gold',
+      sex: 'blush',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark',
+      contact: 'sage'
+    },
+    textColors: { name: '#3B2B23', breedAge: '#8C2F2B' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'quote', 'contact']
+  },
+  // --- RAW & PAW CO. SHUFFLE RECIPES ---
+  {
+    name: 'Championship Showroom Stage',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-showroom',
+    bgStyle: 'rp-warm-stone',
+    windowStyle: 'rp-charcoal-stage',
+    pills: {
+      status: 'rp-clinical',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-light',
+      breedAge: 'none-light',
+      nutrition: 'none-light',
+      contact: 'rp-orange'
+    },
+    textColors: { name: '#FFFFFF', breedAge: '#FF8A00', nutrition: '#9CA3AF' },
+    visibleIds: ['status', 'sex', 'coat', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'Clinical Product Pedestal',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-product-spotlight',
+    bgStyle: 'rp-warm-stone',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'rp-clinical',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      nutrition: 'none-dark',
+      contact: 'rp-orange'
+    },
+    textColors: { name: '#111317', breedAge: '#007F94', nutrition: '#5A5D65' },
+    visibleIds: ['status', 'sex', 'coat', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'Neo-Brutalist Protocol Stack',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-protocol-stack',
+    bgStyle: 'rp-warm-stone',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'obsidian',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      nutrition: 'rp-clinical',
+      contact: 'rp-orange'
+    },
+    textColors: { name: '#111317', breedAge: '#007F94' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'Holistic Naturals Amber Pedestal',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-naturals-pedestal',
+    bgStyle: 'rp-naturals-linen',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'rp-orange',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      nutrition: 'amber',
+      contact: 'obsidian'
+    },
+    textColors: { name: '#1F1A14', breedAge: '#C96400' },
+    visibleIds: ['status', 'sex', 'coat', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: '80/10/10 Clinical Spec Dossier',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-clinical-dossier',
+    bgStyle: 'rp-warm-stone',
+    windowStyle: 'rp-clinical-ice',
+    pills: {
+      status: 'rp-clinical',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      nutrition: 'none-dark',
+      contact: 'rp-orange'
+    },
+    textColors: { name: '#111317', breedAge: '#007F94', nutrition: '#4A5568' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'Pack Drop Asymmetric Bento',
+    brandTheme: 'raw-and-paw',
+    preset: 'rp-bento-grid',
+    bgStyle: 'rp-warm-stone',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'rp-orange',
+      sex: 'rp-hotspot',
+      coat: 'rp-hotspot',
+      name: 'none-light',
+      breedAge: 'none-light',
+      nutrition: 'rp-clinical',
+      contact: 'rp-orange'
+    },
+    textColors: { name: '#FFFFFF', breedAge: '#00E5FF' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  // --- K9SS PERFORMANCE SHUFFLE RECIPES ---
+  {
+    name: 'K9SS Crimson Athlete Stage',
+    brandTheme: 'k9ss',
+    preset: 'k9ss-athlete-stage',
+    bgStyle: 'obsidian-carbon',
+    windowStyle: 'k9ss-steel',
+    pills: {
+      status: 'k9ss-crimson',
+      sex: 'k9ss-hotspot',
+      coat: 'k9ss-hotspot',
+      name: 'none-light',
+      breedAge: 'none-light',
+      nutrition: 'none-light',
+      contact: 'k9ss-crimson'
+    },
+    textColors: { name: '#FFFFFF', breedAge: '#EF4444', nutrition: '#D1D5DB' },
+    visibleIds: ['status', 'sex', 'coat', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'K9SS Red Neo-Brutalist Stack',
+    brandTheme: 'k9ss',
+    preset: 'k9ss-red-brutalist',
+    bgStyle: 'k9ss-steel',
+    windowStyle: 'obsidian-carbon',
+    pills: {
+      status: 'k9ss-crimson',
+      sex: 'k9ss-hotspot',
+      coat: 'k9ss-hotspot',
+      name: 'none-light',
+      breedAge: 'none-light',
+      nutrition: 'titanium',
+      contact: 'k9ss-crimson'
+    },
+    textColors: { name: '#FFFFFF', breedAge: '#EF4444' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'K9SS Titanium Product Pedestal',
+    brandTheme: 'k9ss',
+    preset: 'k9ss-titanium-pedestal',
+    bgStyle: 'obsidian-carbon',
+    windowStyle: 'k9ss-titanium',
+    pills: {
+      status: 'k9ss-crimson',
+      sex: 'k9ss-hotspot',
+      coat: 'k9ss-hotspot',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      nutrition: 'obsidian',
+      contact: 'k9ss-crimson'
+    },
+    textColors: { name: '#111317', breedAge: '#D32F2F' },
+    visibleIds: ['status', 'sex', 'coat', 'name', 'breedAge', 'nutrition', 'contact']
+  },
+  {
+    name: 'K9SS Pro Lineup Bento',
+    brandTheme: 'k9ss',
+    preset: 'k9ss-lineup-bento',
+    bgStyle: 'obsidian-carbon',
+    windowStyle: 'k9ss-steel',
+    pills: {
+      status: 'k9ss-crimson',
+      sex: 'k9ss-hotspot',
+      coat: 'k9ss-hotspot',
+      name: 'none-light',
+      breedAge: 'none-light',
+      nutrition: 'none-light',
+      contact: 'k9ss-crimson'
+    },
+    textColors: { name: '#FFFFFF', breedAge: '#FCA5A5', nutrition: '#D1D5DB' },
+    visibleIds: ['status', 'sex', 'name', 'breedAge', 'nutrition', 'contact']
   }
 ];
 
@@ -737,6 +1044,27 @@ const roundRectPath = (
   ctx.quadraticCurveTo(x, y + h, x, y + h - rbl);
   ctx.lineTo(x, y + rtl);
   ctx.quadraticCurveTo(x, y, x + rtl, y);
+  ctx.closePath();
+};
+
+const chamferRectPath = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  cut: number
+) => {
+  const c = Math.max(0, Math.min(cut, w / 2, h / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + c, y);
+  ctx.lineTo(x + w - c, y);
+  ctx.lineTo(x + w, y + c);
+  ctx.lineTo(x + w, y + h - c);
+  ctx.lineTo(x + w - c, y + h);
+  ctx.lineTo(x + c, y + h);
+  ctx.lineTo(x, y + h - c);
+  ctx.lineTo(x, y + c);
   ctx.closePath();
 };
 
@@ -854,16 +1182,44 @@ const compressImageFileToDataUrl = (file: File, maxDim = 1280, quality = 0.84): 
     reader.readAsDataURL(file);
   });
 
+const WEBSITE_TECH_PRESETS: ReadonlySet<FramePreset> = new Set<FramePreset>([
+  'rp-showroom',
+  'rp-product-spotlight',
+  'rp-protocol-stack',
+  'rp-naturals-pedestal',
+  'rp-clinical-dossier',
+  'rp-bento-grid',
+  'k9ss-athlete-stage',
+  'k9ss-red-brutalist',
+  'k9ss-titanium-pedestal',
+  'k9ss-lineup-bento'
+]);
+
+const isWebsiteTechPreset = (preset: FramePreset): boolean => WEBSITE_TECH_PRESETS.has(preset);
+
 const getFrameGeometry = (
   preset: FramePreset,
   canvasH: number,
   archH: number,
   bgStyle: BgStyle = 'cream-editorial',
   windowStyle: BgStyle = 'pure-white',
-  textCardTheme: TextCardTheme = 'arch-crest'
+  textCardTheme: TextCardTheme = 'arch-crest',
+  customBgColor?: string,
+  customWindowColor?: string
 ) => {
   const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
   const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
+  const resolvedOuterBg1 = customBgColor || outerTheme.bg1;
+  const resolvedOuterBg2 = customBgColor || outerTheme.bg2;
+  const resolvedCardBg = customWindowColor || winTheme.cardBg;
+  const resolvedWinDarkText = customWindowColor ? !isHexDark(customWindowColor) : winTheme.darkText;
+  const resolvedCardBorder = customWindowColor
+    ? resolvedWinDarkText
+      ? 'rgba(28,38,33,0.18)'
+      : 'rgba(255,255,255,0.24)'
+    : winTheme.border;
+  const resolvedOuterDarkText = customBgColor ? !isHexDark(customBgColor) : outerTheme.darkText;
+  const resolvedCardAccent = winTheme.accent;
 
   if (preset === 'no-photo') {
     const isMinimalLuxe = textCardTheme === 'minimal-luxe';
@@ -874,8 +1230,8 @@ const getFrameGeometry = (
     const padX = isCameo ? 64 : isMagazine ? 46 : 50;
     const padY = isCameo ? 74 : isMagazine ? 46 : 50;
     return {
-      outerBg1: outerTheme.bg1,
-      outerBg2: outerTheme.bg2,
+      outerBg1: resolvedOuterBg1,
+      outerBg2: resolvedOuterBg2,
       hasCard: !isMinimalLuxe,
       hasPhoto: false,
       textCardTheme,
@@ -883,8 +1239,21 @@ const getFrameGeometry = (
       cardY: padY,
       cardW: 1080 - padX * 2,
       cardH: canvasH - padY * 2,
-      cardBg: winTheme.cardBg,
-      cardBorder: winTheme.border,
+      cardBg: resolvedCardBg,
+      cardBorder: resolvedCardBorder,
+      cardBorderWidth: 2,
+      cardHardShadowColor: '',
+      cardAccent: resolvedCardAccent,
+      photoBackdrop: '#EFECE4',
+      winDarkText: isMinimalLuxe ? resolvedOuterDarkText : resolvedWinDarkText,
+      headerDarkText: resolvedOuterDarkText,
+      headerBg: resolvedOuterBg2,
+      headerH: 0,
+      chamferCut: 0,
+      photoChamfer: 0,
+      photoBottomScrim: false,
+      spineWidth: 0,
+      contentCenterX: 540,
       cardTopR: isCameo ? 999 : isMagazine || isRibbon || isSplit ? 38 : 220,
       cardBottomR: isCameo ? 999 : 40,
       photoX: 0,
@@ -898,8 +1267,8 @@ const getFrameGeometry = (
 
   if (preset === 'minimal') {
     return {
-      outerBg1: outerTheme.bg1,
-      outerBg2: outerTheme.bg2,
+      outerBg1: resolvedOuterBg1,
+      outerBg2: resolvedOuterBg2,
       hasCard: false,
       hasPhoto: true,
       textCardTheme,
@@ -909,6 +1278,19 @@ const getFrameGeometry = (
       cardH: canvasH,
       cardBg: 'transparent',
       cardBorder: 'transparent',
+      cardBorderWidth: 0,
+      cardHardShadowColor: '',
+      cardAccent: resolvedCardAccent,
+      photoBackdrop: '#14161B',
+      winDarkText: false,
+      headerDarkText: false,
+      headerBg: resolvedOuterBg2,
+      headerH: 0,
+      chamferCut: 0,
+      photoChamfer: 0,
+      photoBottomScrim: false,
+      spineWidth: 0,
+      contentCenterX: 540,
       cardTopR: 0,
       cardBottomR: 0,
       photoX: 0,
@@ -920,33 +1302,311 @@ const getFrameGeometry = (
     };
   }
 
-  const pad = preset === 'sage' ? 38 : preset === 'cameo' ? 34 : 26;
-  const cardW = 1080 - pad * 2;
-  const cardH = canvasH - pad * 2;
-  const photoW = preset === 'cameo' ? 760 : cardW - 52;
-  const photoX = preset === 'cameo' ? Math.round((1080 - photoW) / 2) : pad + 26;
-  const photoY = preset === 'sage' ? pad + 86 : preset === 'cameo' ? pad + 56 : pad + 24;
-  const clampedArch = Math.min(archH, canvasH - 360);
+  const isLegacyPreset =
+    preset === 'arch' || preset === 'cameo' || preset === 'editorial' || preset === 'sage';
+
+  if (isLegacyPreset) {
+    const pad = preset === 'sage' ? 38 : preset === 'cameo' ? 34 : 26;
+    const cardW = 1080 - pad * 2;
+    const cardH = canvasH - pad * 2;
+    const photoW = preset === 'cameo' ? 760 : cardW - 52;
+    const photoX = preset === 'cameo' ? Math.round((1080 - photoW) / 2) : pad + 26;
+    const photoY = preset === 'sage' ? pad + 86 : preset === 'cameo' ? pad + 56 : pad + 24;
+    const clampedArch = Math.min(archH, canvasH - 360);
+    return {
+      outerBg1: resolvedOuterBg1,
+      outerBg2: resolvedOuterBg2,
+      hasCard: true,
+      hasPhoto: true,
+      textCardTheme,
+      cardX: pad,
+      cardY: pad,
+      cardW,
+      cardH,
+      cardBg: resolvedCardBg,
+      cardBorder: resolvedCardBorder,
+      cardBorderWidth: 2,
+      cardHardShadowColor: '',
+      cardAccent: resolvedCardAccent,
+      photoBackdrop: '#EFECE4',
+      winDarkText: resolvedWinDarkText,
+      headerDarkText: resolvedWinDarkText,
+      headerBg: resolvedOuterBg2,
+      headerH: 0,
+      chamferCut: 0,
+      photoChamfer: 0,
+      photoBottomScrim: false,
+      spineWidth: 0,
+      contentCenterX: 540,
+      cardTopR: preset === 'arch' ? 230 : 42,
+      cardBottomR: 40,
+      photoX,
+      photoY,
+      photoW,
+      photoH: clampedArch,
+      photoTopR: preset === 'arch' ? 210 : preset === 'cameo' ? 999 : 28,
+      photoBottomR: preset === 'cameo' ? 999 : 26
+    };
+  }
+
+  // Multi-Brand Signature Templates: stud-crest, filmstrip, lookbook (Boutique Collage), apothecary, split-header, magazine, coastal, keyhole
+  const pad =
+    preset === 'apothecary'
+      ? 42
+      : preset === 'coastal'
+        ? 36
+        : preset === 'split-header' || preset === 'lookbook'
+          ? 34
+          : preset === 'stud-crest'
+            ? 30
+            : 26;
+  let cardX = pad;
+  let cardY = pad;
+  let cardW = 1080 - pad * 2;
+  let cardH = canvasH - pad * 2;
+  const spineWidth = preset === 'lookbook' ? 122 : 0;
+  let headerH =
+    preset === 'split-header' ? 246 : preset === 'magazine' ? 112 : preset === 'coastal' ? 82 : 0;
+
+  let cardBorder = resolvedCardBorder;
+  let cardBorderWidth = 2;
+  let cardHardShadowColor = '';
+  let photoBackdrop = '#EFECE4';
+  let photoX = pad + 28;
+  let photoY = pad + 28;
+  let photoW = cardW - 56;
+  let cardTopR = 38;
+  let cardBottomR = 38;
+  let photoTopR = 26;
+  let photoBottomR = 26;
+  let minBottomRoom = 330;
+  let photoChamfer = 0;
+  let photoBottomScrim = false;
+  let forcedPhotoH: number | null = null;
+
+  if (preset === 'keyhole') {
+    photoW = 730;
+    photoX = Math.round((1080 - photoW) / 2);
+    photoY = pad + 82;
+    cardTopR = 46;
+    cardBottomR = 46;
+    photoTopR = 999;
+    photoBottomR = 999;
+    minBottomRoom = 340;
+  } else if (preset === 'filmstrip') {
+    photoX = 128;
+    photoY = 122;
+    photoW = 824;
+    photoTopR = 22;
+    photoBottomR = 22;
+    minBottomRoom = 360;
+    cardTopR = 30;
+    cardBottomR = 30;
+  } else if (preset === 'apothecary') {
+    photoX = pad + 52;
+    photoY = pad + 106;
+    photoW = cardW - 104;
+    cardTopR = 0;
+    cardBottomR = 0;
+    photoTopR = 0;
+    photoBottomR = 0;
+    photoChamfer = 38;
+    minBottomRoom = 345;
+  } else if (preset === 'split-header') {
+    photoX = pad + 30;
+    photoY = pad + 266;
+    photoW = cardW - 60;
+    forcedPhotoH = Math.max(320, cardH - 296);
+    cardTopR = 40;
+    cardBottomR = 40;
+    photoTopR = 30;
+    photoBottomR = 30;
+    photoBottomScrim = true;
+  } else if (preset === 'stud-crest') {
+    photoW = 852;
+    photoX = Math.round((1080 - photoW) / 2);
+    photoY = pad + 114;
+    cardTopR = 34;
+    cardBottomR = 34;
+    photoTopR = 350;
+    photoBottomR = 28;
+    minBottomRoom = 350;
+  } else if (preset === 'magazine') {
+    photoX = pad + 24;
+    photoY = pad + 126;
+    photoW = cardW - 48;
+    forcedPhotoH = Math.max(340, cardH - 212);
+    cardTopR = 28;
+    cardBottomR = 28;
+    photoTopR = 24;
+    photoBottomR = 24;
+    photoBottomScrim = true;
+  } else if (preset === 'lookbook') {
+    photoX = pad + 28 + spineWidth + 24;
+    photoY = pad + 32;
+    photoW = cardW - 28 - spineWidth - 52;
+    cardTopR = 36;
+    cardBottomR = 36;
+    photoTopR = 30;
+    photoBottomR = 30;
+    minBottomRoom = 345;
+  } else if (preset === 'coastal') {
+    photoX = pad + 34;
+    photoY = pad + 92;
+    photoW = cardW - 68;
+    cardTopR = 38;
+    cardBottomR = 38;
+    photoTopR = 26;
+    photoBottomR = 26;
+    minBottomRoom = 360;
+  } else if (preset === 'rp-showroom' || preset === 'k9ss-athlete-stage') {
+    cardX = 46;
+    cardY = 42;
+    cardW = 988;
+    cardH = canvasH - 84;
+    headerH = 74;
+    photoX = 82;
+    photoY = 128;
+    photoW = 916;
+    cardTopR = 40;
+    cardBottomR = 40;
+    photoTopR = 26;
+    photoBottomR = 26;
+    minBottomRoom = 365;
+    photoBackdrop = '#181C24';
+    if (preset === 'k9ss-athlete-stage') {
+      cardBorder = '#D32F2F';
+      cardBorderWidth = 3;
+    }
+  } else if (preset === 'rp-product-spotlight' || preset === 'k9ss-titanium-pedestal') {
+    cardX = 48;
+    cardY = 44;
+    cardW = 984;
+    cardH = canvasH - 88;
+    headerH = 88;
+    photoX = 84;
+    photoY = 148;
+    photoW = 912;
+    cardTopR = 40;
+    cardBottomR = 40;
+    photoTopR = 30;
+    photoBottomR = 30;
+    minBottomRoom = 360;
+    photoBackdrop = preset === 'k9ss-titanium-pedestal' ? '#E2E8F0' : '#EAF6F8';
+  } else if (preset === 'rp-protocol-stack' || preset === 'k9ss-red-brutalist') {
+    cardX = 52;
+    cardY = 48;
+    cardW = 960;
+    cardH = canvasH - 108;
+    headerH = 112;
+    photoX = 88;
+    photoY = 172;
+    photoW = 888;
+    cardTopR = 32;
+    cardBottomR = 32;
+    photoTopR = 22;
+    photoBottomR = 22;
+    minBottomRoom = 370;
+    cardBorderWidth = 4;
+    cardHardShadowColor = preset === 'k9ss-red-brutalist' ? '#D32F2F' : '#111317';
+    cardBorder = preset === 'k9ss-red-brutalist' ? '#D32F2F' : '#111317';
+    photoBackdrop = preset === 'k9ss-red-brutalist' ? '#14171E' : '#F3FAFB';
+  } else if (preset === 'rp-naturals-pedestal') {
+    cardX = 50;
+    cardY = 46;
+    cardW = 980;
+    cardH = canvasH - 92;
+    headerH = 86;
+    photoX = 86;
+    photoY = 148;
+    photoW = 908;
+    cardTopR = 42;
+    cardBottomR = 42;
+    photoTopR = 30;
+    photoBottomR = 30;
+    minBottomRoom = 365;
+    photoBackdrop = '#FAF0E1';
+  } else if (preset === 'rp-clinical-dossier') {
+    cardX = 48;
+    cardY = 44;
+    cardW = 984;
+    cardH = canvasH - 88;
+    headerH = 166;
+    photoX = 84;
+    photoY = 226;
+    photoW = 912;
+    cardTopR = 36;
+    cardBottomR = 36;
+    photoTopR = 24;
+    photoBottomR = 24;
+    minBottomRoom = 345;
+    photoBackdrop = '#EAF6F8';
+  } else if (preset === 'rp-bento-grid' || preset === 'k9ss-lineup-bento') {
+    cardX = 46;
+    cardY = 42;
+    cardW = 988;
+    cardH = canvasH - 84;
+    headerH = 92;
+    photoX = 78;
+    photoY = 148;
+    photoW = 924;
+    cardTopR = 36;
+    cardBottomR = 36;
+    photoTopR = 26;
+    photoBottomR = 26;
+    minBottomRoom = 365;
+    photoBackdrop = preset === 'k9ss-lineup-bento' ? '#181C24' : '#F3FAFB';
+  }
+
+  const maxPhotoH = Math.max(
+    260,
+    canvasH - (preset === 'filmstrip' ? 30 : isWebsiteTechPreset(preset) ? cardY : pad) - photoY - minBottomRoom
+  );
+  const photoH = forcedPhotoH !== null ? forcedPhotoH : Math.min(archH, maxPhotoH);
+
+  if (preset === 'filmstrip') {
+    cardX = 56;
+    cardY = photoY + photoH + 34;
+    cardW = 968;
+    cardH = Math.max(240, canvasH - cardY - 32);
+  }
+
+  const contentCenterX = 540;
+  const resolvedHeaderBg = customBgColor ? resolvedOuterBg1 : outerTheme.bg2;
+
   return {
-    outerBg1: outerTheme.bg1,
-    outerBg2: outerTheme.bg2,
+    outerBg1: resolvedOuterBg1,
+    outerBg2: resolvedOuterBg2,
     hasCard: true,
     hasPhoto: true,
     textCardTheme,
-    cardX: pad,
-    cardY: pad,
+    cardX,
+    cardY,
     cardW,
     cardH,
-    cardBg: winTheme.cardBg,
-    cardBorder: winTheme.border,
-    cardTopR: preset === 'arch' ? 230 : 42,
-    cardBottomR: 40,
+    cardBg: resolvedCardBg,
+    cardBorder,
+    cardBorderWidth,
+    cardHardShadowColor,
+    cardAccent: resolvedCardAccent,
+    photoBackdrop,
+    winDarkText: resolvedWinDarkText,
+    headerDarkText: resolvedWinDarkText,
+    headerBg: resolvedHeaderBg,
+    headerH,
+    chamferCut: preset === 'apothecary' ? 46 : 0,
+    photoChamfer,
+    photoBottomScrim,
+    spineWidth,
+    contentCenterX,
+    cardTopR,
+    cardBottomR,
     photoX,
     photoY,
     photoW,
-    photoH: clampedArch,
-    photoTopR: preset === 'arch' ? 210 : preset === 'cameo' ? 999 : 28,
-    photoBottomR: preset === 'cameo' ? 999 : 26
+    photoH,
+    photoTopR,
+    photoBottomR
   };
 };
 
@@ -972,13 +1632,16 @@ const resolveLayerOverlaps = (
   layers: TextLayer[],
   minTop: number,
   maxBottom: number,
-  centerSoloPair = true
+  centerSoloPair = true,
+  centerX = 540
 ): TextLayer[] => {
+  const minLeftEdge = centerX > 555 ? 156 : 44;
+  const maxWidth = centerX > 555 ? 840 : 980;
   let working = layers.map((l) => {
-    // Clamp horizontal edges inside the 1080px canvas with safe margins
-    const clampedWidth = Math.min(l.pillWidth, 980);
+    // Clamp horizontal edges inside the active card pane with safe margins
+    const clampedWidth = Math.min(l.pillWidth, maxWidth);
     const halfW = clampedWidth / 2;
-    const clampedX = Math.max(44 + halfW, Math.min(1080 - 44 - halfW, l.x));
+    const clampedX = Math.max(minLeftEdge + halfW, Math.min(1080 - 44 - halfW, l.x));
     return { ...l, pillWidth: clampedWidth, x: clampedX };
   });
 
@@ -988,16 +1651,16 @@ const resolveLayerOverlaps = (
     if (statusVis && !sexVis) {
       working = working.map((l) =>
         l.id === 'status'
-          ? { ...l, x: 540, pillWidth: Math.max(l.pillWidth, Math.min(620, l.text.length * 14 + 70)) }
+          ? { ...l, x: centerX, pillWidth: Math.max(l.pillWidth, Math.min(620, l.text.length * 14 + 70)) }
           : l
       );
     } else if (sexVis && !statusVis) {
-      working = working.map((l) => (l.id === 'sex' ? { ...l, x: 540 } : l));
+      working = working.map((l) => (l.id === 'sex' ? { ...l, x: centerX } : l));
     } else if (statusVis && sexVis && Math.abs(statusVis.y - sexVis.y) <= 18) {
       // Ensure side-by-side status + sex pills never touch horizontally
       working = working.map((l) => {
-        if (l.id === 'status') return { ...l, x: 350, pillWidth: Math.min(l.pillWidth, 400) };
-        if (l.id === 'sex') return { ...l, x: 730, pillWidth: Math.min(l.pillWidth, 240) };
+        if (l.id === 'status') return { ...l, x: centerX - 190, pillWidth: Math.min(l.pillWidth, 390) };
+        if (l.id === 'sex') return { ...l, x: centerX + 190, pillWidth: Math.min(l.pillWidth, 235) };
         return l;
       });
     }
@@ -1142,18 +1805,1117 @@ const resolveLayerOverlaps = (
   return working.map((l) => (rowYById.has(l.id) ? { ...l, y: rowYById.get(l.id)! } : l));
 };
 
+const applyPresetOverlapZones = (
+  preset: FramePreset,
+  layers: TextLayer[],
+  geom: ReturnType<typeof getFrameGeometry>,
+  canvasH: number
+): TextLayer[] => {
+  if (preset === 'no-photo') {
+    return resolveLayerOverlaps(layers, 68, canvasH - 68, false, 540);
+  }
+  if (preset === 'minimal') {
+    const topPass = resolveLayerOverlaps(layers, 46, Math.round(canvasH * 0.44), false, 540);
+    return resolveLayerOverlaps(topPass, Math.round(canvasH * 0.54), canvasH - 36, false, 540);
+  }
+  const photoBottom = geom.photoY + geom.photoH;
+  const cardBottom = geom.cardY + geom.cardH;
+  if (preset === 'split-header') {
+    const topZoneMax = Math.max(geom.cardY + 120, geom.cardY + geom.headerH - 12);
+    const headerPass = resolveLayerOverlaps(layers, geom.cardY + 22, topZoneMax, false, 540);
+    return resolveLayerOverlaps(
+      headerPass,
+      Math.max(geom.photoY + 60, photoBottom - 235),
+      photoBottom - 16,
+      false,
+      540
+    );
+  }
+  if (preset === 'magazine') {
+    const scrimPass = resolveLayerOverlaps(
+      layers,
+      Math.max(geom.photoY + 90, photoBottom - 255),
+      photoBottom - 16,
+      false,
+      540
+    );
+    return resolveLayerOverlaps(scrimPass, photoBottom + 8, cardBottom - 10, false, 540);
+  }
+  if (isWebsiteTechPreset(preset)) {
+    const windowPass = resolveLayerOverlaps(
+      layers,
+      geom.photoY + 24,
+      photoBottom - 16,
+      false,
+      geom.contentCenterX
+    );
+    return resolveLayerOverlaps(windowPass, photoBottom + 18, cardBottom - 18, false, geom.contentCenterX);
+  }
+  const footerTop =
+    preset === 'filmstrip'
+      ? geom.cardY + 18
+      : preset === 'sage' ||
+          preset === 'stud-crest' ||
+          preset === 'coastal' ||
+          preset === 'apothecary' ||
+          preset === 'lookbook'
+        ? photoBottom + 14
+        : photoBottom - 20;
+  const centerSoloPair =
+    preset === 'arch' ||
+    preset === 'cameo' ||
+    preset === 'editorial' ||
+    preset === 'keyhole' ||
+    preset === 'lookbook';
+  return resolveLayerOverlaps(layers, footerTop, cardBottom - 18, centerSoloPair, geom.contentCenterX);
+};
+
+const buildFramedSignatureLayers = (opts: {
+  preset: FramePreset;
+  geom: ReturnType<typeof getFrameGeometry>;
+  canvasH: number;
+  bgStyle: BgStyle;
+  activeKit: BrandThemeKit;
+  statusLabel: string;
+  statusStr: string;
+  sexLabel: string;
+  sexStr: string;
+  showSex: boolean;
+  sexPill: PillStyle;
+  nameLabel: string;
+  nameStr: string;
+  breedLabel: string;
+  breedAgeStr: string;
+  coatStr: string;
+  showCoat: boolean;
+  dnaStr: string;
+  showDna: boolean;
+  quoteStr: string;
+  showQuoteDefault: boolean;
+  isStud: boolean;
+}): TextLayer[] => {
+  const {
+    preset,
+    geom,
+    canvasH,
+    bgStyle,
+    activeKit,
+    statusLabel,
+    statusStr,
+    sexLabel,
+    sexStr,
+    showSex,
+    sexPill,
+    nameLabel,
+    nameStr,
+    breedLabel,
+    breedAgeStr,
+    coatStr,
+    showCoat,
+    dnaStr,
+    showDna,
+    quoteStr,
+    showQuoteDefault,
+    isStud
+  } = opts;
+  const baseTextPill: PillStyle = geom.winDarkText ? 'none-dark' : 'none-light';
+  const isRaw = activeKit.id === 'raw-and-paw';
+  const isK9 = activeKit.id === 'k9ss';
+  const primaryAccentPill: PillStyle = isK9 ? 'trophy-gold' : isRaw ? 'amber' : 'gold';
+  const darkBadgePill: PillStyle = isK9 ? 'obsidian' : isRaw ? 'crimson' : 'mocha';
+  const bodyBadgePill: PillStyle = isK9 ? 'titanium' : isRaw ? 'kraft' : 'cream';
+  const contactSurfacePill: PillStyle = geom.winDarkText
+    ? isK9
+      ? 'obsidian'
+      : isRaw
+        ? 'crimson'
+        : 'sage'
+    : primaryAccentPill;
+
+  const photoBottom = geom.photoY + geom.photoH;
+  const cardBottom = geom.cardY + geom.cardH;
+  const cx = geom.contentCenterX;
+  const maxContentW = 860;
+  let layers: TextLayer[];
+
+  if (preset === 'split-header') {
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: 245,
+        y: geom.cardY + 52,
+        fontSize: 20,
+        pillWidth: 330,
+        padY: 10,
+        pill: primaryAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: true,
+        text: activeKit.handle,
+        x: 855,
+        y: geom.cardY + 52,
+        fontSize: 21,
+        pillWidth: 260,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: 540,
+        y: geom.cardY + 132,
+        fontSize: 58,
+        pillWidth: 880,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: 540,
+        y: geom.cardY + 202,
+        fontSize: 22,
+        pillWidth: 880,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: false,
+        text: sexStr,
+        x: 540,
+        y: geom.photoY + 38,
+        fontSize: 20,
+        pillWidth: 230,
+        padY: 10,
+        pill: sexPill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: false,
+        text: coatStr,
+        x: 540,
+        y: photoBottom - 185,
+        fontSize: 22,
+        pillWidth: 780,
+        padY: 9,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: 540,
+        y: photoBottom - 150,
+        fontSize: 19,
+        pillWidth: 760,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault,
+        text: quoteStr,
+        x: 540,
+        y: photoBottom - 118,
+        fontSize: 27,
+        pillWidth: 860,
+        padY: 8,
+        pill: 'none-light',
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: 540,
+        y: photoBottom - 78,
+        fontSize: 20,
+        pillWidth: 680,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: photoBottom - 38,
+        fontSize: 21,
+        pillWidth: 660,
+        padY: 10,
+        pill: bodyBadgePill,
+        font: 'sans'
+      }
+    ];
+  } else if (preset === 'magazine') {
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: 250,
+        y: geom.photoY + 44,
+        fontSize: 20,
+        pillWidth: 320,
+        padY: 10,
+        pill: primaryAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: showSex,
+        text: sexStr,
+        x: 845,
+        y: geom.photoY + 44,
+        fontSize: 20,
+        pillWidth: 230,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: false,
+        text: activeKit.handle,
+        x: 540,
+        y: geom.cardY + 86,
+        fontSize: 21,
+        pillWidth: 280,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: 540,
+        y: photoBottom - 178,
+        fontSize: 62,
+        pillWidth: 880,
+        padY: 8,
+        pill: 'none-light',
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: !showCoat,
+        text: breedAgeStr.toUpperCase(),
+        x: 540,
+        y: photoBottom - 118,
+        fontSize: 22,
+        pillWidth: 840,
+        padY: 6,
+        pill: 'none-light',
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: showCoat,
+        text: coatStr,
+        x: 540,
+        y: photoBottom - 104,
+        fontSize: 23,
+        pillWidth: 780,
+        padY: 10,
+        pill: primaryAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: 540,
+        y: photoBottom - 140,
+        fontSize: 19,
+        pillWidth: 760,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: 540,
+        y: photoBottom - 142,
+        fontSize: 20,
+        pillWidth: 680,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault,
+        text: quoteStr,
+        x: 540,
+        y: photoBottom - 44,
+        fontSize: 25,
+        pillWidth: 860,
+        padY: 8,
+        pill: 'none-light',
+        font: 'serif-italic'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: cardBottom - 42,
+        fontSize: 21,
+        pillWidth: 820,
+        padY: 9,
+        pill: baseTextPill,
+        font: 'sans'
+      }
+    ];
+  } else if (preset === 'stud-crest') {
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: 540,
+        y: geom.cardY + 60,
+        fontSize: 20,
+        pillWidth: 460,
+        padY: 10,
+        pill: primaryAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: false,
+        text: activeKit.handle,
+        x: 540,
+        y: geom.cardY + 34,
+        fontSize: 20,
+        pillWidth: 280,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: 540,
+        y: photoBottom + 50,
+        fontSize: 58,
+        pillWidth: 840,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: 540,
+        y: photoBottom + 108,
+        fontSize: 21,
+        pillWidth: 840,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: showCoat,
+        text: coatStr,
+        x: showSex ? 325 : 540,
+        y: photoBottom + 168,
+        fontSize: 20,
+        pillWidth: showSex ? 400 : 780,
+        padY: 11,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: showSex,
+        text: sexStr,
+        x: 755,
+        y: photoBottom + 168,
+        fontSize: 20,
+        pillWidth: 360,
+        padY: 11,
+        pill: sexPill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: 540,
+        y: photoBottom + 216,
+        fontSize: 19,
+        pillWidth: 780,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault && !isStud,
+        text: quoteStr,
+        x: 540,
+        y: photoBottom + 228,
+        fontSize: 23,
+        pillWidth: 840,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: 540,
+        y: cardBottom - 98,
+        fontSize: 20,
+        pillWidth: 680,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: cardBottom - 44,
+        fontSize: 21,
+        pillWidth: 720,
+        padY: 11,
+        pill: contactSurfacePill,
+        font: 'sans'
+      }
+    ];
+  } else if (preset === 'filmstrip') {
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: 790,
+        y: 74,
+        fontSize: 19,
+        pillWidth: 310,
+        padY: 10,
+        pill: isK9 ? 'trophy-gold' : 'terracotta',
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: false,
+        text: activeKit.handle,
+        x: 540,
+        y: 74,
+        fontSize: 20,
+        pillWidth: 280,
+        padY: 6,
+        pill: 'none-light',
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: 540,
+        y: geom.cardY + 62,
+        fontSize: 56,
+        pillWidth: 840,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: 540,
+        y: geom.cardY + 120,
+        fontSize: 21,
+        pillWidth: 840,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: showCoat,
+        text: coatStr,
+        x: 540,
+        y: geom.cardY + 166,
+        fontSize: 22,
+        pillWidth: 840,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: false,
+        text: sexStr,
+        x: 540,
+        y: geom.cardY + 206,
+        fontSize: 20,
+        pillWidth: 240,
+        padY: 9,
+        pill: sexPill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: 540,
+        y: geom.cardY + 210,
+        fontSize: 19,
+        pillWidth: 780,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault,
+        text: quoteStr,
+        x: 540,
+        y: geom.cardY + 214,
+        fontSize: 23,
+        pillWidth: 840,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: 540,
+        y: cardBottom - 96,
+        fontSize: 20,
+        pillWidth: 680,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: cardBottom - 42,
+        fontSize: 21,
+        pillWidth: 680,
+        padY: 10,
+        pill: contactSurfacePill,
+        font: 'sans'
+      }
+    ];
+  } else if (preset === 'coastal') {
+    const coastalAccentPill: PillStyle =
+      bgStyle === 'coastal-sky' ? 'coastal' : contactSurfacePill;
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: 800,
+        y: geom.cardY + 48,
+        fontSize: 19,
+        pillWidth: 310,
+        padY: 10,
+        pill: coastalAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: false,
+        text: activeKit.handle,
+        x: 540,
+        y: geom.cardY + 48,
+        fontSize: 20,
+        pillWidth: 280,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: 540,
+        y: photoBottom + 50,
+        fontSize: 58,
+        pillWidth: 860,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: showSex ? 310 : 540,
+        y: photoBottom + 116,
+        fontSize: 20,
+        pillWidth: showSex ? 420 : 780,
+        padY: 11,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: showSex,
+        text: sexStr,
+        x: 770,
+        y: photoBottom + 116,
+        fontSize: 20,
+        pillWidth: 420,
+        padY: 11,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: showCoat,
+        text: coatStr,
+        x: 540,
+        y: photoBottom + 176,
+        fontSize: 22,
+        pillWidth: 860,
+        padY: 11,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: 540,
+        y: photoBottom + 210,
+        fontSize: 19,
+        pillWidth: 780,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault,
+        text: quoteStr,
+        x: 540,
+        y: photoBottom + 232,
+        fontSize: 23,
+        pillWidth: 860,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: 540,
+        y: cardBottom - 98,
+        fontSize: 20,
+        pillWidth: 680,
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: cardBottom - 44,
+        fontSize: 21,
+        pillWidth: 680,
+        padY: 11,
+        pill: coastalAccentPill,
+        font: 'sans'
+      }
+    ];
+  } else if (isWebsiteTechPreset(preset)) {
+    const hotspotPill: PillStyle = isK9 ? 'k9ss-hotspot' : 'rp-hotspot';
+    const topBadgePill: PillStyle = isK9 ? 'k9ss-crimson' : 'rp-clinical';
+    const ctaButtonPill: PillStyle = isK9 ? 'k9ss-crimson' : 'rp-orange';
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: geom.photoX + 205,
+        y: geom.photoY + 42,
+        fontSize: 19,
+        pillWidth: 380,
+        padY: 10,
+        pill: topBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: 'Hotspot 1 / Badge',
+        visible: showSex,
+        text: sexStr.startsWith('+') ? sexStr : `+ ${sexStr}`,
+        x: geom.photoX + 225,
+        y: photoBottom - 102,
+        fontSize: 19,
+        pillWidth: 410,
+        padY: 10,
+        pill: hotspotPill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Hotspot 2 / Specs',
+        visible: showCoat,
+        text: coatStr.startsWith('+') ? coatStr : `+ ${coatStr}`,
+        x: geom.photoX + 225,
+        y: photoBottom - 40,
+        fontSize: 19,
+        pillWidth: 410,
+        padY: 10,
+        pill: hotspotPill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: false,
+        text: activeKit.handle,
+        x: 830,
+        y: geom.cardY + 42,
+        fontSize: 20,
+        pillWidth: 260,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr.toUpperCase(),
+        x: 540,
+        y: photoBottom + 54,
+        fontSize: 50,
+        pillWidth: 860,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: 540,
+        y: photoBottom + 114,
+        fontSize: 22,
+        pillWidth: 840,
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA / Spec String',
+        visible: false,
+        text: dnaStr ? `DNA: ${dnaStr}` : `SPEC: ${coatStr}`,
+        x: 540,
+        y: photoBottom + 158,
+        fontSize: 20,
+        pillWidth: 780,
+        padY: 8,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Caption Note',
+        visible: false,
+        text: quoteStr,
+        x: 540,
+        y: photoBottom + 158,
+        fontSize: 22,
+        pillWidth: 820,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Protocol / Spec Bar',
+        visible: true,
+        text: activeKit.nutritionText,
+        x: 540,
+        y: cardBottom - 114,
+        fontSize: 20,
+        pillWidth: 820,
+        padY: 10,
+        pill: isK9 ? 'obsidian' : 'rp-clinical',
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Shop CTA Bar',
+        visible: true,
+        text: activeKit.contactText,
+        x: 540,
+        y: cardBottom - 48,
+        fontSize: 22,
+        pillWidth: 820,
+        padY: 12,
+        pill: ctaButtonPill,
+        font: 'sans'
+      }
+    ];
+  } else {
+    const showHandleTop = preset === 'sage' || preset === 'keyhole';
+    layers = [
+      {
+        id: 'status',
+        label: statusLabel,
+        visible: true,
+        text: statusStr,
+        x: preset === 'sage' ? (showSex ? geom.photoX + 195 : cx) : showSex ? cx - 190 : cx,
+        y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 10,
+        fontSize: 20,
+        pillWidth: preset === 'sage' ? 360 : 390,
+        padY: 10,
+        pill: primaryAccentPill,
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: sexLabel,
+        visible: showSex,
+        text: sexStr,
+        x: preset === 'sage' ? geom.photoX + 510 : cx + 190,
+        y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 10,
+        fontSize: 20,
+        pillWidth: 235,
+        padY: 10,
+        pill: sexPill,
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: activeKit.handle,
+        visible: showHandleTop,
+        text: activeKit.handle,
+        x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
+        y: preset === 'sage' ? geom.cardY + 46 : geom.cardY + 44,
+        fontSize: 21,
+        pillWidth: 280,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: nameLabel,
+        visible: true,
+        text: nameStr,
+        x: cx,
+        y: preset === 'sage' ? photoBottom + 54 : photoBottom + 72,
+        fontSize: 56,
+        pillWidth: Math.min(maxContentW, 780),
+        padY: 8,
+        pill: baseTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: breedLabel,
+        visible: true,
+        text: breedAgeStr.toUpperCase(),
+        x: cx,
+        y: preset === 'sage' ? photoBottom + 114 : photoBottom + 132,
+        fontSize: 22,
+        pillWidth: Math.min(maxContentW, 800),
+        padY: 6,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'coat',
+        label: 'Coat Color',
+        visible: showCoat,
+        text: coatStr,
+        x: cx,
+        y: preset === 'sage' ? photoBottom + 162 : photoBottom + 178,
+        fontSize: 24,
+        pillWidth: maxContentW,
+        padY: 8,
+        pill: baseTextPill,
+        font: 'sans'
+      },
+      {
+        id: 'dna',
+        label: 'DNA String',
+        visible: showDna,
+        text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
+        x: cx,
+        y: preset === 'sage' ? photoBottom + 212 : photoBottom + 228,
+        fontSize: 20,
+        pillWidth: Math.min(maxContentW, 780),
+        padY: 9,
+        pill: bodyBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Sweet Quote',
+        visible: showQuoteDefault,
+        text: quoteStr,
+        x: cx,
+        y: photoBottom + (dnaStr && showDna ? 278 : 234),
+        fontSize: 24,
+        pillWidth: maxContentW,
+        padY: 10,
+        pill: baseTextPill,
+        font: 'serif-italic'
+      },
+      {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
+        x: cx,
+        y: cardBottom - 104,
+        fontSize: 20,
+        pillWidth: Math.min(maxContentW, 680),
+        padY: 10,
+        pill: darkBadgePill,
+        font: 'sans'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: activeKit.contactText,
+        x: cx,
+        y: cardBottom - 46,
+        fontSize: 21,
+        pillWidth: Math.min(maxContentW, 670),
+        padY: 11,
+        pill: contactSurfacePill,
+        font: 'sans'
+      }
+    ];
+  }
+
+  return applyPresetOverlapZones(preset, layers, geom, canvasH);
+};
+
 const buildLayersForDog = (
   dog: DogRecord,
   preset: FramePreset,
   canvasH: number,
   archH: number,
   bgStyle: BgStyle = 'cream-editorial',
-  windowStyle: BgStyle = 'pure-white'
+  windowStyle: BgStyle = 'pure-white',
+  themeKit?: BrandThemeKit,
+  customBgColor?: string,
+  customWindowColor?: string
 ): TextLayer[] => {
-  const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
-  const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
-  const surfaceTheme = winTheme;
-  const baseTextPill: PillStyle = surfaceTheme.darkText ? 'none-dark' : 'none-light';
+  const activeKit = themeKit || BUILT_IN_BRAND_THEMES[0];
+  const geom = getFrameGeometry(
+    preset,
+    canvasH,
+    archH,
+    bgStyle,
+    windowStyle,
+    'arch-crest',
+    customBgColor,
+    customWindowColor
+  );
+  const baseTextPill: PillStyle = geom.winDarkText ? 'none-dark' : 'none-light';
+  const isRaw = activeKit.id === 'raw-and-paw';
+  const isK9 = activeKit.id === 'k9ss';
+  const primaryAccentPill: PillStyle = isK9 ? 'trophy-gold' : isRaw ? 'amber' : 'gold';
+  const darkBadgePill: PillStyle = isK9 ? 'obsidian' : isRaw ? 'crimson' : 'mocha';
+  const bodyBadgePill: PillStyle = isK9 ? 'titanium' : isRaw ? 'kraft' : 'cream';
+  const contactSurfacePill: PillStyle = geom.winDarkText
+    ? isK9
+      ? 'obsidian'
+      : isRaw
+        ? 'crimson'
+        : 'sage'
+    : primaryAccentPill;
+
   const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const age = extractAge(dog);
   const isStud = dog.category === 'Stud';
@@ -1164,11 +2926,23 @@ const buildLayersForDog = (
     : dog.gender
       ? `${isFemale ? '♀' : '♂'} ${dog.gender}`
       : '♀ Female';
-  const sexPillStyle: PillStyle = isStud ? 'gold' : isFemale ? 'blush' : 'sage';
+  const sexPillStyle: PillStyle = isStud
+    ? primaryAccentPill
+    : isFemale
+      ? activeKit.id === 'sunlit-garden'
+        ? 'blush'
+        : primaryAccentPill
+      : isK9
+        ? 'cyber-teal'
+        : isRaw
+          ? 'pasture'
+          : 'sage';
 
   const statusLower = (dog.status || '').toLowerCase();
   const statusStr = statusLower.includes('keeper')
-    ? '👑 Keeper • Staying at OKC Frenchies'
+    ? activeKit.id === 'sunlit-garden'
+      ? '👑 Keeper • Staying at OKC Frenchies'
+      : '👑 Keeper • Program Ambassador'
     : statusLower.includes('retained') || statusLower.includes('co-own')
       ? '🤝 Retained / Co-Own Opportunity'
       : dog.status === 'Pending'
@@ -1191,18 +2965,19 @@ const buildLayersForDog = (
   if (preset === 'minimal' || preset === 'no-photo') {
     const topTextPill: PillStyle =
       preset === 'no-photo' ? baseTextPill : 'none-light';
+    const handleMinPill: PillStyle = isK9 ? 'obsidian' : isRaw ? 'crimson' : 'frosted';
     const rawMinimalLayers: TextLayer[] = [
       {
         id: 'handle',
-        label: '@okcfrenchies',
-        visible: preset === 'no-photo',
-        text: '@okcfrenchies',
+        label: activeKit.handle,
+        visible: preset === 'no-photo' || activeKit.id !== 'sunlit-garden',
+        text: activeKit.handle,
         x: 540,
         y: 78,
         fontSize: 22,
-        pillWidth: 260,
+        pillWidth: 300,
         padY: 10,
-        pill: 'frosted',
+        pill: handleMinPill,
         font: 'sans'
       },
       {
@@ -1215,7 +2990,7 @@ const buildLayersForDog = (
         fontSize: 24,
         pillWidth: 460,
         padY: 12,
-        pill: 'gold',
+        pill: primaryAccentPill,
         font: 'sans'
       },
       {
@@ -1228,7 +3003,7 @@ const buildLayersForDog = (
         fontSize: 25,
         pillWidth: 680,
         padY: 12,
-        pill: 'frosted',
+        pill: handleMinPill,
         font: 'sans'
       },
       {
@@ -1241,7 +3016,7 @@ const buildLayersForDog = (
         fontSize: 22,
         pillWidth: 780,
         padY: 12,
-        pill: 'cream',
+        pill: bodyBadgePill,
         font: 'sans'
       },
       {
@@ -1254,7 +3029,7 @@ const buildLayersForDog = (
         fontSize: 26,
         pillWidth: 820,
         padY: 14,
-        pill: 'cream',
+        pill: bodyBadgePill,
         font: 'serif-italic'
       },
       {
@@ -1280,7 +3055,7 @@ const buildLayersForDog = (
         fontSize: 32,
         pillWidth: 700,
         padY: 16,
-        pill: 'cream',
+        pill: bodyBadgePill,
         font: 'sans'
       },
       {
@@ -1299,27 +3074,27 @@ const buildLayersForDog = (
       {
         id: 'nutrition',
         label: 'Raw & Plasma Pill',
-        visible: false,
-        text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.nutritionText,
         x: 540,
         y: canvasH - 115,
         fontSize: 20,
-        pillWidth: 660,
+        pillWidth: 680,
         padY: 11,
-        pill: 'mocha',
+        pill: darkBadgePill,
         font: 'sans'
       },
       {
         id: 'contact',
         label: 'Contact Info',
-        visible: false,
-        text: 'Text 405.300.8482 • info@okcfrenchies.com',
+        visible: activeKit.id !== 'sunlit-garden',
+        text: activeKit.contactText,
         x: 540,
         y: canvasH - 52,
         fontSize: 21,
-        pillWidth: 660,
+        pillWidth: 680,
         padY: 11,
-        pill: 'sage',
+        pill: contactSurfacePill,
         font: 'sans'
       }
     ];
@@ -1336,150 +3111,30 @@ const buildLayersForDog = (
     return resolveLayerOverlaps(topPass, Math.round(canvasH * 0.54), canvasH - 36, false);
   }
 
-  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle, windowStyle);
-  const photoBottom = geom.photoY + geom.photoH;
-  const cardBottom = geom.cardY + geom.cardH;
-
-  const framedLayers: TextLayer[] = [
-    {
-      id: 'status',
-      label: 'Status Pill',
-      visible: true,
-      text: statusStr,
-      x: preset === 'sage' ? geom.photoX + 195 : 350,
-      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
-      fontSize: 20,
-      pillWidth: preset === 'sage' ? 360 : 395,
-      padY: 10,
-      pill: 'gold',
-      font: 'sans'
-    },
-    {
-      id: 'sex',
-      label: isStud ? 'Sire Badge' : 'Sex Pill',
-      visible: true,
-      text: sexLabel,
-      x: preset === 'sage' ? geom.photoX + 510 : 730,
-      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
-      fontSize: 20,
-      pillWidth: 235,
-      padY: 10,
-      pill: sexPillStyle,
-      font: 'sans'
-    },
-    {
-      id: 'handle',
-      label: '@okcfrenchies',
-      visible: preset === 'sage',
-      text: '@okcfrenchies',
-      x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
-      y: preset === 'sage' ? geom.cardY + 46 : 86,
-      fontSize: 21,
-      pillWidth: 230,
-      padY: 8,
-      pill: baseTextPill,
-      font: 'sans'
-    },
-    {
-      id: 'name',
-      label: 'Meet Name',
-      visible: true,
-      text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 54 : photoBottom + 68,
-      fontSize: 56,
-      pillWidth: 780,
-      padY: 8,
-      pill: baseTextPill,
-      font: 'serif'
-    },
-    {
-      id: 'breedAge',
-      label: 'Breed & Age',
-      visible: true,
-      text: breedAgeStr.toUpperCase(),
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 114 : photoBottom + 128,
-      fontSize: 22,
-      pillWidth: 800,
-      padY: 6,
-      pill: baseTextPill,
-      font: 'sans'
-    },
-    {
-      id: 'coat',
-      label: 'Coat Color',
-      visible: true,
-      text: coatStr,
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 162 : photoBottom + 174,
-      fontSize: 24,
-      pillWidth: 840,
-      padY: 8,
-      pill: baseTextPill,
-      font: 'sans'
-    },
-    {
-      id: 'dna',
-      label: 'DNA String',
-      visible: Boolean(dnaStr),
-      text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 212 : photoBottom + 224,
-      fontSize: 20,
-      pillWidth: 780,
-      padY: 9,
-      pill: 'cream',
-      font: 'sans'
-    },
-    {
-      id: 'quote',
-      label: 'Sweet Quote',
-      visible: true,
-      text: quoteStr,
-      x: 540,
-      y: photoBottom + (dnaStr ? 278 : 232),
-      fontSize: 24,
-      pillWidth: 840,
-      padY: 10,
-      pill: baseTextPill,
-      font: 'serif-italic'
-    },
-    {
-      id: 'nutrition',
-      label: 'Raw & Plasma Pill',
-      visible: false,
-      text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
-      x: 540,
-      y: cardBottom - 104,
-      fontSize: 20,
-      pillWidth: 660,
-      padY: 10,
-      pill: 'mocha',
-      font: 'sans'
-    },
-    {
-      id: 'contact',
-      label: 'Contact Pill',
-      visible: true,
-      text: 'Text 405.300.8482 • info@okcfrenchies.com',
-      x: 540,
-      y: cardBottom - 46,
-      fontSize: 21,
-      pillWidth: 650,
-      padY: 11,
-      pill: surfaceTheme.darkText ? 'sage' : 'gold',
-      font: 'sans'
-    }
-  ];
-
-  const footerTop = preset === 'sage' ? photoBottom + 14 : photoBottom - 22;
-  return resolveLayerOverlaps(
-    framedLayers,
-    footerTop,
-    cardBottom - 20,
-    preset !== 'sage'
-  );
+  return buildFramedSignatureLayers({
+    preset,
+    geom,
+    canvasH,
+    bgStyle,
+    activeKit,
+    statusLabel: 'Status Pill',
+    statusStr,
+    sexLabel: isStud ? 'Sire Badge' : 'Sex Pill',
+    sexStr: sexLabel,
+    showSex: true,
+    sexPill: sexPillStyle,
+    nameLabel: 'Meet Name',
+    nameStr: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
+    breedLabel: 'Breed & Age',
+    breedAgeStr,
+    coatStr,
+    showCoat: true,
+    dnaStr,
+    showDna: Boolean(dnaStr),
+    quoteStr,
+    showQuoteDefault: true,
+    isStud
+  });
 };
 
 const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
@@ -1532,11 +3187,64 @@ const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
     .join('\n');
 };
 
+const buildCornerProductOverlay = (
+  product: ProductShowcaseItem,
+  canvasHeight: number,
+  photoBottomY: number
+): PhotoOverlayLayer => ({
+  id: 'product-showcase-cutout',
+  label: `🛍️ ${product.shortName}`,
+  visible: true,
+  mediaType: 'image',
+  src: product.imageSrc,
+  x: 825,
+  y: Math.min(canvasHeight - 240, Math.max(320, photoBottomY - 95)),
+  width: 310,
+  height: 360,
+  shape: 'cutout',
+  borderColor: 'transparent',
+  borderWidth: 0,
+  opacity: 1,
+  rotation: -3,
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  shadow: true,
+  zIndex: 38
+});
+
+const resolveAutoBrandOverlays = (
+  kitId: string,
+  existing: PhotoOverlayLayer[] | undefined,
+  preset: FramePreset,
+  ch: number,
+  archH: number,
+  bgStyle: BgStyle,
+  winStyle: BgStyle,
+  photoFit?: 'cover' | 'contain'
+): PhotoOverlayLayer[] | undefined => {
+  const base = existing || [];
+  if (kitId !== 'raw-and-paw' && kitId !== 'k9ss') {
+    const cleaned = base.filter((o) => o.id !== 'product-showcase-cutout');
+    return cleaned.length > 0 ? cleaned : undefined;
+  }
+  if (preset === 'no-photo' || photoFit === 'contain') {
+    return existing;
+  }
+  const flagship = BRAND_PRODUCT_CATALOG.find((p) => p.brandTheme === kitId);
+  if (!flagship) return existing;
+  const g = getFrameGeometry(preset, ch, archH, bgStyle, winStyle);
+  const cutout = buildCornerProductOverlay(flagship, ch, g.photoY + g.photoH);
+  const withoutOld = base.filter((o) => o.id !== 'product-showcase-cutout');
+  return [...withoutOld, cutout];
+};
+
 const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
   const ch = getCanvasHeight(ratio);
   const archH = ratio === 'story' ? 1180 : ratio === 'square' ? 600 : 800;
   return {
     id: 'slide-1',
+    brandTheme: BUILT_IN_BRAND_THEMES[0].id,
     preset: 'arch',
     bgStyle: 'sage-mist',
     windowStyle: 'cream-editorial',
@@ -1548,7 +3256,7 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
     panY: 0,
     zoom: 1,
     archHeight: archH,
-    layers: buildLayersForDog(dog, 'arch', ch, archH, 'sage-mist', 'cream-editorial')
+    layers: buildLayersForDog(dog, 'arch', ch, archH, 'sage-mist', 'cream-editorial', BUILT_IN_BRAND_THEMES[0])
   };
 };
 
@@ -1597,45 +3305,84 @@ const buildGeneralCustomPhotoLayers = (
   preset: FramePreset,
   archH: number,
   bgStyle: BgStyle = 'cream-editorial',
-  windowStyle: BgStyle = 'pure-white'
+  windowStyle: BgStyle = 'pure-white',
+  themeKit?: BrandThemeKit,
+  customBgColor?: string,
+  customWindowColor?: string
 ): TextLayer[] => {
-  const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
-  const baseTextPill: PillStyle = winTheme.darkText ? 'none-dark' : 'none-light';
+  const activeKit = themeKit || BUILT_IN_BRAND_THEMES[0];
+  const geom = getFrameGeometry(
+    preset,
+    canvasH,
+    archH,
+    bgStyle,
+    windowStyle,
+    'arch-crest',
+    customBgColor,
+    customWindowColor
+  );
+  const baseTextPill: PillStyle = geom.winDarkText ? 'none-dark' : 'none-light';
+  const isRaw = activeKit.id === 'raw-and-paw';
+  const isK9 = activeKit.id === 'k9ss';
+  const primaryAccentPill: PillStyle = isK9 ? 'trophy-gold' : isRaw ? 'amber' : 'gold';
+  const bodyBadgePill: PillStyle = isK9 ? 'titanium' : isRaw ? 'kraft' : 'cream';
+  const contactPill: PillStyle = geom.winDarkText
+    ? isK9
+      ? 'obsidian'
+      : isRaw
+        ? 'crimson'
+        : 'sage'
+    : primaryAccentPill;
+  const headerLabel =
+    activeKit.id === 'sunlit-garden'
+      ? '✨ OKC Frenchies • Oklahoma City'
+      : `${activeKit.icon} ${activeKit.name}`;
+  const headlineText =
+    activeKit.id === 'sunlit-garden' ? 'Raised Underfoot' : activeKit.shortName;
+  const subheadText =
+    activeKit.id === 'sunlit-garden'
+      ? 'French & Mini English Bulldogs'
+      : activeKit.tagline;
+  const noteText =
+    activeKit.id === 'sunlit-garden'
+      ? '"Health, structure & temperament first—raised right in our home."'
+      : activeKit.nutritionText;
 
   if (preset === 'minimal' || preset === 'no-photo') {
     const topTextPill: PillStyle = preset === 'no-photo' ? baseTextPill : 'none-light';
+    const handleMinPill: PillStyle = isK9 ? 'obsidian' : isRaw ? 'crimson' : 'frosted';
     const rawMin: TextLayer[] = [
       {
         id: 'handle',
-        label: '@okcfrenchies',
+        label: activeKit.handle,
         visible: true,
-        text: '@okcfrenchies',
+        text: activeKit.handle,
         x: 540,
         y: 82,
         fontSize: 22,
-        pillWidth: 260,
+        pillWidth: 300,
         padY: 10,
-        pill: 'frosted',
+        pill: handleMinPill,
         font: 'sans'
       },
       {
         id: 'status',
         label: 'Header Pill',
         visible: true,
-        text: '✨ OKC Frenchies • Oklahoma City',
+        text: headerLabel,
         x: 540,
         y: 162,
         fontSize: 23,
         pillWidth: 480,
         padY: 11,
-        pill: 'gold',
+        pill: primaryAccentPill,
         font: 'sans'
       },
       {
         id: 'name',
         label: 'Headline',
         visible: true,
-        text: 'Raised Underfoot',
+        text: headlineText,
         x: 540,
         y: preset === 'no-photo' ? Math.round(canvasH * 0.36) : canvasH - 295,
         fontSize: 60,
@@ -1648,39 +3395,39 @@ const buildGeneralCustomPhotoLayers = (
         id: 'breedAge',
         label: 'Subtitle Pill',
         visible: true,
-        text: 'French & Mini English Bulldogs',
+        text: subheadText,
         x: 540,
         y: canvasH - 205,
         fontSize: 30,
         pillWidth: 740,
         padY: 14,
-        pill: 'cream',
+        pill: bodyBadgePill,
         font: 'sans'
       },
       {
         id: 'quote',
         label: 'Caption Note',
-        visible: preset === 'no-photo',
-        text: '"Health, structure & temperament first—raised right inside our family home."',
+        visible: preset === 'no-photo' || activeKit.id !== 'sunlit-garden',
+        text: noteText,
         x: 540,
         y: Math.round(canvasH * 0.56),
         fontSize: 25,
         pillWidth: 820,
         padY: 14,
-        pill: 'cream',
+        pill: bodyBadgePill,
         font: 'serif-italic'
       },
       {
         id: 'contact',
         label: 'Contact Pill',
         visible: true,
-        text: 'Text 405.300.8482 • OKCFrenchies.com',
+        text: activeKit.contactText,
         x: 540,
         y: canvasH - 118,
         fontSize: 22,
         pillWidth: 660,
         padY: 11,
-        pill: 'sage',
+        pill: contactPill,
         font: 'sans'
       }
     ];
@@ -1691,97 +3438,30 @@ const buildGeneralCustomPhotoLayers = (
     return resolveLayerOverlaps(topPass, Math.round(canvasH * 0.56), canvasH - 36, false);
   }
 
-  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle, windowStyle);
-  const photoBottom = geom.photoY + geom.photoH;
-  const cardBottom = geom.cardY + geom.cardH;
-
-  const framed: TextLayer[] = [
-    {
-      id: 'status',
-      label: 'Header Pill',
-      visible: true,
-      text: '✨ OKC Frenchies • Oklahoma City',
-      x: preset === 'sage' ? geom.photoX + 230 : 540,
-      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
-      fontSize: 21,
-      pillWidth: 460,
-      padY: 10,
-      pill: 'gold',
-      font: 'sans'
-    },
-    {
-      id: 'handle',
-      label: '@okcfrenchies',
-      visible: preset === 'sage',
-      text: '@okcfrenchies',
-      x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
-      y: preset === 'sage' ? geom.cardY + 46 : 86,
-      fontSize: 21,
-      pillWidth: 230,
-      padY: 8,
-      pill: baseTextPill,
-      font: 'sans'
-    },
-    {
-      id: 'name',
-      label: 'Headline',
-      visible: true,
-      text: 'Raised Underfoot',
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 56 : photoBottom + 72,
-      fontSize: 54,
-      pillWidth: 800,
-      padY: 8,
-      pill: baseTextPill,
-      font: 'serif'
-    },
-    {
-      id: 'breedAge',
-      label: 'Subtitle',
-      visible: true,
-      text: 'FRENCH & MINI ENGLISH BULLDOGS',
-      x: 540,
-      y: preset === 'sage' ? photoBottom + 116 : photoBottom + 132,
-      fontSize: 22,
-      pillWidth: 800,
-      padY: 6,
-      pill: baseTextPill,
-      font: 'sans'
-    },
-    {
-      id: 'quote',
-      label: 'Sweet Quote',
-      visible: true,
-      text: '"Health, structure & temperament first—raised right in our home."',
-      x: 540,
-      y: photoBottom + 205,
-      fontSize: 24,
-      pillWidth: 840,
-      padY: 10,
-      pill: baseTextPill,
-      font: 'serif-italic'
-    },
-    {
-      id: 'contact',
-      label: 'Contact Pill',
-      visible: true,
-      text: 'Text 405.300.8482 • OKCFrenchies.com',
-      x: 540,
-      y: cardBottom - 46,
-      fontSize: 21,
-      pillWidth: 660,
-      padY: 11,
-      pill: 'cream',
-      font: 'sans'
-    }
-  ];
-
-  return resolveLayerOverlaps(
-    framed,
-    preset === 'sage' ? photoBottom + 14 : photoBottom - 20,
-    cardBottom - 20,
-    false
-  );
+  return buildFramedSignatureLayers({
+    preset,
+    geom,
+    canvasH,
+    bgStyle,
+    activeKit,
+    statusLabel: 'Header Pill',
+    statusStr: headerLabel,
+    sexLabel: 'Detail Badge',
+    sexStr: '✨ Oklahoma City',
+    showSex: false,
+    sexPill: primaryAccentPill,
+    nameLabel: 'Headline',
+    nameStr: headlineText,
+    breedLabel: 'Subtitle',
+    breedAgeStr: subheadText,
+    coatStr: '',
+    showCoat: false,
+    dnaStr: '',
+    showDna: false,
+    quoteStr: noteText,
+    showQuoteDefault: true,
+    isStud: false
+  });
 };
 
 const SocialStudio: React.FC = () => {
@@ -1912,6 +3592,29 @@ const SocialStudio: React.FC = () => {
   const [activeSlideIdx, setActiveSlideIdx] = useState<number>(0);
   const activeSlide = slides[activeSlideIdx] || slides[0];
 
+  // Brand Theme Kits (Built-in + User Custom Saved Themes)
+  const [customBrandThemes, setCustomBrandThemes] = useState<BrandThemeKit[]>(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_THEMES_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showAllThemeSwatches, setShowAllThemeSwatches] = useState<boolean>(false);
+  const [showNewThemeForm, setShowNewThemeForm] = useState<boolean>(false);
+  const [newThemeName, setNewThemeName] = useState<string>('');
+  const allBrandThemes = useMemo(
+    () => [...BUILT_IN_BRAND_THEMES, ...customBrandThemes],
+    [customBrandThemes]
+  );
+  const activeBrandTheme = useMemo(
+    () =>
+      allBrandThemes.find((t) => t.id === (activeSlide.brandTheme || 'sunlit-garden')) ||
+      BUILT_IN_BRAND_THEMES[0],
+    [allBrandThemes, activeSlide.brandTheme]
+  );
+
   // Undo History Stack
   const [history, setHistory] = useState<SlideState[][]>([]);
   const pushHistory = (snapshot: SlideState[]) => {
@@ -1965,6 +3668,12 @@ const SocialStudio: React.FC = () => {
   const [videoExporting, setVideoExporting] = useState<boolean>(false);
   const [videoExportProgress, setVideoExportProgress] = useState<number>(0);
   const stopVideoExportRef = useRef<(() => void) | null>(null);
+  const [readyVideoExport, setReadyVideoExport] = useState<{
+    file: File;
+    url: string;
+    fileName: string;
+    ext: string;
+  } | null>(null);
 
   useEffect(() => {
     inspectorScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -2159,15 +3868,20 @@ const SocialStudio: React.FC = () => {
 
   const handleApplyGeneralCustomCard = (photoUrl?: string) => {
     const targetPreset: FramePreset =
-      activeSlide.preset === 'no-photo' ? (photoUrl || activeSlide.photoSrc || activeSlide.videoSrc ? 'arch' : 'no-photo') : activeSlide.preset;
-    const bg = activeSlide.bgStyle || 'cream-editorial';
-    const win = activeSlide.windowStyle || 'pure-white';
+      activeSlide.preset === 'no-photo'
+        ? photoUrl || activeSlide.photoSrc || activeSlide.videoSrc
+          ? activeBrandTheme.defaultPuppyPreset
+          : 'no-photo'
+        : activeSlide.preset;
+    const bg = activeSlide.bgStyle || activeBrandTheme.defaultPuppyBg;
+    const win = activeSlide.windowStyle || activeBrandTheme.defaultPuppyWindow;
     const archH =
       activeSlide.archHeight ||
       (ratio === 'story' ? 1180 : ratio === 'square' ? 580 : targetPreset === 'sage' ? 740 : 800);
 
     updateActiveSlide(
       {
+        brandTheme: activeBrandTheme.id,
         preset: targetPreset,
         dogId: '__custom__',
         customPhotoDogId: '__custom__',
@@ -2175,7 +3889,16 @@ const SocialStudio: React.FC = () => {
         topicId: undefined,
         ...(photoUrl ? { photoSrc: photoUrl, videoSrc: undefined, panX: 0, panY: 0 } : {}),
         archHeight: archH,
-        layers: buildGeneralCustomPhotoLayers(canvasH, targetPreset, archH, bg, win)
+        layers: buildGeneralCustomPhotoLayers(
+          canvasH,
+          targetPreset,
+          archH,
+          bg,
+          win,
+          activeBrandTheme,
+          activeSlide.customBgColor,
+          activeSlide.customWindowColor
+        )
       },
       true
     );
@@ -2328,6 +4051,477 @@ const SocialStudio: React.FC = () => {
     );
   };
 
+  const saveCustomBrandThemesList = (next: BrandThemeKit[]) => {
+    setCustomBrandThemes(next);
+    try {
+      localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(next));
+    } catch {
+      // ignore storage quota
+    }
+  };
+
+  const handlePinProductCornerCutout = (product: ProductShowcaseItem) => {
+    const g = getFrameGeometry(
+      activeSlide.preset,
+      canvasH,
+      activeSlide.archHeight,
+      activeSlide.bgStyle,
+      activeSlide.windowStyle || 'pure-white',
+      activeSlide.textCardTheme || 'arch-crest',
+      activeSlide.customBgColor,
+      activeSlide.customWindowColor
+    );
+    const photoBottomY = g.hasPhoto ? g.photoY + g.photoH : Math.round(canvasH * 0.72);
+    const nextCutout = buildCornerProductOverlay(product, canvasH, photoBottomY);
+    const existing = activeSlide.photoOverlays || [];
+    const nextOverlays = [
+      ...existing.filter((o) => o.id !== 'product-showcase-cutout'),
+      nextCutout
+    ];
+    const updatedLayers = activeSlide.layers.map((l) => {
+      if (l.id === 'nutrition') {
+        return {
+          ...l,
+          visible: true,
+          text: `${product.name} • ${product.servings} • ${product.price}`
+        };
+      }
+      if (l.id === 'contact') {
+        return { ...l, visible: true, text: product.ctaText };
+      }
+      return l;
+    });
+    updateActiveSlide(
+      {
+        productId: product.id,
+        photoOverlays: nextOverlays,
+        layers: updatedLayers
+      },
+      true
+    );
+    setSelectedLayerId(nextCutout.id);
+    setEditingLayerId(null);
+  };
+
+  const handleLoadProductMainShowcase = (product: ProductShowcaseItem) => {
+    const targetKit =
+      allBrandThemes.find((t) => t.id === product.brandTheme) || activeBrandTheme;
+    const targetPreset: FramePreset =
+      isWebsiteTechPreset(activeSlide.preset) &&
+      targetKit.featuredTemplates.includes(activeSlide.preset)
+        ? activeSlide.preset
+        : product.defaultPreset;
+    const targetBg: BgStyle =
+      targetPreset === 'rp-naturals-pedestal'
+        ? 'rp-naturals-linen'
+        : targetPreset === 'k9ss-titanium-pedestal'
+          ? 'obsidian-carbon'
+          : targetKit.defaultPuppyBg;
+    const targetWin: BgStyle =
+      targetPreset === 'rp-naturals-pedestal' ||
+      targetPreset === 'rp-product-spotlight' ||
+      targetPreset === 'rp-protocol-stack' ||
+      targetPreset === 'rp-bento-grid'
+        ? 'pure-white'
+        : targetPreset === 'rp-clinical-dossier'
+          ? 'rp-clinical-ice'
+          : targetPreset === 'k9ss-titanium-pedestal'
+            ? 'k9ss-titanium'
+            : targetKit.defaultPuppyWindow;
+
+    const archH = ratio === 'story' ? 1140 : ratio === 'square' ? 580 : 780;
+    const baseLayers = buildGeneralCustomPhotoLayers(
+      canvasH,
+      targetPreset,
+      archH,
+      targetBg,
+      targetWin,
+      targetKit,
+      targetKit.customBgHex,
+      targetKit.customWindowHex
+    );
+    const filledLayers = baseLayers.map((l) => {
+      if (l.id === 'status') return { ...l, visible: true, text: product.divisionLabel };
+      if (l.id === 'sex') return { ...l, visible: true, text: product.hotspot1 };
+      if (l.id === 'coat') return { ...l, visible: true, text: product.hotspot2 };
+      if (l.id === 'name') return { ...l, visible: true, text: product.name.toUpperCase() };
+      if (l.id === 'breedAge') {
+        return {
+          ...l,
+          visible: true,
+          text: `${product.servings.toUpperCase()} • ${product.price}`
+        };
+      }
+      if (l.id === 'nutrition') return { ...l, visible: true, text: product.clinicalSpec };
+      if (l.id === 'contact') return { ...l, visible: true, text: product.ctaText };
+      return l;
+    });
+    const remainingOverlays = (activeSlide.photoOverlays || []).filter(
+      (o) => o.id !== 'product-showcase-cutout'
+    );
+    updateActiveSlide(
+      {
+        brandTheme: targetKit.id,
+        preset: targetPreset,
+        bgStyle: targetBg,
+        windowStyle: targetWin,
+        customBgColor: targetKit.customBgHex,
+        customWindowColor: targetKit.customWindowHex,
+        dogId: '__custom__',
+        customPhotoDogId: '__custom__',
+        slideMode: 'puppies',
+        productId: product.id,
+        photoSrc: product.imageSrc,
+        videoSrc: undefined,
+        photoFit: 'contain',
+        photoDim: 0,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        archHeight: archH,
+        layers: filledLayers,
+        photoOverlays: remainingOverlays.length > 0 ? remainingOverlays : undefined
+      },
+      true
+    );
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+  };
+
+  const handleSelectBrandTheme = (themeId: BrandThemeId) => {
+    const kit = allBrandThemes.find((t) => t.id === themeId) || BUILT_IN_BRAND_THEMES[0];
+    remixDeckRef.current = [];
+
+    const isCustomCard =
+      activeSlide.dogId === '__custom__' || activeSlide.customPhotoDogId === '__custom__';
+    const isTopicSlide =
+      Boolean(activeSlide.slideMode && activeSlide.slideMode !== 'puppies' && activeSlide.slideMode !== 'studs') ||
+      activeSlide.layers.some((l) => l.id === 'headline' || l.id === 'body' || l.id === 'badge');
+
+    if (isTopicSlide) {
+      const targetBg = kit.defaultTopicBg;
+      const targetWin = kit.defaultTopicWindow;
+      const targetTextTheme =
+        activeSlide.preset === 'no-photo'
+          ? kit.defaultTopicTheme
+          : activeSlide.textCardTheme || kit.defaultTopicTheme;
+      const syntheticItem: TopicCardItem = {
+        id: activeSlide.topicId || activeTopicItem?.id || 'topic',
+        badge:
+          activeSlide.layers.find((l) => l.id === 'badge')?.text ||
+          activeTopicItem?.badge ||
+          `${kit.icon} ${kit.shortName.toUpperCase()}`,
+        title:
+          activeSlide.layers.find((l) => l.id === 'headline' || l.id === 'title')?.text ||
+          activeTopicItem?.title ||
+          kit.name,
+        body:
+          activeSlide.layers.find((l) => l.id === 'body')?.text || activeTopicItem?.body || '',
+        footer:
+          activeSlide.layers.find((l) => l.id === 'footer')?.text ||
+          `${kit.handle} • ${kit.contactText}`,
+        bgStyle: targetBg,
+        shareUrl: activeTopicItem?.shareUrl || 'https://okcfrenchies.com'
+      };
+      const effectiveSurface: BgStyle =
+        activeSlide.preset !== 'no-photo'
+          ? targetBg
+          : targetTextTheme === 'minimal-luxe'
+            ? targetBg
+            : targetWin;
+      const themedBase = buildTopicLayers(
+        syntheticItem,
+        canvasH,
+        effectiveSurface,
+        activeSlide.slideMode || contentMode,
+        activeSlide.preset === 'no-photo' ? targetTextTheme : 'arch-crest',
+        kit
+      );
+      const customExtras = activeSlide.layers.filter(
+        (el) => !themedBase.some((tl) => tl.id === el.id)
+      );
+      const overDarkPhoto = activeSlide.preset !== 'no-photo';
+      const darkSurface = overDarkPhoto
+        ? false
+        : kit.customWindowHex && targetTextTheme !== 'minimal-luxe'
+          ? !isHexDark(kit.customWindowHex)
+          : kit.customBgHex && targetTextTheme === 'minimal-luxe'
+            ? !isHexDark(kit.customBgHex)
+            : (BG_STYLES[effectiveSurface] || BG_STYLES['cream-editorial']).darkText;
+
+      const merged = [
+        ...themedBase.map((tl) => {
+          const prev = activeSlide.layers.find((el) => el.id === tl.id);
+          let nextPill = tl.pill;
+          let nextTextColor = tl.textColor;
+          if (overDarkPhoto) {
+            if (nextPill === 'none-dark') nextPill = 'none-light';
+            if (tl.id === 'body' && nextPill === 'white') nextPill = 'frosted';
+          } else if (kit.customWindowHex || kit.customBgHex) {
+            if (nextPill === 'none-dark' && !darkSurface) nextPill = 'none-light';
+            if (nextPill === 'none-light' && darkSurface) nextPill = 'none-dark';
+          }
+          if (tl.id === 'handle') {
+            return { ...tl, pill: nextPill, text: kit.handle, label: kit.handle };
+          }
+          return {
+            ...tl,
+            pill: nextPill,
+            textColor: nextTextColor,
+            visible: prev ? prev.visible : tl.visible,
+            text: prev ? prev.text : tl.text,
+            pillOpacity: prev?.pillOpacity
+          };
+        }),
+        ...customExtras
+      ];
+      const resolved = resolveLayerOverlaps(merged, 86, canvasH - 76, false);
+      updateActiveSlide(
+        {
+          brandTheme: kit.id,
+          textCardTheme: targetTextTheme,
+          bgStyle: targetBg,
+          windowStyle: targetWin,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
+          layers: resolved
+        },
+        true
+      );
+      setSelectedLayerId(null);
+      setEditingLayerId(null);
+      return;
+    }
+
+    if (isCustomCard || !selectedDog) {
+      const nextPreset: FramePreset =
+        activeSlide.preset === 'no-photo' ? 'no-photo' : kit.defaultPuppyPreset;
+      const nextBg = kit.defaultPuppyBg;
+      const nextWin = kit.defaultPuppyWindow;
+      const defaultArch =
+        ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
+      const freshCustom = buildGeneralCustomPhotoLayers(
+        canvasH,
+        nextPreset,
+        defaultArch,
+        nextBg,
+        nextWin,
+        kit,
+        kit.customBgHex,
+        kit.customWindowHex
+      );
+      const customExtras = activeSlide.layers.filter(
+        (el) => !freshCustom.some((fl) => fl.id === el.id)
+      );
+      const merged = [
+        ...freshCustom.map((fl) => {
+          const prev = activeSlide.layers.find((el) => el.id === fl.id);
+          if (fl.id === 'handle' || fl.id === 'contact' || fl.id === 'status') {
+            return fl;
+          }
+          return prev
+            ? { ...fl, text: prev.text, visible: prev.visible }
+            : fl;
+        }),
+        ...customExtras
+      ];
+      updateActiveSlide(
+        {
+          brandTheme: kit.id,
+          preset: nextPreset,
+          bgStyle: nextBg,
+          windowStyle: nextWin,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
+          archHeight: defaultArch,
+          layers: merged,
+          photoOverlays: resolveAutoBrandOverlays(
+            kit.id,
+            activeSlide.photoOverlays,
+            nextPreset,
+            canvasH,
+            defaultArch,
+            nextBg,
+            nextWin,
+            activeSlide.photoFit
+          )
+        },
+        true
+      );
+      setSelectedLayerId(null);
+      setEditingLayerId(null);
+      return;
+    }
+
+    // Dog Slide (Puppy or Stud): Swap frame, colors, pills & brand copy while preserving photo, video, overlays & dog copy!
+    const isStud = selectedDog.category === 'Stud' || activeSlide.slideMode === 'studs';
+    const nextPreset: FramePreset =
+      activeSlide.preset === 'no-photo'
+        ? 'no-photo'
+        : isStud
+          ? kit.defaultStudPreset
+          : kit.defaultPuppyPreset;
+    const nextBg = isStud ? kit.defaultStudBg : kit.defaultPuppyBg;
+    const nextWin = isStud ? kit.defaultStudWindow : kit.defaultPuppyWindow;
+    const defaultArch =
+      ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
+
+    const freshDogLayers = buildLayersForDog(
+      selectedDog,
+      nextPreset,
+      canvasH,
+      defaultArch,
+      nextBg,
+      nextWin,
+      kit,
+      kit.customBgHex,
+      kit.customWindowHex
+    );
+    const customExtras = activeSlide.layers.filter(
+      (el) => !freshDogLayers.some((fl) => fl.id === el.id)
+    );
+    const merged = [
+      ...freshDogLayers.map((fl) => {
+        const prev = activeSlide.layers.find((el) => el.id === fl.id);
+        if (!prev) return fl;
+        if (fl.id === 'handle' || fl.id === 'nutrition' || fl.id === 'contact') {
+          return fl;
+        }
+        return {
+          ...fl,
+          text: prev.text,
+          visible: prev.id === 'nutrition' ? fl.visible : prev.visible
+        };
+      }),
+      ...customExtras
+    ];
+
+    updateActiveSlide(
+      {
+        brandTheme: kit.id,
+        preset: nextPreset,
+        bgStyle: nextBg,
+        windowStyle: nextWin,
+        customBgColor: kit.customBgHex,
+        customWindowColor: kit.customWindowHex,
+        archHeight: defaultArch,
+        layers: merged,
+        photoOverlays: resolveAutoBrandOverlays(
+          kit.id,
+          activeSlide.photoOverlays,
+          nextPreset,
+          canvasH,
+          defaultArch,
+          nextBg,
+          nextWin,
+          activeSlide.photoFit
+        )
+      },
+      true
+    );
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+  };
+
+  const handleSaveCustomBrandTheme = () => {
+    const cleanName = newThemeName.trim() || `Custom Theme ${customBrandThemes.length + 1}`;
+    const handleLayer = activeSlide.layers.find((l) => l.id === 'handle');
+    const contactLayer = activeSlide.layers.find((l) => l.id === 'contact');
+    const nutritionLayer = activeSlide.layers.find((l) => l.id === 'nutrition');
+    const usedPills = Array.from(
+      new Set([
+        ...activeSlide.layers.map((l) => l.pill),
+        ...activeBrandTheme.defaultPillPalette
+      ])
+    ) as PillStyle[];
+    const savedPreset: FramePreset =
+      activeSlide.preset === 'no-photo' ? activeBrandTheme.defaultPuppyPreset : activeSlide.preset;
+
+    const customKit: BrandThemeKit = {
+      ...activeBrandTheme,
+      id: `custom-theme-${Date.now()}`,
+      name: cleanName,
+      shortName: cleanName.slice(0, 14),
+      icon: '🎨',
+      tagline: `Saved custom look (${BG_STYLES[activeSlide.bgStyle]?.label.replace(/^[^\s]+\s/, '') || 'Custom'})`,
+      handle: handleLayer?.text || activeBrandTheme.handle,
+      contactText: contactLayer?.text || activeBrandTheme.contactText,
+      nutritionText: nutritionLayer?.text || activeBrandTheme.nutritionText,
+      defaultPuppyPreset: savedPreset,
+      defaultPuppyBg: activeSlide.bgStyle,
+      defaultPuppyWindow: activeSlide.windowStyle || 'pure-white',
+      defaultStudPreset: savedPreset,
+      defaultStudBg: activeSlide.bgStyle,
+      defaultStudWindow: activeSlide.windowStyle || 'pure-white',
+      defaultTopicBg: activeSlide.bgStyle,
+      defaultTopicWindow: activeSlide.windowStyle || 'cream-editorial',
+      defaultTopicTheme: activeSlide.textCardTheme || activeBrandTheme.defaultTopicTheme,
+      defaultBgSwatches: Array.from(
+        new Set([
+          activeSlide.bgStyle,
+          activeSlide.windowStyle || 'pure-white',
+          ...activeBrandTheme.defaultBgSwatches
+        ])
+      ),
+      defaultPillPalette: usedPills,
+      featuredTemplates: Array.from(
+        new Set([savedPreset, ...activeBrandTheme.featuredTemplates])
+      ),
+      customBgHex: activeSlide.customBgColor,
+      customWindowHex: activeSlide.customWindowColor,
+      isCustom: true
+    };
+    saveCustomBrandThemesList([customKit, ...customBrandThemes]);
+    updateActiveSlide({ brandTheme: customKit.id }, true);
+    setNewThemeName('');
+    setShowNewThemeForm(false);
+  };
+
+  const handleDeleteCustomBrandTheme = (themeId: string) => {
+    const next = customBrandThemes.filter((t) => t.id !== themeId);
+    saveCustomBrandThemesList(next);
+    if (activeSlide.brandTheme === themeId) {
+      updateActiveSlide({ brandTheme: BUILT_IN_BRAND_THEMES[0].id }, true);
+    }
+  };
+
+  const handleSetCustomBgColor = (hex?: string) => {
+    updateActiveSlide({ customBgColor: hex || undefined }, true);
+  };
+
+  const handleSetCustomWindowColor = (hex?: string) => {
+    const prevDark = activeSlide.customWindowColor
+      ? !isHexDark(activeSlide.customWindowColor)
+      : (BG_STYLES[activeSlide.windowStyle || 'pure-white'] || BG_STYLES['pure-white']).darkText;
+    const nextDark = hex
+      ? !isHexDark(hex)
+      : (BG_STYLES[activeSlide.windowStyle || 'pure-white'] || BG_STYLES['pure-white']).darkText;
+    const adjustUnpilled = activeSlide.preset !== 'minimal';
+    const updatedLayers = adjustUnpilled
+      ? activeSlide.layers.map((l) => {
+          if (l.pill === 'none-dark' && !nextDark) {
+            return {
+              ...l,
+              pill: 'none-light' as PillStyle,
+              textColor: prevDark !== nextDark ? undefined : l.textColor
+            };
+          }
+          if (l.pill === 'none-light' && nextDark) {
+            return {
+              ...l,
+              pill: 'none-dark' as PillStyle,
+              textColor: prevDark !== nextDark ? undefined : l.textColor
+            };
+          }
+          return l;
+        })
+      : activeSlide.layers;
+    updateActiveSlide(
+      { customWindowColor: hex || undefined, layers: updatedLayers },
+      true
+    );
+  };
+
   // Signature Default Theme & Template Builder for EVERY Mode (Puppies, Studs, Coat & DNA, Standards, Did You Know)
   const buildDefaultSlideForMode = (
     targetMode: ContentMode,
@@ -2336,6 +4530,8 @@ const SocialStudio: React.FC = () => {
     useDefaultEntity = false
   ): { slide: SlideState; dog?: DogRecord; topic?: TopicCardItem } => {
     const ch = getCanvasHeight(targetRatio);
+    const kit = activeBrandTheme;
+    const isSunlit = kit.id === 'sunlit-garden';
 
     if (targetMode === 'puppies') {
       const dog =
@@ -2347,9 +4543,12 @@ const SocialStudio: React.FC = () => {
         dog,
         slide: {
           id: slideId,
-          preset: 'arch',
-          bgStyle: 'sage-mist',
-          windowStyle: 'cream-editorial',
+          brandTheme: kit.id,
+          preset: kit.defaultPuppyPreset,
+          bgStyle: kit.defaultPuppyBg,
+          windowStyle: kit.defaultPuppyWindow,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
           dogId: dog.id,
           slideMode: 'puppies',
           photoSrc: dog.image || '',
@@ -2358,7 +4557,26 @@ const SocialStudio: React.FC = () => {
           panY: 0,
           zoom: 1,
           archHeight: archH,
-          layers: buildLayersForDog(dog, 'arch', ch, archH, 'sage-mist', 'cream-editorial')
+          layers: buildLayersForDog(
+            dog,
+            kit.defaultPuppyPreset,
+            ch,
+            archH,
+            kit.defaultPuppyBg,
+            kit.defaultPuppyWindow,
+            kit,
+            kit.customBgHex,
+            kit.customWindowHex
+          ),
+          photoOverlays: resolveAutoBrandOverlays(
+            kit.id,
+            undefined,
+            kit.defaultPuppyPreset,
+            ch,
+            archH,
+            kit.defaultPuppyBg,
+            kit.defaultPuppyWindow
+          )
         }
       };
     }
@@ -2368,27 +4586,36 @@ const SocialStudio: React.FC = () => {
         (!useDefaultEntity && selectedDog?.category === 'Stud' ? selectedDog : allStuds[0]) ||
         defaultStudioDog;
       const archH = targetRatio === 'story' ? 1180 : targetRatio === 'square' ? 580 : 800;
-      const baseLayers = buildLayersForDog(
+      const builtLayers = buildLayersForDog(
         stud,
-        'cameo',
+        kit.defaultStudPreset,
         ch,
         archH,
-        'forest-luxe',
-        'cream-editorial'
-      ).map((l) => {
-        if (l.id === 'breedAge') return { ...l, pill: 'gold' as PillStyle };
-        if (l.id === 'coat') return { ...l, pill: 'sage' as PillStyle };
-        if (l.id === 'nutrition') return { ...l, pill: 'mocha' as PillStyle };
-        if (l.id === 'status') return { ...l, pill: 'mocha' as PillStyle };
-        return l;
-      });
+        kit.defaultStudBg,
+        kit.defaultStudWindow,
+        kit,
+        kit.customBgHex,
+        kit.customWindowHex
+      );
+      const baseLayers = isSunlit
+        ? builtLayers.map((l) => {
+            if (l.id === 'breedAge') return { ...l, pill: 'gold' as PillStyle };
+            if (l.id === 'coat') return { ...l, pill: 'sage' as PillStyle };
+            if (l.id === 'nutrition') return { ...l, pill: 'mocha' as PillStyle };
+            if (l.id === 'status') return { ...l, pill: 'mocha' as PillStyle };
+            return l;
+          })
+        : builtLayers;
       return {
         dog: stud,
         slide: {
           id: slideId,
-          preset: 'cameo',
-          bgStyle: 'forest-luxe',
-          windowStyle: 'cream-editorial',
+          brandTheme: kit.id,
+          preset: kit.defaultStudPreset,
+          bgStyle: kit.defaultStudBg,
+          windowStyle: kit.defaultStudWindow,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
           dogId: stud.id,
           slideMode: 'studs',
           photoSrc: stud.image || '',
@@ -2397,7 +4624,16 @@ const SocialStudio: React.FC = () => {
           panY: 0,
           zoom: 1,
           archHeight: archH,
-          layers: baseLayers
+          layers: baseLayers,
+          photoOverlays: resolveAutoBrandOverlays(
+            kit.id,
+            undefined,
+            kit.defaultStudPreset,
+            ch,
+            archH,
+            kit.defaultStudBg,
+            kit.defaultStudWindow
+          )
         }
       };
     }
@@ -2406,14 +4642,20 @@ const SocialStudio: React.FC = () => {
       const item =
         (!useDefaultEntity && GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId)) ||
         GLOSSARY_ITEMS[0];
+      const bg = isSunlit ? 'forest-luxe' : kit.defaultTopicBg;
+      const win = isSunlit ? 'cream-editorial' : kit.defaultTopicWindow;
+      const tTheme = isSunlit ? 'arch-crest' : kit.defaultTopicTheme;
       return {
         topic: item,
         slide: {
           id: slideId,
+          brandTheme: kit.id,
           preset: 'no-photo',
-          textCardTheme: 'arch-crest',
-          bgStyle: 'forest-luxe',
-          windowStyle: 'cream-editorial',
+          textCardTheme: tTheme,
+          bgStyle: bg,
+          windowStyle: win,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
           slideMode: 'glossary',
           topicId: item.id,
           photoSrc: '',
@@ -2422,7 +4664,7 @@ const SocialStudio: React.FC = () => {
           panY: 0,
           zoom: 1,
           archHeight: 800,
-          layers: buildTopicLayers(item, ch, 'cream-editorial', 'glossary', 'arch-crest')
+          layers: buildTopicLayers(item, ch, win, 'glossary', tTheme, kit)
         }
       };
     }
@@ -2432,14 +4674,20 @@ const SocialStudio: React.FC = () => {
         (!useDefaultEntity && STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId)) ||
         STANDARDS_AND_BLOG_ITEMS[0];
       const hasImg = Boolean(item.image);
+      const bg = hasImg ? (isSunlit ? 'forest-luxe' : kit.defaultTopicBg) : isSunlit ? 'sage-mist' : kit.defaultTopicBg;
+      const win = isSunlit ? 'pure-white' : kit.defaultTopicWindow;
+      const tTheme = isSunlit ? 'magazine-border' : kit.defaultTopicTheme;
       return {
         topic: item,
         slide: {
           id: slideId,
+          brandTheme: kit.id,
           preset: hasImg ? 'minimal' : 'no-photo',
-          textCardTheme: 'magazine-border',
-          bgStyle: hasImg ? 'forest-luxe' : 'sage-mist',
-          windowStyle: 'pure-white',
+          textCardTheme: tTheme,
+          bgStyle: bg,
+          windowStyle: win,
+          customBgColor: kit.customBgHex,
+          customWindowColor: kit.customWindowHex,
           slideMode: 'standards',
           topicId: item.id,
           photoSrc: item.image || '',
@@ -2451,26 +4699,33 @@ const SocialStudio: React.FC = () => {
           layers: buildTopicLayers(
             item,
             ch,
-            hasImg ? 'forest-luxe' : 'pure-white',
+            hasImg ? bg : win,
             'standards',
-            hasImg ? 'arch-crest' : 'magazine-border'
+            hasImg ? 'arch-crest' : tTheme,
+            kit
           )
         }
       };
     }
 
-    // 'didyouknow' Default Template: Espresso Mocha + Botanical Cream Top Header Card
+    // 'didyouknow' Default Template
     const dykItem =
       DID_YOU_KNOW_ITEMS[(useDefaultEntity ? 0 : selectedDykIndex) % DID_YOU_KNOW_ITEMS.length] ||
       DID_YOU_KNOW_ITEMS[0];
+    const dykBg = isSunlit ? 'espresso-mocha' : kit.defaultTopicBg;
+    const dykWin = isSunlit ? 'cream-editorial' : kit.defaultTopicWindow;
+    const dykTheme = isSunlit ? 'ribbon-banner' : kit.defaultTopicTheme;
     return {
       topic: dykItem,
       slide: {
         id: slideId,
+        brandTheme: kit.id,
         preset: 'no-photo',
-        textCardTheme: 'ribbon-banner',
-        bgStyle: 'espresso-mocha',
-        windowStyle: 'cream-editorial',
+        textCardTheme: dykTheme,
+        bgStyle: dykBg,
+        windowStyle: dykWin,
+        customBgColor: kit.customBgHex,
+        customWindowColor: kit.customWindowHex,
         slideMode: 'didyouknow',
         topicId: dykItem.id,
         photoSrc: '',
@@ -2479,7 +4734,7 @@ const SocialStudio: React.FC = () => {
         panY: 0,
         zoom: 1,
         archHeight: 800,
-        layers: buildTopicLayers(dykItem, ch, 'cream-editorial', 'didyouknow', 'ribbon-banner')
+        layers: buildTopicLayers(dykItem, ch, dykWin, 'didyouknow', dykTheme, kit)
       }
     };
   };
@@ -2679,21 +4934,31 @@ const SocialStudio: React.FC = () => {
     const ch = getCanvasHeight(r);
     const pr =
       targetPreset ||
-      (activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset) ||
-      'minimal';
+      (activeSlide.preset === 'no-photo' ? activeBrandTheme.defaultPuppyPreset : activeSlide.preset) ||
+      activeBrandTheme.defaultPuppyPreset;
     const currentBg: BgStyle =
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
-        : 'cream-editorial';
+        : activeBrandTheme.defaultPuppyBg;
     const currentWin: BgStyle =
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
-        : 'pure-white';
+        : activeBrandTheme.defaultPuppyWindow;
     const currentArch =
       activeSlide.archHeight ||
       (r === 'story' ? 1180 : r === 'square' ? 580 : pr === 'sage' ? 740 : 800);
 
-    const freshDogLayers = buildLayersForDog(dog, pr, ch, currentArch, currentBg, currentWin);
+    const freshDogLayers = buildLayersForDog(
+      dog,
+      pr,
+      ch,
+      currentArch,
+      currentBg,
+      currentWin,
+      activeBrandTheme,
+      activeSlide.customBgColor,
+      activeSlide.customWindowColor
+    );
     const hasExistingDogLayers = activeSlide.layers.some(
       (l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex'
     );
@@ -2724,20 +4989,23 @@ const SocialStudio: React.FC = () => {
         const topPass = resolveLayerOverlaps(rawNextLayers, 46, Math.round(ch * 0.44), false);
         nextLayers = resolveLayerOverlaps(topPass, Math.round(ch * 0.54), ch - 36, false);
       } else if (pr !== 'no-photo') {
-        const g = getFrameGeometry(pr, ch, currentArch, currentBg, currentWin);
-        const pBottom = g.photoY + g.photoH;
-        const cBottom = g.cardY + g.cardH;
-        nextLayers = resolveLayerOverlaps(
-          rawNextLayers,
-          pr === 'sage' ? pBottom + 14 : pBottom - 20,
-          cBottom - 20,
-          pr !== 'sage'
+        const g = getFrameGeometry(
+          pr,
+          ch,
+          currentArch,
+          currentBg,
+          currentWin,
+          activeSlide.textCardTheme || 'arch-crest',
+          activeSlide.customBgColor,
+          activeSlide.customWindowColor
         );
+        nextLayers = applyPresetOverlapZones(pr, rawNextLayers, g, ch);
       }
     }
 
     updateActiveSlide(
       {
+        brandTheme: activeBrandTheme.id,
         preset: pr,
         bgStyle: currentBg,
         windowStyle: currentWin,
@@ -2747,6 +5015,8 @@ const SocialStudio: React.FC = () => {
         topicId: undefined,
         photoSrc: dog.image || '',
         videoSrc: undefined,
+        photoFit: undefined,
+        productId: undefined,
         panX: 0,
         panY: 0,
         archHeight: currentArch,
@@ -2768,18 +5038,21 @@ const SocialStudio: React.FC = () => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
     const hasImg = Boolean(item.image);
-    const defaultBgForMode: BgStyle =
-      contentMode === 'didyouknow'
+    const isSunlit = activeBrandTheme.id === 'sunlit-garden';
+    const defaultBgForMode: BgStyle = isSunlit
+      ? contentMode === 'didyouknow'
         ? 'espresso-mocha'
         : contentMode === 'glossary'
           ? 'forest-luxe'
-          : 'sage-mist';
-    const defaultWinForMode: BgStyle =
-      contentMode === 'didyouknow'
+          : 'sage-mist'
+      : activeBrandTheme.defaultTopicBg;
+    const defaultWinForMode: BgStyle = isSunlit
+      ? contentMode === 'didyouknow'
         ? 'cream-editorial'
         : contentMode === 'glossary'
           ? 'cream-editorial'
-          : 'pure-white';
+          : 'pure-white'
+      : activeBrandTheme.defaultTopicWindow;
 
     const keepExistingTopicColors =
       !resetTheme &&
@@ -2788,7 +5061,9 @@ const SocialStudio: React.FC = () => {
       !hasImg;
 
     const chosenBg: BgStyle = hasImg
-      ? 'forest-luxe'
+      ? isSunlit
+        ? 'forest-luxe'
+        : activeBrandTheme.defaultTopicBg
       : keepExistingTopicColors
         ? activeSlide.bgStyle
         : defaultBgForMode;
@@ -2796,18 +5071,20 @@ const SocialStudio: React.FC = () => {
       ? activeSlide.windowStyle || defaultWinForMode
       : defaultWinForMode;
 
-    const defaultTextThemeForMode: TextCardTheme =
-      contentMode === 'didyouknow'
+    const defaultTextThemeForMode: TextCardTheme = isSunlit
+      ? contentMode === 'didyouknow'
         ? 'ribbon-banner'
         : contentMode === 'standards'
           ? 'magazine-border'
-          : 'arch-crest';
+          : 'arch-crest'
+      : activeBrandTheme.defaultTopicTheme;
     const chosenTextTheme: TextCardTheme = keepExistingTopicColors
       ? activeSlide.textCardTheme || defaultTextThemeForMode
       : defaultTextThemeForMode;
 
     updateActiveSlide(
       {
+        brandTheme: activeBrandTheme.id,
         preset: hasImg ? 'minimal' : 'no-photo',
         textCardTheme: chosenTextTheme,
         bgStyle: chosenBg,
@@ -2825,7 +5102,8 @@ const SocialStudio: React.FC = () => {
           ch,
           hasImg ? chosenBg : chosenTextTheme === 'minimal-luxe' ? chosenBg : chosenWin,
           contentMode,
-          hasImg ? 'arch-crest' : chosenTextTheme
+          hasImg ? 'arch-crest' : chosenTextTheme,
+          activeBrandTheme
         )
       },
       true
@@ -2860,19 +5138,111 @@ const SocialStudio: React.FC = () => {
   const handleSwitchPreset = (nextPreset: FramePreset) => {
     const defaultArch =
       ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
-    const currentBg: BgStyle =
+    let currentBg: BgStyle =
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
-        : 'cream-editorial';
-    const currentWin: BgStyle =
+        : activeBrandTheme.defaultPuppyBg;
+    let currentWin: BgStyle =
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
-        : 'pure-white';
+        : activeBrandTheme.defaultPuppyWindow;
+
+    if (
+      nextPreset === 'coastal' &&
+      activeBrandTheme.id === 'sunlit-garden' &&
+      !activeSlide.customBgColor &&
+      activeSlide.bgStyle === 'sage-mist'
+    ) {
+      currentBg = 'coastal-sky';
+      currentWin = 'cream-editorial';
+    } else if (
+      nextPreset === 'filmstrip' &&
+      !activeSlide.customBgColor &&
+      activeSlide.bgStyle === 'sage-mist'
+    ) {
+      currentBg = 'espresso-mocha';
+      currentWin = 'oat-latte';
+    } else if (!activeSlide.customBgColor && !activeSlide.customWindowColor && isWebsiteTechPreset(nextPreset)) {
+      if (nextPreset === 'rp-showroom') {
+        currentBg = 'rp-warm-stone';
+        currentWin = 'rp-charcoal-stage';
+      } else if (nextPreset === 'rp-naturals-pedestal') {
+        currentBg = 'rp-naturals-linen';
+        currentWin = 'pure-white';
+      } else if (nextPreset === 'rp-clinical-dossier') {
+        currentBg = 'rp-warm-stone';
+        currentWin = 'rp-clinical-ice';
+      } else if (
+        nextPreset === 'rp-product-spotlight' ||
+        nextPreset === 'rp-protocol-stack' ||
+        nextPreset === 'rp-bento-grid'
+      ) {
+        currentBg = 'rp-warm-stone';
+        currentWin = 'pure-white';
+      } else if (nextPreset === 'k9ss-athlete-stage' || nextPreset === 'k9ss-lineup-bento') {
+        currentBg = 'obsidian-carbon';
+        currentWin = 'k9ss-steel';
+      } else if (nextPreset === 'k9ss-red-brutalist') {
+        currentBg = 'k9ss-steel';
+        currentWin = 'obsidian-carbon';
+      } else if (nextPreset === 'k9ss-titanium-pedestal') {
+        currentBg = 'obsidian-carbon';
+        currentWin = 'k9ss-titanium';
+      }
+    }
+
+    const mergeTemplateLayer = (tl: TextLayer): TextLayer => {
+      const prev = activeSlide.layers.find((el) => el.id === tl.id);
+      if (!prev) return tl;
+      const keepPrevTextColor =
+        tl.pill === 'none-light' && prev.textColor && isHexDark(prev.textColor)
+          ? undefined
+          : prev.textColor;
+      return {
+        ...tl,
+        text: prev.text,
+        font: prev.font,
+        textColor: keepPrevTextColor,
+        customPillColor: prev.customPillColor
+      };
+    };
+
+    const isCustomCard =
+      activeSlide.dogId === '__custom__' || activeSlide.customPhotoDogId === '__custom__';
     const isDogSlide =
+      !isCustomCard &&
       (!activeSlide.slideMode ||
         activeSlide.slideMode === 'puppies' ||
         activeSlide.slideMode === 'studs') &&
       activeSlide.layers.some((l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex');
+
+    if (isCustomCard) {
+      const templateLayers = buildGeneralCustomPhotoLayers(
+        canvasH,
+        nextPreset,
+        defaultArch,
+        currentBg,
+        currentWin,
+        activeBrandTheme,
+        activeSlide.customBgColor,
+        activeSlide.customWindowColor
+      );
+      const customLayers = activeSlide.layers.filter(
+        (el) => !templateLayers.some((tl) => tl.id === el.id)
+      );
+      const mergedLayers = [...templateLayers.map(mergeTemplateLayer), ...customLayers];
+      updateActiveSlide(
+        {
+          preset: nextPreset,
+          bgStyle: currentBg,
+          windowStyle: currentWin,
+          archHeight: defaultArch,
+          layers: mergedLayers
+        },
+        true
+      );
+      return;
+    }
 
     if (isDogSlide && selectedDog) {
       const templateLayers = buildLayersForDog(
@@ -2881,24 +5251,15 @@ const SocialStudio: React.FC = () => {
         canvasH,
         defaultArch,
         currentBg,
-        currentWin
+        currentWin,
+        activeBrandTheme,
+        activeSlide.customBgColor,
+        activeSlide.customWindowColor
       );
       const customLayers = activeSlide.layers.filter(
         (el) => !templateLayers.some((tl) => tl.id === el.id)
       );
-      const mergedLayers = [
-        ...templateLayers.map((tl) => {
-          const prev = activeSlide.layers.find((el) => el.id === tl.id);
-          if (!prev) return tl;
-          return {
-            ...tl,
-            text: prev.text,
-            font: prev.font,
-            textColor: prev.textColor
-          };
-        }),
-        ...customLayers
-      ];
+      const mergedLayers = [...templateLayers.map(mergeTemplateLayer), ...customLayers];
       updateActiveSlide(
         {
           preset: nextPreset,
@@ -2924,7 +5285,9 @@ const SocialStudio: React.FC = () => {
           : 0.48;
 
     const overDarkPhoto = nextPreset !== 'no-photo';
-    const winDarkText = BG_STYLES[currentWin].darkText;
+    const winDarkText = activeSlide.customWindowColor
+      ? !isHexDark(activeSlide.customWindowColor)
+      : BG_STYLES[currentWin].darkText;
     const adjustedTopicLayers = activeSlide.layers.map((l) => {
       if (overDarkPhoto) {
         if (l.pill === 'none-dark') return { ...l, pill: 'none-light' as PillStyle };
@@ -2990,7 +5353,8 @@ const SocialStudio: React.FC = () => {
         canvasH,
         effectiveSurface,
         activeSlide.slideMode || contentMode,
-        nextTextTheme
+        nextTextTheme,
+        activeBrandTheme
       );
       const customExtras = activeSlide.layers.filter(
         (el) => !themedTemplate.some((tl) => tl.id === el.id)
@@ -3003,7 +5367,8 @@ const SocialStudio: React.FC = () => {
             ...tl,
             visible: prev.visible,
             text: prev.text,
-            pillOpacity: prev.pillOpacity
+            pillOpacity: prev.pillOpacity,
+            customPillColor: prev.customPillColor
           };
         }),
         ...customExtras
@@ -3024,7 +5389,9 @@ const SocialStudio: React.FC = () => {
     }
 
     // If used on a puppy text-only card, simply switch the decorative card shape & contrast
-    const dark = BG_STYLES[effectiveSurface].darkText;
+    const customHex =
+      nextTextTheme === 'minimal-luxe' ? activeSlide.customBgColor : activeSlide.customWindowColor;
+    const dark = customHex ? !isHexDark(customHex) : BG_STYLES[effectiveSurface].darkText;
     const adjusted = activeSlide.layers.map((l) => {
       if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
       if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
@@ -3049,7 +5416,8 @@ const SocialStudio: React.FC = () => {
     updateActiveSlide(
       {
         bgStyle: nextBg,
-        windowStyle: currentWin
+        windowStyle: currentWin,
+        customBgColor: undefined
       },
       true
     );
@@ -3065,7 +5433,9 @@ const SocialStudio: React.FC = () => {
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
         : 'pure-white';
-    const prevDark = BG_STYLES[prevWin].darkText;
+    const prevDark = activeSlide.customWindowColor
+      ? !isHexDark(activeSlide.customWindowColor)
+      : BG_STYLES[prevWin].darkText;
     const dark = BG_STYLES[nextWin].darkText;
     const adjustUnpilledContrast = activeSlide.preset !== 'minimal';
     const updatedLayers = adjustUnpilledContrast
@@ -3091,6 +5461,7 @@ const SocialStudio: React.FC = () => {
       {
         bgStyle: currentBg,
         windowStyle: nextWin,
+        customWindowColor: undefined,
         layers: updatedLayers
       },
       true
@@ -3107,10 +5478,12 @@ const SocialStudio: React.FC = () => {
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
         : 'pure-white';
+    const prevCustomBg = activeSlide.customBgColor;
+    const prevCustomWin = activeSlide.customWindowColor;
     const nextWin = currentBg;
     const nextBg = currentWin;
-    const prevDark = BG_STYLES[currentWin].darkText;
-    const dark = BG_STYLES[nextWin].darkText;
+    const prevDark = prevCustomWin ? !isHexDark(prevCustomWin) : BG_STYLES[currentWin].darkText;
+    const dark = prevCustomBg ? !isHexDark(prevCustomBg) : BG_STYLES[nextWin].darkText;
     const updatedLayers = activeSlide.layers.map((l) => {
       if (l.pill === 'none-dark' && !dark) {
         return {
@@ -3128,21 +5501,36 @@ const SocialStudio: React.FC = () => {
       }
       return l;
     });
-    updateActiveSlide({ bgStyle: nextBg, windowStyle: nextWin, layers: updatedLayers }, true);
+    updateActiveSlide(
+      {
+        bgStyle: nextBg,
+        windowStyle: nextWin,
+        customBgColor: prevCustomWin,
+        customWindowColor: prevCustomBg,
+        layers: updatedLayers
+      },
+      true
+    );
   };
 
   // Canva-Style 1-Tap Brand Kit Shuffle (Mix & Match Frame, Outer/Inner Colors, Zero-Pill Colored Text & Pills!)
   const handleShuffleBrandLook = (alsoRotatePhoto = false) => {
-    // Draw from a shuffled non-repeating deck so every tap mixes Zero-Pill Editorial, Whisper Hybrid & Pill looks!
+    const themePool = BRAND_REMIX_RECIPES.map((r, idx) =>
+      (r.brandTheme || 'sunlit-garden') === activeBrandTheme.id ? idx : -1
+    ).filter((i) => i >= 0);
+    const activePool =
+      themePool.length > 0 ? themePool : BRAND_REMIX_RECIPES.map((_, idx) => idx);
+
+    remixDeckRef.current = remixDeckRef.current.filter((idx) => activePool.includes(idx));
     if (remixDeckRef.current.length === 0) {
-      const indices = BRAND_REMIX_RECIPES.map((_, idx) => idx).filter((idx) => idx !== remixIdx);
+      const indices = activePool.filter((idx) => idx !== remixIdx || activePool.length === 1);
       for (let i = indices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [indices[i], indices[j]] = [indices[j], indices[i]];
       }
       remixDeckRef.current = indices;
     }
-    const nextIdx = remixDeckRef.current.pop() ?? (remixIdx + 1) % BRAND_REMIX_RECIPES.length;
+    const nextIdx = remixDeckRef.current.pop() ?? activePool[0] ?? 0;
     setRemixIdx(nextIdx);
     const recipe = BRAND_REMIX_RECIPES[nextIdx];
 
@@ -3187,7 +5575,8 @@ const SocialStudio: React.FC = () => {
         canvasH,
         defaultArch,
         recipe.bgStyle,
-        recipe.windowStyle
+        recipe.windowStyle,
+        activeBrandTheme
       );
 
       const customLayers = activeSlide.layers.filter(
@@ -3203,7 +5592,7 @@ const SocialStudio: React.FC = () => {
         let pillChoice: PillStyle = recipe.pills[fl.id] || fl.pill;
         // Keep sex badge gender-smart when a recipe picks blush on a male puppy or stud
         if (fl.id === 'sex' && pillChoice === 'blush' && !isFemale) {
-          pillChoice = isStud ? 'gold' : 'sage';
+          pillChoice = isStud ? (activeBrandTheme.id === 'k9ss' ? 'trophy-gold' : 'gold') : 'sage';
         }
         const visible = recipe.visibleIds.includes(fl.id) && Boolean(textVal.trim());
         return {
@@ -3211,50 +5600,33 @@ const SocialStudio: React.FC = () => {
           visible,
           text: textVal,
           pill: pillChoice,
+          customPillColor: undefined,
           textColor: recipe.textColors?.[fl.id]
         };
       });
 
       const combinedLayers = [...mappedStandardLayers, ...customLayers];
-      let resolvedLayers: TextLayer[];
-
-      if (recipe.preset === 'minimal') {
-        const topResolved = resolveLayerOverlaps(
-          combinedLayers,
-          46,
-          Math.round(canvasH * 0.44),
-          false
-        );
-        resolvedLayers = resolveLayerOverlaps(
-          topResolved,
-          Math.round(canvasH * 0.54),
-          canvasH - 36,
-          false
-        );
-      } else {
-        const geom = getFrameGeometry(
-          recipe.preset,
-          canvasH,
-          defaultArch,
-          recipe.bgStyle,
-          recipe.windowStyle
-        );
-        const photoBottom = geom.photoY + geom.photoH;
-        const cardBottom = geom.cardY + geom.cardH;
-        const footerTop = recipe.preset === 'sage' ? photoBottom + 14 : photoBottom - 20;
-        resolvedLayers = resolveLayerOverlaps(
-          combinedLayers,
-          footerTop,
-          cardBottom - 20,
-          recipe.preset !== 'sage'
-        );
-      }
+      const geom = getFrameGeometry(
+        recipe.preset,
+        canvasH,
+        defaultArch,
+        recipe.bgStyle,
+        recipe.windowStyle
+      );
+      const resolvedLayers = applyPresetOverlapZones(
+        recipe.preset,
+        combinedLayers,
+        geom,
+        canvasH
+      );
 
       updateActiveSlide(
         {
           preset: recipe.preset,
           bgStyle: recipe.bgStyle,
           windowStyle: recipe.windowStyle,
+          customBgColor: undefined,
+          customWindowColor: undefined,
           dogId: selectedDog.id,
           customPhotoDogId: nextCustomPhotoDogId,
           photoSrc: nextPhotoSrc,
@@ -3310,7 +5682,8 @@ const SocialStudio: React.FC = () => {
         canvasH,
         surfaceStyle,
         activeSlide.slideMode || contentMode,
-        nextTextTheme
+        nextTextTheme,
+        activeBrandTheme
       );
       const customExtras = activeSlide.layers.filter(
         (el) => !themedBase.some((tl) => tl.id === el.id)
@@ -3346,46 +5719,49 @@ const SocialStudio: React.FC = () => {
           const text = prev ? prev.text : tl.text;
           if (tl.id === 'badge') {
             if (nextTextTheme === 'ribbon-banner' || nextTextTheme === 'split-quote') {
-              return { ...tl, visible, text, pill: 'gold' as PillStyle, textColor: undefined };
+              return { ...tl, visible, text, pill: 'gold' as PillStyle, customPillColor: undefined, textColor: undefined };
             }
             if (isZeroPillTopic) {
-              return { ...tl, visible, text, pill: baseNone, textColor: accentTextColor };
+              return { ...tl, visible, text, pill: baseNone, customPillColor: undefined, textColor: accentTextColor };
             }
             return {
               ...tl,
               visible,
               text,
               pill: (recipe.pills.status || recipe.pills.breedAge || (dark ? 'sage' : 'gold')) as PillStyle,
+              customPillColor: undefined,
               textColor: undefined
             };
           }
           if (tl.id === 'headline') {
             if (nextTextTheme === 'split-quote') {
-              return { ...tl, visible, text, pill: 'none-light' as PillStyle, textColor: '#FFFFFF' };
+              return { ...tl, visible, text, pill: 'none-light' as PillStyle, customPillColor: undefined, textColor: '#FFFFFF' };
             }
-            return { ...tl, visible, text, pill: baseNone, textColor: primaryTextColor };
+            return { ...tl, visible, text, pill: baseNone, customPillColor: undefined, textColor: primaryTextColor };
           }
           if (tl.id === 'body') {
             if (isZeroPillTopic || isWhisperTopic || nextTextTheme === 'split-quote') {
-              return { ...tl, visible, text, pill: baseNone, textColor: secondaryTextColor };
+              return { ...tl, visible, text, pill: baseNone, customPillColor: undefined, textColor: secondaryTextColor };
             }
             return {
               ...tl,
               visible,
               text,
               pill: (dark ? 'cream' : 'frosted') as PillStyle,
+              customPillColor: undefined,
               textColor: undefined
             };
           }
           if (tl.id === 'footer') {
             if (isZeroPillTopic) {
-              return { ...tl, visible, text, pill: baseNone, textColor: accentTextColor };
+              return { ...tl, visible, text, pill: baseNone, customPillColor: undefined, textColor: accentTextColor };
             }
             return {
               ...tl,
               visible,
               text,
               pill: (recipe.pills.contact || recipe.pills.coat || (dark ? 'terracotta' : 'gold')) as PillStyle,
+              customPillColor: undefined,
               textColor: undefined
             };
           }
@@ -3400,6 +5776,8 @@ const SocialStudio: React.FC = () => {
           textCardTheme: nextTextTheme,
           bgStyle: recipe.bgStyle,
           windowStyle: recipe.windowStyle,
+          customBgColor: undefined,
+          customWindowColor: undefined,
           layers: resolvedTopicLayers
         },
         true
@@ -3424,12 +5802,14 @@ const SocialStudio: React.FC = () => {
           return {
             ...l,
             pill: 'none-light' as PillStyle,
+            customPillColor: undefined,
             textColor: accentTextColor
           };
         }
         return {
           ...l,
           pill: (recipe.pills.status || recipe.pills.breedAge || 'gold') as PillStyle,
+          customPillColor: undefined,
           textColor: undefined
         };
       }
@@ -3437,6 +5817,7 @@ const SocialStudio: React.FC = () => {
         return {
           ...l,
           pill: 'none-light' as PillStyle,
+          customPillColor: undefined,
           textColor: primaryTextColor
         };
       }
@@ -3445,6 +5826,7 @@ const SocialStudio: React.FC = () => {
           return {
             ...l,
             pill: 'none-light' as PillStyle,
+            customPillColor: undefined,
             textColor: secondaryTextColor
           };
         }
@@ -3452,6 +5834,7 @@ const SocialStudio: React.FC = () => {
           ...l,
           pill: 'frosted' as PillStyle,
           pillOpacity: 0.78,
+          customPillColor: undefined,
           textColor: undefined
         };
       }
@@ -3460,12 +5843,14 @@ const SocialStudio: React.FC = () => {
           return {
             ...l,
             pill: 'none-light' as PillStyle,
+            customPillColor: undefined,
             textColor: accentTextColor
           };
         }
         return {
           ...l,
           pill: (recipe.pills.contact || recipe.pills.coat || 'gold') as PillStyle,
+          customPillColor: undefined,
           textColor: undefined
         };
       }
@@ -3486,6 +5871,8 @@ const SocialStudio: React.FC = () => {
       {
         bgStyle: recipe.bgStyle,
         windowStyle: recipe.windowStyle,
+        customBgColor: undefined,
+        customWindowColor: undefined,
         photoDim: Math.max(activeSlide.photoDim || 0.42, 0.38),
         layers: resolvedTopicLayers
       },
@@ -3911,10 +6298,13 @@ const SocialStudio: React.FC = () => {
     const presetItem: SavedLayoutPreset = {
       id: `layout-${Date.now()}`,
       name,
+      brandTheme: activeBrandTheme.id,
       preset: activeSlide.preset,
       textCardTheme: activeSlide.textCardTheme || 'arch-crest',
       bgStyle: activeSlide.bgStyle,
       windowStyle: activeSlide.windowStyle || 'pure-white',
+      customBgColor: activeSlide.customBgColor,
+      customWindowColor: activeSlide.customWindowColor,
       photoDim: activeSlide.photoDim,
       archHeight: activeSlide.archHeight,
       layers: activeSlide.layers.map(({ text, ...rest }) => ({
@@ -3930,6 +6320,8 @@ const SocialStudio: React.FC = () => {
   };
 
   const handleApplySavedLayout = (saved: SavedLayoutPreset) => {
+    const savedKit =
+      allBrandThemes.find((t) => t.id === saved.brandTheme) || activeBrandTheme;
     // Keep current dog's fresh text for matching standard layer IDs (breedAge, sex, name, coat, dna, quote, status)!
     const freshDogLayers =
       selectedDog && (contentMode === 'puppies' || contentMode === 'studs')
@@ -3939,7 +6331,10 @@ const SocialStudio: React.FC = () => {
             canvasH,
             saved.archHeight,
             saved.bgStyle,
-            saved.windowStyle || 'pure-white'
+            saved.windowStyle || 'pure-white',
+            savedKit,
+            saved.customBgColor,
+            saved.customWindowColor
           )
         : [];
     const freshTextMap = new Map(freshDogLayers.map((l) => [l.id, l.text]));
@@ -3959,6 +6354,7 @@ const SocialStudio: React.FC = () => {
             ? 'blush'
             : 'sage'
           : sl.pill,
+      customPillColor: sl.customPillColor,
       pillOpacity: sl.pillOpacity,
       font: sl.font,
       textColor: sl.textColor,
@@ -3977,10 +6373,13 @@ const SocialStudio: React.FC = () => {
 
     updateActiveSlide(
       {
+        brandTheme: saved.brandTheme || activeSlide.brandTheme,
         preset: saved.preset,
         textCardTheme: saved.textCardTheme || 'arch-crest',
         bgStyle: saved.bgStyle,
         windowStyle: saved.windowStyle || 'pure-white',
+        customBgColor: saved.customBgColor,
+        customWindowColor: saved.customWindowColor,
         photoDim: saved.photoDim,
         archHeight: saved.archHeight,
         ...(isDogMode && selectedDog
@@ -4256,7 +6655,7 @@ const SocialStudio: React.FC = () => {
         badge: cardData.badge || '💡 DID YOU KNOW?',
         title: cardData.headline,
         body: cardData.body || '',
-        footer: cardData.footer || 'Drop your thoughts below! 👇 • @okcfrenchies',
+        footer: cardData.footer || `Drop your thoughts below! 👇 • ${activeBrandTheme.handle}`,
         bgStyle: chosenBg,
         shareUrl: 'https://okcfrenchies.com'
       };
@@ -4264,14 +6663,15 @@ const SocialStudio: React.FC = () => {
       const keepPhotoOverlay =
         activeSlide.slideMode === 'didyouknow' && activeSlide.preset !== 'no-photo' && Boolean(activeSlide.photoSrc);
       const targetPreset: FramePreset = keepPhotoOverlay ? activeSlide.preset : 'no-photo';
-      const targetTextTheme: TextCardTheme = activeSlide.textCardTheme || 'ribbon-banner';
-      const targetWin: BgStyle = activeSlide.windowStyle || 'cream-editorial';
+      const targetTextTheme: TextCardTheme = activeSlide.textCardTheme || activeBrandTheme.defaultTopicTheme;
+      const targetWin: BgStyle = activeSlide.windowStyle || activeBrandTheme.defaultTopicWindow;
       const baseAiLayers = buildTopicLayers(
         generatedItem,
         canvasH,
         targetTextTheme === 'minimal-luxe' ? chosenBg : targetWin,
         'didyouknow',
-        keepPhotoOverlay ? 'arch-crest' : targetTextTheme
+        keepPhotoOverlay ? 'arch-crest' : targetTextTheme,
+        activeBrandTheme
       ).map((l) => {
         if (!keepPhotoOverlay) return l;
         if (l.pill === 'none-dark') return { ...l, pill: 'none-light' as PillStyle };
@@ -4281,6 +6681,7 @@ const SocialStudio: React.FC = () => {
 
       updateActiveSlide(
         {
+          brandTheme: activeBrandTheme.id,
           preset: targetPreset,
           textCardTheme: targetTextTheme,
           bgStyle: chosenBg,
@@ -4325,13 +6726,18 @@ const SocialStudio: React.FC = () => {
     overlayMediaMap: Map<string, DrawableMedia>
   ) => {
     const tTheme: TextCardTheme = slide.textCardTheme || 'arch-crest';
+    const slideKit =
+      allBrandThemes.find((t) => t.id === (slide.brandTheme || 'sunlit-garden')) ||
+      BUILT_IN_BRAND_THEMES[0];
     const geom = getFrameGeometry(
       slide.preset,
       canvasH,
       slide.archHeight,
       slide.bgStyle,
       slide.windowStyle || 'pure-white',
-      tTheme
+      tTheme,
+      slide.customBgColor,
+      slide.customWindowColor
     );
     const outerGrad = ctx.createLinearGradient(0, 0, 1080, canvasH);
     outerGrad.addColorStop(0, geom.outerBg1);
@@ -4340,45 +6746,70 @@ const SocialStudio: React.FC = () => {
     ctx.fillRect(0, 0, 1080, canvasH);
 
     if (geom.hasCard) {
+      if (geom.cardHardShadowColor) {
+        ctx.save();
+        roundRectPath(
+          ctx,
+          geom.cardX + 12,
+          geom.cardY + 12,
+          geom.cardW,
+          geom.cardH,
+          geom.cardTopR,
+          geom.cardTopR,
+          geom.cardBottomR,
+          geom.cardBottomR
+        );
+        ctx.fillStyle = geom.cardHardShadowColor;
+        ctx.fill();
+        ctx.restore();
+      }
       ctx.save();
-      ctx.shadowColor = 'rgba(28,38,33,0.12)';
-      ctx.shadowBlur = 50;
-      ctx.shadowOffsetY = 20;
-      roundRectPath(
-        ctx,
-        geom.cardX,
-        geom.cardY,
-        geom.cardW,
-        geom.cardH,
-        geom.cardTopR,
-        geom.cardTopR,
-        geom.cardBottomR,
-        geom.cardBottomR
-      );
+      ctx.shadowColor = geom.cardHardShadowColor ? 'transparent' : 'rgba(28,38,33,0.12)';
+      ctx.shadowBlur = geom.cardHardShadowColor ? 0 : 50;
+      ctx.shadowOffsetY = geom.cardHardShadowColor ? 0 : 20;
+      if (geom.chamferCut > 0) {
+        chamferRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, geom.cardH, geom.chamferCut);
+      } else {
+        roundRectPath(
+          ctx,
+          geom.cardX,
+          geom.cardY,
+          geom.cardW,
+          geom.cardH,
+          geom.cardTopR,
+          geom.cardTopR,
+          geom.cardBottomR,
+          geom.cardBottomR
+        );
+      }
       ctx.fillStyle = geom.cardBg;
       ctx.fill();
       ctx.restore();
 
-      roundRectPath(
-        ctx,
-        geom.cardX,
-        geom.cardY,
-        geom.cardW,
-        geom.cardH,
-        geom.cardTopR,
-        geom.cardTopR,
-        geom.cardBottomR,
-        geom.cardBottomR
-      );
+      if (geom.chamferCut > 0) {
+        chamferRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, geom.cardH, geom.chamferCut);
+      } else {
+        roundRectPath(
+          ctx,
+          geom.cardX,
+          geom.cardY,
+          geom.cardW,
+          geom.cardH,
+          geom.cardTopR,
+          geom.cardTopR,
+          geom.cardBottomR,
+          geom.cardBottomR
+        );
+      }
       ctx.strokeStyle = geom.cardBorder;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = geom.cardBorderWidth;
       ctx.stroke();
     }
 
     if (!geom.hasPhoto) {
       const winTheme = BG_STYLES[slide.windowStyle || 'cream-editorial'] || BG_STYLES['cream-editorial'];
       const outerTheme = BG_STYLES[slide.bgStyle || 'forest-luxe'] || BG_STYLES['forest-luxe'];
-      const accentStroke = winTheme.darkText ? 'rgba(46,90,68,0.22)' : 'rgba(244,211,126,0.32)';
+      const accentStroke = geom.winDarkText ? 'rgba(46,90,68,0.22)' : 'rgba(244,211,126,0.32)';
       ctx.save();
       if (tTheme === 'arch-crest') {
         roundRectPath(ctx, 76, 76, 1080 - 152, canvasH - 152, 196, 196, 28, 28);
@@ -4402,7 +6833,8 @@ const SocialStudio: React.FC = () => {
       } else if (tTheme === 'ribbon-banner') {
         ctx.save();
         roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, 148, 38, 38, 0, 0);
-        ctx.fillStyle = outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1;
+        ctx.fillStyle =
+          slide.customBgColor || (outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1);
         ctx.fill();
         ctx.beginPath();
         ctx.moveTo(geom.cardX, geom.cardY + 148);
@@ -4415,7 +6847,8 @@ const SocialStudio: React.FC = () => {
         const splitH = Math.round(canvasH * 0.44) - geom.cardY;
         ctx.save();
         roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, splitH, 38, 38, 0, 0);
-        ctx.fillStyle = outerTheme.darkText ? '#2E5A44' : outerTheme.bg1;
+        ctx.fillStyle =
+          slide.customBgColor || (outerTheme.darkText ? '#2E5A44' : outerTheme.bg1);
         ctx.fill();
         ctx.beginPath();
         ctx.moveTo(geom.cardX + 90, geom.cardY + splitH);
@@ -4425,7 +6858,7 @@ const SocialStudio: React.FC = () => {
         ctx.stroke();
         ctx.restore();
       } else if (tTheme === 'minimal-luxe') {
-        const lineStroke = outerTheme.darkText ? 'rgba(46,90,68,0.28)' : 'rgba(244,211,126,0.38)';
+        const lineStroke = geom.winDarkText ? 'rgba(46,90,68,0.28)' : 'rgba(244,211,126,0.38)';
         ctx.beginPath();
         ctx.moveTo(160, 165);
         ctx.lineTo(1080 - 160, 165);
@@ -4437,6 +6870,318 @@ const SocialStudio: React.FC = () => {
       }
       ctx.restore();
     } else {
+      // Architectural accents for photo-framed multi-brand templates
+      if (slide.preset === 'filmstrip') {
+        ctx.save();
+        const railH = geom.photoY + geom.photoH - 2;
+        ctx.fillStyle = 'rgba(15, 12, 10, 0.62)';
+        roundRectPath(ctx, 26, 34, 62, railH, 14, 14, 14, 14);
+        ctx.fill();
+        roundRectPath(ctx, 992, 34, 62, railH, 14, 14, 14, 14);
+        ctx.fill();
+        ctx.fillStyle = geom.cardBg;
+        for (let sy = 62; sy < geom.photoY + geom.photoH - 28; sy += 52) {
+          roundRectPath(ctx, 44, sy, 26, 18, 4, 4, 4, 4);
+          ctx.fill();
+          roundRectPath(ctx, 1010, sy, 26, 18, 4, 4, 4, 4);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#F4D37E';
+        ctx.font = `800 20px 'DM Sans', sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`FRAME 01A • ${slideKit.shortName.toUpperCase()} REEL`, 128, 74);
+        ctx.restore();
+      }
+      if (geom.hasCard) {
+        ctx.save();
+        if (slide.preset === 'split-header') {
+          ctx.beginPath();
+          ctx.moveTo(geom.cardX + 32, geom.cardY + geom.headerH);
+          ctx.lineTo(geom.cardX + geom.cardW - 32, geom.cardY + geom.headerH);
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.45);
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (slide.preset === 'apothecary') {
+          chamferRectPath(
+            ctx,
+            geom.cardX,
+            geom.cardY,
+            geom.cardW,
+            geom.cardH,
+            geom.chamferCut
+          );
+          ctx.strokeStyle = geom.cardBorder;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          chamferRectPath(
+            ctx,
+            geom.cardX + 16,
+            geom.cardY + 16,
+            geom.cardW - 32,
+            geom.cardH - 32,
+            Math.max(12, geom.chamferCut - 10)
+          );
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.55);
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+          ctx.fillStyle = geom.winDarkText ? '#5E5045' : '#F4D37E';
+          ctx.font = `800 18px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            `MAISON DE BOULEDOGUE • ${slideKit.shortName.toUpperCase()}`,
+            540,
+            geom.cardY + 54
+          );
+          ctx.beginPath();
+          ctx.moveTo(geom.cardX + 58, geom.cardY + 84);
+          ctx.lineTo(geom.cardX + geom.cardW - 58, geom.cardY + 84);
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.35);
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else if (slide.preset === 'keyhole') {
+          roundRectPath(
+            ctx,
+            geom.cardX + 16,
+            geom.cardY + 16,
+            geom.cardW - 32,
+            geom.cardH - 32,
+            34,
+            34,
+            34,
+            34
+          );
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.38);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (slide.preset === 'stud-crest') {
+          roundRectPath(
+            ctx,
+            geom.cardX + 14,
+            geom.cardY + 14,
+            geom.cardW - 28,
+            geom.cardH - 28,
+            28,
+            28,
+            28,
+            28
+          );
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.45);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (slide.preset === 'magazine') {
+          ctx.fillStyle = geom.winDarkText ? '#1C2621' : '#FFFFFF';
+          ctx.font = `700 48px 'Playfair Display', serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(slideKit.magazineMasthead.toUpperCase(), 540, geom.cardY + 46);
+          ctx.fillStyle = geom.cardAccent;
+          ctx.font = `800 16px 'DM Sans', sans-serif`;
+          ctx.fillText('OKLAHOMA CITY • GENETIC BOUTIQUE EDITION', 540, geom.cardY + 88);
+          ctx.beginPath();
+          ctx.moveTo(geom.cardX + 28, geom.cardY + 108);
+          ctx.lineTo(geom.cardX + geom.cardW - 28, geom.cardY + 108);
+          ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.5);
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (slide.preset === 'lookbook') {
+          const spineX = geom.cardX + 28;
+          const spineOuterTheme =
+            BG_STYLES[slide.bgStyle || slideKit.defaultPuppyBg] || BG_STYLES['forest-luxe'];
+          const spineWinTheme =
+            BG_STYLES[slide.windowStyle || slideKit.defaultPuppyWindow] ||
+            BG_STYLES['cream-editorial'];
+          roundRectPath(
+            ctx,
+            spineX,
+            geom.photoY,
+            geom.spineWidth,
+            geom.photoH,
+            28,
+            28,
+            28,
+            28
+          );
+          ctx.fillStyle =
+            slide.customBgColor ||
+            (spineOuterTheme.swatch === spineWinTheme.swatch ? '#8C2F2B' : geom.outerBg2);
+          ctx.fill();
+          ctx.save();
+          ctx.translate(spineX + geom.spineWidth / 2, geom.photoY + geom.photoH / 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillStyle = '#F9E4E2';
+          ctx.font = `800 26px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(slideKit.lookbookLabel.toUpperCase(), 0, 0);
+          ctx.restore();
+        } else if (slide.preset === 'coastal') {
+          ctx.fillStyle = geom.winDarkText ? '#234152' : '#F4D37E';
+          ctx.font = `800 19px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            `🪪 OFFICIAL PUPPY PASSPORT • ${slideKit.shortName.toUpperCase()}`,
+            geom.cardX + 36,
+            geom.cardY + 48
+          );
+        } else if (slide.preset === 'rp-showroom' || slide.preset === 'k9ss-athlete-stage') {
+          const isK9Preset = slide.preset === 'k9ss-athlete-stage';
+          const dotColor = isK9Preset ? '#D32F2F' : '#10B981';
+          const barTitle = isK9Preset
+            ? 'K9 SUPER SUPPLEMENTS // ATHLETE DIVISION'
+            : 'RAW & PAW // CHAMPIONSHIP NUTRITION';
+          ctx.fillStyle = dotColor;
+          ctx.beginPath();
+          ctx.arc(geom.cardX + 46, geom.cardY + 44, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = geom.winDarkText ? '#111317' : '#E5E7EB';
+          ctx.font = `800 18px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(barTitle, geom.cardX + 64, geom.cardY + 44);
+          ctx.fillStyle = isK9Preset ? '#EF4444' : '#00ADC7';
+          ctx.textAlign = 'right';
+          ctx.fillText(
+            isK9Preset ? 'HIGH-OUTPUT FORMULA' : 'CLINICAL SHOWCASE',
+            geom.cardX + geom.cardW - 36,
+            geom.cardY + 44
+          );
+        } else if (
+          slide.preset === 'rp-product-spotlight' ||
+          slide.preset === 'rp-naturals-pedestal' ||
+          slide.preset === 'k9ss-titanium-pedestal'
+        ) {
+          const isK9Ped = slide.preset === 'k9ss-titanium-pedestal';
+          const isNatPed = slide.preset === 'rp-naturals-pedestal';
+          const eyebrow = isK9Ped
+            ? 'K9SS // TITANIUM SERIES'
+            : isNatPed
+              ? 'RAW & PAW // NATURALS APOTHECARY'
+              : 'RAW & PAW // CLINICAL SHOWCASE';
+          ctx.fillStyle = isK9Ped ? '#D32F2F' : isNatPed ? '#C96400' : '#007F94';
+          ctx.font = `800 18px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(eyebrow, geom.cardX + 36, geom.cardY + 48);
+
+          const ptsW = 196;
+          const ptsH = 38;
+          const ptsX = geom.cardX + geom.cardW - ptsW - 34;
+          const ptsY = geom.cardY + 29;
+          roundRectPath(ctx, ptsX, ptsY, ptsW, ptsH, 19, 19, 19, 19);
+          ctx.fillStyle = isK9Ped ? '#D32F2F' : isNatPed ? '#FFF3E0' : '#E6F4F7';
+          ctx.fill();
+          ctx.strokeStyle = isK9Ped ? '#EF4444' : isNatPed ? '#FF8A00' : '#00ADC7';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = isK9Ped ? '#FFFFFF' : '#111317';
+          ctx.font = `800 16px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText('★ EARN 50 PTS', ptsX + ptsW / 2, ptsY + ptsH / 2 + 1);
+        } else if (slide.preset === 'rp-protocol-stack' || slide.preset === 'k9ss-red-brutalist') {
+          const isK9Brut = slide.preset === 'k9ss-red-brutalist';
+          roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, 102, geom.cardTopR, geom.cardTopR, 0, 0);
+          ctx.fillStyle = isK9Brut ? '#14171E' : '#F3FAFB';
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(geom.cardX, geom.cardY + 102);
+          ctx.lineTo(geom.cardX + geom.cardW, geom.cardY + 102);
+          ctx.strokeStyle = isK9Brut ? '#D32F2F' : '#111317';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          ctx.fillStyle = isK9Brut ? '#FFFFFF' : '#111317';
+          ctx.font = `800 22px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            isK9Brut ? 'K9SS ATHLETE STACK // PRO' : 'CHAMPIONSHIP PROTOCOL STACK',
+            geom.cardX + 36,
+            geom.cardY + 52
+          );
+
+          const tabW = 205;
+          const tabX = geom.cardX + geom.cardW - tabW - 32;
+          const tabY = geom.cardY + 31;
+          roundRectPath(ctx, tabX, tabY, tabW, 40, 20, 20, 20, 20);
+          ctx.fillStyle = isK9Brut ? '#D32F2F' : '#111317';
+          ctx.fill();
+          ctx.fillStyle = isK9Brut ? '#FFFFFF' : '#00E5FF';
+          ctx.font = `800 16px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(isK9Brut ? 'STEP 01 // POWER' : 'STEP 01 // DAILY', tabX + tabW / 2, tabY + 21);
+        } else if (slide.preset === 'rp-clinical-dossier') {
+          roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, 86, geom.cardTopR, geom.cardTopR, 0, 0);
+          ctx.fillStyle = '#14161B';
+          ctx.fill();
+          ctx.fillStyle = '#FFFFFF';
+          ctx.font = `800 22px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('RAW & PAW // 80/10/10 DOSSIER', geom.cardX + 36, geom.cardY + 44);
+          ctx.fillStyle = '#00E5FF';
+          ctx.font = `800 17px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'right';
+          ctx.fillText('LAB SPEC SHEET', geom.cardX + geom.cardW - 36, geom.cardY + 44);
+
+          const macros: [string, string][] = [
+            ['80%', 'MUSCLE & PROTEIN'],
+            ['10%', 'EDIBLE BONE MINERAL'],
+            ['10%', 'SECRETING ORGAN IgG']
+          ];
+          const colW = (geom.cardW - 72) / 3;
+          macros.forEach(([pct, desc], idx) => {
+            const cx = geom.cardX + 36 + idx * colW + 4;
+            const cy = geom.cardY + 98;
+            roundRectPath(ctx, cx, cy, colW - 8, 66, 14, 14, 14, 14);
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+            ctx.strokeStyle = '#CBEBF0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#007F94';
+            ctx.font = `800 24px 'DM Sans', sans-serif`;
+            ctx.textAlign = 'left';
+            ctx.fillText(pct, cx + 16, cy + 25);
+            ctx.fillStyle = '#334155';
+            ctx.font = `800 13px 'DM Sans', sans-serif`;
+            ctx.fillText(desc, cx + 16, cy + 48);
+          });
+        } else if (slide.preset === 'rp-bento-grid' || slide.preset === 'k9ss-lineup-bento') {
+          const isK9Bento = slide.preset === 'k9ss-lineup-bento';
+          const topX = geom.cardX + 30;
+          const topY = geom.cardY + 28;
+          const topW = geom.cardW - 60;
+          roundRectPath(ctx, topX, topY, topW, 64, 18, 18, 18, 18);
+          ctx.fillStyle = isK9Bento ? '#0B0D11' : '#F3FAFB';
+          ctx.fill();
+          ctx.strokeStyle = isK9Bento ? '#D32F2F' : '#CBEBF0';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = isK9Bento ? '#FFFFFF' : '#111317';
+          ctx.font = `800 20px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(
+            isK9Bento ? 'K9SS PRO ARSENAL // BENTO' : 'PACK DROP™ // BUNDLE MATRIX',
+            topX + 24,
+            topY + 32
+          );
+          ctx.fillStyle = isK9Bento ? '#EF4444' : '#FF8A00';
+          ctx.font = `800 16px 'DM Sans', sans-serif`;
+          ctx.textAlign = 'right';
+          ctx.fillText('SAVE 15% + EARN PTS', topX + topW - 24, topY + 32);
+
+          const footY = geom.cardY + geom.cardH - 166;
+          roundRectPath(ctx, geom.cardX + 30, footY, geom.cardW - 60, 146, 22, 22, 22, 22);
+          ctx.fillStyle = isK9Bento ? '#0B0D11' : '#14161B';
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
       ctx.save();
       if (slide.preset === 'cameo') {
         ctx.beginPath();
@@ -4450,6 +7195,15 @@ const SocialStudio: React.FC = () => {
           Math.PI * 2
         );
         ctx.closePath();
+      } else if (geom.photoChamfer > 0) {
+        chamferRectPath(
+          ctx,
+          geom.photoX,
+          geom.photoY,
+          geom.photoW,
+          geom.photoH,
+          geom.photoChamfer
+        );
       } else {
         roundRectPath(
           ctx,
@@ -4464,8 +7218,26 @@ const SocialStudio: React.FC = () => {
         );
       }
       ctx.clip();
-      ctx.fillStyle = '#EFECE4';
+      ctx.fillStyle = geom.photoBackdrop || '#EFECE4';
       ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
+
+      if (slide.preset === 'rp-showroom' || slide.preset === 'k9ss-athlete-stage') {
+        ctx.save();
+        ctx.fillStyle =
+          slide.preset === 'k9ss-athlete-stage'
+            ? 'rgba(211, 47, 47, 0.12)'
+            : 'rgba(255, 255, 255, 0.05)';
+        ctx.font = `800 94px 'DM Sans', sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+          slide.preset === 'k9ss-athlete-stage' ? 'K9 SUPER ATHLETE' : 'CHAMPION NUTRITION',
+          geom.photoX + geom.photoW / 2,
+          geom.photoY + 110
+        );
+        ctx.restore();
+      }
+
       const mainDims = getDrawableDims(mainMedia);
       const mainReady =
         mainMedia &&
@@ -4473,22 +7245,42 @@ const SocialStudio: React.FC = () => {
         mainDims.h > 0 &&
         !(mainMedia instanceof HTMLVideoElement && mainMedia.readyState < 2);
       if (mainReady && mainMedia) {
-        const coverScale =
-          Math.max(geom.photoW / mainDims.w, geom.photoH / mainDims.h) * slide.zoom;
-        const drawW = mainDims.w * coverScale;
-        const drawH = mainDims.h * coverScale;
+        const isContain = slide.photoFit === 'contain';
+        const mediaScale =
+          (isContain
+            ? Math.min(geom.photoW / mainDims.w, geom.photoH / mainDims.h) * 0.88
+            : Math.max(geom.photoW / mainDims.w, geom.photoH / mainDims.h)) * slide.zoom;
+        const drawW = mainDims.w * mediaScale;
+        const drawH = mainDims.h * mediaScale;
         const drawX = geom.photoX + (geom.photoW - drawW) / 2 + slide.panX;
         const drawY = geom.photoY + (geom.photoH - drawH) / 2 + slide.panY;
-        ctx.drawImage(mainMedia, drawX, drawY, drawW, drawH);
+        if (isContain) {
+          ctx.save();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.34)';
+          ctx.shadowBlur = 34;
+          ctx.shadowOffsetY = 16;
+          ctx.drawImage(mainMedia, drawX, drawY, drawW, drawH);
+          ctx.restore();
+        } else {
+          ctx.drawImage(mainMedia, drawX, drawY, drawW, drawH);
+        }
       }
       if (slide.photoDim > 0) {
         ctx.fillStyle = `rgba(20, 28, 24, ${slide.photoDim})`;
         ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
       }
+      if (geom.photoBottomScrim) {
+        const scrimH = slide.preset === 'magazine' ? 240 : 220;
+        const scrimY = geom.photoY + geom.photoH - scrimH;
+        const scrimGrad = ctx.createLinearGradient(0, scrimY, 0, geom.photoY + geom.photoH);
+        scrimGrad.addColorStop(0, 'rgba(20, 18, 16, 0)');
+        scrimGrad.addColorStop(1, 'rgba(20, 18, 16, 0.78)');
+        ctx.fillStyle = scrimGrad;
+        ctx.fillRect(geom.photoX, scrimY, geom.photoW, scrimH);
+      }
       ctx.restore();
 
       if (slide.preset === 'cameo') {
-        const winTheme = BG_STYLES[slide.windowStyle || 'pure-white'] || BG_STYLES['pure-white'];
         ctx.save();
         ctx.beginPath();
         ctx.ellipse(
@@ -4500,8 +7292,59 @@ const SocialStudio: React.FC = () => {
           0,
           Math.PI * 2
         );
-        ctx.strokeStyle = winTheme.accent;
+        ctx.strokeStyle = geom.cardAccent;
         ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      } else if (slide.preset === 'keyhole') {
+        ctx.save();
+        roundRectPath(
+          ctx,
+          geom.photoX - 10,
+          geom.photoY - 10,
+          geom.photoW + 20,
+          geom.photoH + 20,
+          999,
+          999,
+          999,
+          999
+        );
+        ctx.strokeStyle = geom.cardAccent;
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+        ctx.restore();
+      } else if (slide.preset === 'stud-crest') {
+        ctx.save();
+        roundRectPath(
+          ctx,
+          geom.photoX - 8,
+          geom.photoY - 8,
+          geom.photoW + 16,
+          geom.photoH + 16,
+          358,
+          358,
+          34,
+          34
+        );
+        ctx.strokeStyle = geom.cardAccent;
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+        ctx.restore();
+      } else if (slide.preset === 'filmstrip') {
+        ctx.save();
+        roundRectPath(
+          ctx,
+          geom.photoX - 8,
+          geom.photoY - 8,
+          geom.photoW + 16,
+          geom.photoH + 16,
+          26,
+          26,
+          26,
+          26
+        );
+        ctx.strokeStyle = applyColorAlpha(geom.cardAccent, 0.55);
+        ctx.lineWidth = 2;
         ctx.stroke();
         ctx.restore();
       }
@@ -4545,6 +7388,22 @@ const SocialStudio: React.FC = () => {
         const outerH = ov.shape === 'circle' ? ov.width : ov.height;
         const ox = -outerW / 2;
         const oy = -outerH / 2;
+
+        if (ov.shape === 'cutout') {
+          const containScale =
+            Math.min(outerW / ovDims.w, outerH / ovDims.h) * (ov.zoom || 1);
+          const dw = ovDims.w * containScale;
+          const dh = ovDims.h * containScale;
+          if (ov.shadow !== false) {
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.44)';
+            ctx.shadowBlur = 28;
+            ctx.shadowOffsetY = 14;
+          }
+          ctx.drawImage(ovMedia, -dw / 2 + (ov.panX || 0), -dh / 2 + (ov.panY || 0), dw, dh);
+          ctx.restore();
+          continue;
+        }
+
         const radTL =
           ov.shape === 'circle'
             ? outerW / 2
@@ -4629,7 +7488,7 @@ const SocialStudio: React.FC = () => {
             : `800 ${fontSize}px 'DM Sans', sans-serif`;
       ctx.font = fontSpec;
 
-      const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
+      const pal = resolvePillAppearance(layer);
       const padX = pal.hasBg ? 26 : 8;
       const innerMaxW = Math.max(60, layer.pillWidth - padX * 2);
       const textLines = wrapLines(ctx, layer.text, innerMaxW);
@@ -4640,6 +7499,7 @@ const SocialStudio: React.FC = () => {
       const by = layer.y - boxH / 2;
       const r = textLines.length > 1 || layer.padY > 28 ? 32 : 999;
 
+      const resolvedTextColor = layer.textColor || pal.text;
       const pillOpacity = layer.pillOpacity !== undefined ? layer.pillOpacity : 1;
       if (pal.hasBg && pillOpacity > 0.01) {
         ctx.save();
@@ -4660,18 +7520,14 @@ const SocialStudio: React.FC = () => {
       } else if (
         layer.pill === 'none-light' ||
         pillOpacity < 0.35 ||
-        (!pal.hasBg &&
-          (layer.textColor === '#FFFFFF' ||
-            layer.textColor === '#F4D37E' ||
-            layer.textColor === '#F6F4EE' ||
-            layer.textColor === '#E8DFCE'))
+        (!pal.hasBg && Boolean(resolvedTextColor) && !isHexDark(resolvedTextColor))
       ) {
         ctx.shadowColor = 'rgba(0,0,0,0.48)';
         ctx.shadowBlur = 16;
         ctx.shadowOffsetY = 4;
       }
 
-      ctx.fillStyle = layer.textColor || pal.text;
+      ctx.fillStyle = resolvedTextColor;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const totalH = (textLines.length - 1) * lineH;
@@ -4722,40 +7578,109 @@ const SocialStudio: React.FC = () => {
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
   };
 
+  // Synchronous 1-tap Share / Save to Camera Roll helper (preserves iOS Safari user-gesture activation)
+  const triggerSyncVideoShareOrDownload = (exp: {
+    file: File;
+    url: string;
+    fileName: string;
+  }) => {
+    if (
+      typeof navigator.share === 'function' &&
+      navigator.canShare &&
+      navigator.canShare({ files: [exp.file] })
+    ) {
+      navigator
+        .share({
+          files: [exp.file],
+          title: 'OKC Frenchies Video'
+        })
+        .catch(() => {});
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = exp.url;
+    a.download = exp.fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+
   // Real-Time 1080px Themed Video Reel Recorder & Exporter
   const handleExportVideoReel = async (preferShare: boolean) => {
     if (videoExporting) return;
+
+    const stageVid = stageVideoRef.current;
+    const wasStagePlaying = Boolean(stageVid && !stageVid.paused);
+    const prevStageLoop = stageVid?.loop ?? true;
+    const prevStageMuted = stageVid?.muted ?? Boolean(activeSlide.videoMuted ?? true);
+
+    // Synchronously unlock playback inside the user's tap gesture before any await (required on iOS Safari)
+    if (stageVid && activeSlide.preset !== 'no-photo' && activeSlide.videoSrc) {
+      try {
+        stageVid.loop = false;
+        stageVid.currentTime = 0;
+        stageVid.play().catch(() => {});
+      } catch {
+        // Ignore synchronous play errors
+      }
+    }
+
     if (document.fonts?.ready) {
       await document.fonts.ready;
     }
+
     const canvas = document.createElement('canvas') as HTMLCanvasElement & {
       captureStream?: (fps?: number) => MediaStream;
     };
     canvas.width = 1080;
     canvas.height = canvasH;
+    canvas.style.cssText =
+      'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;';
     const ctx = canvas.getContext('2d');
     if (!ctx || typeof canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') {
+      if (stageVid) {
+        stageVid.loop = prevStageLoop;
+      }
       alert('Video reel export requires a modern Safari, Chrome, or Edge browser.');
       return;
     }
 
+    document.body.appendChild(canvas);
     setVideoExporting(true);
     setVideoExportProgress(0);
+    setReadyVideoExport((prev) => {
+      if (prev?.url) URL.revokeObjectURL(prev.url);
+      return null;
+    });
 
-    const wasStagePlaying = Boolean(stageVideoRef.current && !stageVideoRef.current.paused);
-    if (stageVideoRef.current && !stageVideoRef.current.paused) {
-      stageVideoRef.current.pause();
-    }
+    const createdVideosToCleanup: HTMLVideoElement[] = [];
+    const mountedTempVideos: HTMLVideoElement[] = [];
+    const playbackVideos: HTMLVideoElement[] = [];
+    const liveOverlayVideos: Array<{
+      el: HTMLVideoElement;
+      prevLoop: boolean;
+      prevMuted: boolean;
+      wasPaused: boolean;
+    }> = [];
 
-    const videosToCleanup: HTMLVideoElement[] = [];
     try {
       let mainMedia: DrawableMedia | null = null;
       if (activeSlide.preset !== 'no-photo') {
         if (activeSlide.videoSrc) {
-          const mv = await loadVideoElement(activeSlide.videoSrc, Boolean(activeSlide.videoMuted));
-          if (mv) {
-            videosToCleanup.push(mv);
-            mainMedia = mv;
+          if (stageVid && stageVid.videoWidth > 0) {
+            mainMedia = stageVid;
+            playbackVideos.push(stageVid);
+          } else {
+            const mv = await loadVideoElement(activeSlide.videoSrc, Boolean(activeSlide.videoMuted));
+            if (mv) {
+              mv.style.cssText =
+                'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;';
+              document.body.appendChild(mv);
+              mountedTempVideos.push(mv);
+              createdVideosToCleanup.push(mv);
+              playbackVideos.push(mv);
+              mainMedia = mv;
+            }
           }
         } else if (activeSlide.photoSrc) {
           mainMedia = await loadImageElement(activeSlide.photoSrc);
@@ -4766,11 +7691,31 @@ const SocialStudio: React.FC = () => {
       for (const ov of activeSlide.photoOverlays || []) {
         if (!ov.visible || !ov.src) continue;
         if (ov.mediaType === 'video') {
-          const ovVid = await loadVideoElement(ov.src, true);
-          if (ovVid) {
-            ovVid.loop = true;
-            videosToCleanup.push(ovVid);
-            overlayMediaMap.set(ov.id, ovVid);
+          const domOvVid = document.querySelector<HTMLVideoElement>(
+            `video[data-overlay-video-id="${ov.id}"]`
+          );
+          if (domOvVid && domOvVid.videoWidth > 0) {
+            liveOverlayVideos.push({
+              el: domOvVid,
+              prevLoop: domOvVid.loop,
+              prevMuted: domOvVid.muted,
+              wasPaused: domOvVid.paused
+            });
+            domOvVid.loop = true;
+            overlayMediaMap.set(ov.id, domOvVid);
+            playbackVideos.push(domOvVid);
+          } else {
+            const ovVid = await loadVideoElement(ov.src, true);
+            if (ovVid) {
+              ovVid.loop = true;
+              ovVid.style.cssText =
+                'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;';
+              document.body.appendChild(ovVid);
+              mountedTempVideos.push(ovVid);
+              createdVideosToCleanup.push(ovVid);
+              playbackVideos.push(ovVid);
+              overlayMediaMap.set(ov.id, ovVid);
+            }
           }
         } else {
           const ovImg = await loadImageElement(ov.src);
@@ -4781,12 +7726,12 @@ const SocialStudio: React.FC = () => {
       const primaryVid =
         mainMedia instanceof HTMLVideoElement
           ? mainMedia
-          : videosToCleanup.length > 0
-            ? videosToCleanup[0]
+          : playbackVideos.length > 0
+            ? playbackVideos[0]
             : null;
       const rawDur = primaryVid?.duration;
       const durationSec =
-        rawDur && Number.isFinite(rawDur) && rawDur > 0.4 ? Math.min(60, Math.max(2, rawDur)) : 6;
+        rawDur && Number.isFinite(rawDur) && rawDur > 0.4 ? Math.min(30, Math.max(3, rawDur)) : 5;
 
       paintSlideToCanvas(ctx, activeSlide, mainMedia, overlayMediaMap);
 
@@ -4806,30 +7751,43 @@ const SocialStudio: React.FC = () => {
         }
       }
 
-      const mimeCandidates = [
-        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-        'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm'
-      ];
-      const chosenMime = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || '';
+      const hasAudioTrack = stream.getAudioTracks().length > 0;
+      const mimeCandidates = hasAudioTrack
+        ? [
+            'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+            'video/mp4',
+            'video/mp4;codecs=avc1.42E01E',
+            'video/webm;codecs=vp9,opus',
+            'video/webm'
+          ]
+        : ['video/mp4', 'video/mp4;codecs=avc1.42E01E', 'video/webm;codecs=vp9', 'video/webm'];
+      const chosenMime =
+        typeof MediaRecorder.isTypeSupported === 'function'
+          ? mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || ''
+          : '';
       const chunks: BlobPart[] = [];
-      const recorder = new MediaRecorder(stream, {
-        ...(chosenMime ? { mimeType: chosenMime } : {}),
-        videoBitsPerSecond: 8_000_000
-      });
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, {
+          ...(chosenMime ? { mimeType: chosenMime } : {}),
+          videoBitsPerSecond: 8_000_000
+        });
+      } catch {
+        recorder = new MediaRecorder(stream);
+      }
+
       recorder.ondataavailable = (ev) => {
         if (ev.data && ev.data.size > 0) chunks.push(ev.data);
       };
 
       const finishPromise = new Promise<Blob>((resolve) => {
         recorder.onstop = () => {
-          const actualType = recorder.mimeType || chosenMime || 'video/webm';
+          const actualType = recorder.mimeType || chosenMime || 'video/mp4';
           resolve(new Blob(chunks, { type: actualType }));
         };
       });
 
-      for (const v of videosToCleanup) {
+      for (const v of playbackVideos) {
         v.currentTime = 0;
         try {
           await v.play();
@@ -4850,15 +7808,29 @@ const SocialStudio: React.FC = () => {
         cancelAnimationFrame(rafId);
         stopVideoExportRef.current = null;
         if (recorder.state !== 'inactive') {
+          try {
+            recorder.requestData();
+          } catch {
+            // Ignore if requestData is unavailable in this browser
+          }
           recorder.stop();
         }
       };
 
       stopVideoExportRef.current = finishRecording;
 
+      const videoTrack = stream.getVideoTracks()[0] as
+        | (MediaStreamTrack & { requestFrame?: () => void })
+        | undefined;
+
       const tick = () => {
         if (stopped) return;
         paintSlideToCanvas(ctx, activeSlide, mainMedia, overlayMediaMap);
+        try {
+          videoTrack?.requestFrame?.();
+        } catch {
+          // Ignore if requestFrame is unavailable
+        }
         const elapsed = (performance.now() - startTime) / 1000;
         setVideoExportProgress(Math.min(99, Math.round((elapsed / durationSec) * 100)));
         if (elapsed >= durationSec || (mainMedia instanceof HTMLVideoElement && mainMedia.ended)) {
@@ -4870,8 +7842,15 @@ const SocialStudio: React.FC = () => {
       rafId = requestAnimationFrame(tick);
 
       const blob = await finishPromise;
+      if (!blob || blob.size === 0) {
+        alert(
+          'Could not capture video frames on this browser. Try tapping "⏹️ Save Clip Now" or updating iOS/Safari.'
+        );
+        return;
+      }
+
       setVideoExportProgress(100);
-      const actualMime = blob.type || chosenMime || 'video/webm';
+      const actualMime = (blob.type || recorder.mimeType || chosenMime || 'video/mp4').split(';')[0];
       const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
       const baseSlug = (
         contentMode === 'puppies' || contentMode === 'studs'
@@ -4882,34 +7861,63 @@ const SocialStudio: React.FC = () => {
         .replace(/[^a-z0-9]+/g, '-');
       const fileName = `okcfrenchies-${baseSlug}-${ratio}-reel.${ext}`;
       const file = new File([blob], fileName, { type: actualMime });
+      const url = URL.createObjectURL(blob);
 
-      if (preferShare && navigator.canShare && navigator.canShare({ files: [file] })) {
+      setReadyVideoExport((prev) => {
+        if (prev?.url) URL.revokeObjectURL(prev.url);
+        return { file, url, fileName, ext };
+      });
+
+      if (
+        preferShare &&
+        typeof navigator.share === 'function' &&
+        navigator.canShare &&
+        navigator.canShare({ files: [file] })
+      ) {
         try {
           await navigator.share({
             files: [file],
-            title: 'OKC Frenchies Video Reel'
+            title: 'OKC Frenchies Video'
           });
-        } catch {
-          // User cancelled share sheet
+          return;
+        } catch (err: any) {
+          if (err?.name === 'AbortError') {
+            return;
+          }
+          // If iOS user-gesture activation expired during async recording (NotAllowedError),
+          // readyVideoExport shows the 1-tap "Save to Camera Roll" banner synchronously on next tap.
         }
-      } else {
-        const url = URL.createObjectURL(blob);
+      } else if (!preferShare && typeof window !== 'undefined' && window.innerWidth >= 640) {
         const a = document.createElement('a');
         a.download = fileName;
         a.href = url;
+        document.body.appendChild(a);
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        a.remove();
       }
     } finally {
       stopVideoExportRef.current = null;
-      videosToCleanup.forEach((v) => {
+      mountedTempVideos.forEach((v) => v.remove());
+      createdVideosToCleanup.forEach((v) => {
         v.pause();
         v.removeAttribute('src');
         v.load();
       });
-      if (wasStagePlaying && stageVideoRef.current) {
-        stageVideoRef.current.play().catch(() => {});
+      liveOverlayVideos.forEach(({ el, prevLoop, prevMuted, wasPaused }) => {
+        el.loop = prevLoop;
+        el.muted = prevMuted;
+        if (!wasPaused) el.play().catch(() => {});
+      });
+      if (stageVid) {
+        stageVid.loop = prevStageLoop;
+        stageVid.muted = prevStageMuted;
+        if (wasStagePlaying) {
+          stageVid.play().catch(() => {});
+        } else {
+          stageVid.pause();
+        }
       }
+      canvas.remove();
       setVideoExporting(false);
       setVideoExportProgress(0);
     }
@@ -4968,7 +7976,9 @@ const SocialStudio: React.FC = () => {
     activeSlide.archHeight,
     activeSlide.bgStyle,
     activeSlide.windowStyle || 'pure-white',
-    activeSlide.textCardTheme || 'arch-crest'
+    activeSlide.textCardTheme || 'arch-crest',
+    activeSlide.customBgColor,
+    activeSlide.customWindowColor
   );
   const hasActiveVideo = Boolean(
     (geom.hasPhoto && activeSlide.videoSrc) ||
@@ -4976,12 +7986,106 @@ const SocialStudio: React.FC = () => {
   );
   const previewScale =
     geom.hasPhoto && imgNat.w > 0 && imgNat.h > 0
-      ? Math.max(geom.photoW / imgNat.w, geom.photoH / imgNat.h) * activeSlide.zoom
+      ? (activeSlide.photoFit === 'contain'
+          ? Math.min(geom.photoW / imgNat.w, geom.photoH / imgNat.h) * 0.88
+          : Math.max(geom.photoW / imgNat.w, geom.photoH / imgNat.h)) * activeSlide.zoom
       : 1;
   const previewDrawW = imgNat.w > 0 ? imgNat.w * previewScale : geom.photoW;
   const previewDrawH = imgNat.h > 0 ? imgNat.h * previewScale : geom.photoH;
   const previewDrawX = (geom.photoW - previewDrawW) / 2 + activeSlide.panX;
   const previewDrawY = (geom.photoH - previewDrawH) / 2 + activeSlide.panY;
+
+  const renderProductShowcaseShelf = () => {
+    const isProductBrand =
+      activeBrandTheme.id === 'raw-and-paw' || activeBrandTheme.id === 'k9ss';
+    const items = isProductBrand
+      ? BRAND_PRODUCT_CATALOG.filter((p) => p.brandTheme === activeBrandTheme.id)
+      : BRAND_PRODUCT_CATALOG;
+    const isContainFit = activeSlide.photoFit === 'contain';
+
+    return (
+      <div className="space-y-2 pt-2 border-t border-[#F0ECE1]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+            🛍️ {isProductBrand ? `${activeBrandTheme.shortName} Products` : 'Product Showcase'}
+          </div>
+          {geom.hasPhoto && (
+            <button
+              type="button"
+              onClick={() =>
+                updateActiveSlide({ photoFit: isContainFit ? 'cover' : 'contain' }, true)
+              }
+              className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                isContainFit
+                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                  : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
+              }`}
+              title="Toggle main media between full uncropped product fit (Contain) and edge-to-edge fill (Cover)"
+            >
+              📐 Fit: {isContainFit ? 'Contain' : 'Cover'}
+            </button>
+          )}
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          {items.map((prod) => {
+            const isMainActive = activeSlide.productId === prod.id;
+            return (
+              <div
+                key={prod.id}
+                className={`shrink-0 w-[138px] rounded-xl p-2 border flex flex-col gap-1.5 transition ${
+                  isMainActive
+                    ? 'bg-[#EDF4EF] border-[#2E5A44] shadow-xs'
+                    : 'bg-[#F6F4EE] border-[#DDD6C7]'
+                }`}
+              >
+                <div className="h-16 w-full rounded-lg bg-white border border-[#E6E0D3] flex items-center justify-center p-1 overflow-hidden">
+                  <img
+                    src={prod.imageSrc}
+                    alt={prod.name}
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[11px] font-extrabold text-[#1C2621] truncate">
+                    {prod.shortName}
+                  </div>
+                  <div className="text-[10px] font-bold text-[#5C6B63] flex items-center justify-between gap-1">
+                    <span>{prod.price}</span>
+                    {prod.servings ? (
+                      <span className="truncate opacity-80">{prod.servings}</span>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-1 mt-auto">
+                  <button
+                    type="button"
+                    onClick={() => handlePinProductCornerCutout(prod)}
+                    className="px-1.5 py-1 rounded-md text-[10px] font-extrabold bg-white text-[#1C2621] border border-[#DDD6C7] hover:bg-[#EFECE4] touch-manipulation cursor-pointer text-center"
+                    title={`Pin ${prod.shortName} transparent cutout over your photo or video`}
+                  >
+                    ➕ Cutout
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLoadProductMainShowcase(prod)}
+                    className={`px-1.5 py-1 rounded-md text-[10px] font-extrabold border touch-manipulation cursor-pointer text-center ${
+                      isMainActive
+                        ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                        : 'bg-[#1C2621] text-white border-[#1C2621] hover:opacity-90'
+                    }`}
+                    title={`Load ${prod.shortName} onto the main stage`}
+                  >
+                    🎯 Stage
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   // Point Home Screen / favicon / PWA manifest tags to the dedicated Studio icon on mount
   useEffect(() => {
@@ -5015,12 +8119,12 @@ const SocialStudio: React.FC = () => {
       </Helmet>
 
       {/* Compact App-Shell Top Header Bar (Zero Vertical Bloat!) */}
-      <header className="shrink-0 bg-white border-b border-[#EAE5D9] px-2 sm:px-4 py-1.5 z-30">
-        <div className="flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0">
+      <header className="shrink-0 bg-white border-b border-[#EAE5D9] px-1.5 sm:px-4 py-1.5 z-30">
+        <div className="flex items-center justify-between gap-1 sm:gap-1.5">
+          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
             <Link
               to="/"
-              className="shrink-0 px-2 py-1 rounded-full bg-[#F6F4EE] border border-[#DDD6C7] text-[11px] font-extrabold text-[#3E4D45] hover:bg-[#EAE5D9] transition"
+              className="shrink-0 px-1.5 py-1 sm:px-2 rounded-full bg-[#F6F4EE] border border-[#DDD6C7] text-[10px] sm:text-[11px] font-extrabold text-[#3E4D45] hover:bg-[#EAE5D9] transition"
               title="Back to OKC Frenchies website"
             >
               ← Site
@@ -5042,7 +8146,7 @@ const SocialStudio: React.FC = () => {
                   key={rKey}
                   type="button"
                   onClick={() => handleSwitchRatio(rKey)}
-                  className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full touch-manipulation cursor-pointer transition ${
+                  className={`px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full touch-manipulation cursor-pointer transition ${
                     ratio === rKey ? 'bg-[#2E5A44] text-white' : 'text-[#5C6B63]'
                   }`}
                 >
@@ -5084,11 +8188,11 @@ const SocialStudio: React.FC = () => {
             )}
           </div>
 
-                          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleResetActiveSlideToModeDefault}
-              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] touch-manipulation cursor-pointer transition"
+              className="px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] touch-manipulation cursor-pointer transition"
               title="Reset current slide to this section's default template & theme"
             >
               🔄<span className="hidden sm:inline"> Reset</span>
@@ -5097,7 +8201,7 @@ const SocialStudio: React.FC = () => {
               type="button"
               disabled={history.length === 0}
               onClick={handleUndo}
-              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#1C2621] disabled:opacity-40 touch-manipulation cursor-pointer"
+              className="px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#1C2621] disabled:opacity-40 touch-manipulation cursor-pointer"
               title="Undo last change"
             >
               ↩<span className="hidden md:inline"> Undo</span>
@@ -5106,7 +8210,7 @@ const SocialStudio: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setPhotoLocked((v) => !v)}
-                className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold border touch-manipulation cursor-pointer transition ${
+                className={`px-1.5 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold border touch-manipulation cursor-pointer transition ${
                   photoLocked
                     ? 'bg-[#F4D37E] border-[#D9B451] text-[#1C2621]'
                     : 'bg-[#F6F4EE] border-[#D9D2C3] text-[#5C6B63]'
@@ -5117,45 +8221,56 @@ const SocialStudio: React.FC = () => {
                 <span className="hidden md:inline">{photoLocked ? ' Locked' : ' Lock'}</span>
               </button>
             )}
-            {hasActiveVideo && (
-              <>
-                <button
-                  type="button"
-                  disabled={videoExporting}
-                  onClick={() => handleExportVideoReel(true)}
-                  className="sm:hidden px-2.5 py-1 rounded-full bg-[#D46A4E] text-white text-[11px] font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
-                >
-                  {videoExporting ? `🎬 ${videoExportProgress}%` : '🎬 Reel'}
-                </button>
-                <button
-                  type="button"
-                  disabled={videoExporting}
-                  onClick={() => handleExportVideoReel(false)}
-                  className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-[#D46A4E] text-white text-xs font-extrabold hover:bg-[#BE583D] transition shadow-sm disabled:opacity-60 cursor-pointer"
-                >
-                  {videoExporting ? `🎬 Exporting ${videoExportProgress}%` : '🎬 Export Reel'}
-                </button>
-              </>
-            )}
             <button
               type="button"
-              onClick={() => handleExportSlides(slides.length > 1, true)}
-              className="sm:hidden px-2.5 py-1 rounded-full bg-[#2E5A44] text-white text-[11px] font-extrabold shadow-sm touch-manipulation cursor-pointer"
+              disabled={hasActiveVideo && videoExporting}
+              onClick={() =>
+                hasActiveVideo
+                  ? handleExportVideoReel(true)
+                  : handleExportSlides(slides.length > 1, true)
+              }
+              className="sm:hidden px-2 py-1 rounded-full bg-[#2E5A44] text-white text-[10px] font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
             >
-              📲 Share{slides.length > 1 ? ` (${slides.length})` : ''}
+              {hasActiveVideo
+                ? videoExporting
+                  ? `🎬 ${videoExportProgress}%`
+                  : '📲 Share'
+                : `📲 Share${slides.length > 1 ? ` (${slides.length})` : ''}`}
             </button>
             <button
               type="button"
-              onClick={() => handleExportSlides(false, false)}
-              className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold hover:bg-[#234735] transition shadow-sm cursor-pointer"
+              disabled={hasActiveVideo && videoExporting}
+              onClick={() =>
+                hasActiveVideo
+                  ? handleExportVideoReel(false)
+                  : handleExportSlides(false, false)
+              }
+              className={`hidden sm:inline-flex px-3 py-1.5 rounded-full text-white text-xs font-extrabold transition shadow-sm disabled:opacity-60 cursor-pointer ${
+                hasActiveVideo
+                  ? 'bg-[#D46A4E] hover:bg-[#BE583D]'
+                  : 'bg-[#2E5A44] hover:bg-[#234735]'
+              }`}
             >
-              ⬇ PNG
+              {hasActiveVideo
+                ? videoExporting
+                  ? `🎬 ${videoExportProgress}%`
+                  : '⬇ Video'
+                : '⬇ PNG'}
             </button>
             <button
               type="button"
-              onClick={() => handleExportSlides(false, false)}
-              className="sm:hidden px-2 py-1 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-[11px] font-extrabold touch-manipulation cursor-pointer"
-              title="Download PNG"
+              disabled={hasActiveVideo && videoExporting}
+              onClick={() =>
+                hasActiveVideo
+                  ? handleExportVideoReel(false)
+                  : handleExportSlides(false, false)
+              }
+              className={`sm:hidden px-1.5 py-1 rounded-full border text-[10px] font-extrabold disabled:opacity-60 touch-manipulation cursor-pointer ${
+                hasActiveVideo
+                  ? 'bg-[#FDF2EC] border-[#D46A4E] text-[#B84D33]'
+                  : 'bg-[#F6F4EE] border-[#2E5A44] text-[#2E5A44]'
+              }`}
+              title={hasActiveVideo ? 'Save / Download Video' : 'Download PNG'}
             >
               ⬇
             </button>
@@ -5320,6 +8435,25 @@ const SocialStudio: React.FC = () => {
               >
                 {geom.hasPhoto ? (activeSlide.videoSrc ? '🎬 Video' : '🖼️ Photo') : '🎨 Bg'}
               </button>
+              {geom.hasPhoto && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateActiveSlide(
+                      { photoFit: activeSlide.photoFit === 'contain' ? 'cover' : 'contain' },
+                      true
+                    )
+                  }
+                  className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                    activeSlide.photoFit === 'contain'
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                      : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
+                  }`}
+                  title="Toggle main photo/video fit between Contain (no crop) and Cover (fill frame)"
+                >
+                  📐 {activeSlide.photoFit === 'contain' ? 'Contain' : 'Cover'}
+                </button>
+              )}
               {geom.hasPhoto && activeSlide.videoSrc && (
                 <>
                   <button
@@ -5493,7 +8627,7 @@ const SocialStudio: React.FC = () => {
           >
             {videoExporting && (
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#1C2621]/95 text-white px-3.5 py-2 rounded-full shadow-xl border border-[#F4D37E]/60 text-xs font-extrabold whitespace-nowrap">
-                <span>🎬 Recording Themed Reel... {videoExportProgress}%</span>
+                <span>🎬 Recording Video... {videoExportProgress}%</span>
                 <button
                   type="button"
                   onClick={() => stopVideoExportRef.current?.()}
@@ -5501,6 +8635,47 @@ const SocialStudio: React.FC = () => {
                 >
                   ⏹️ Save Clip Now
                 </button>
+              </div>
+            )}
+            {readyVideoExport && !videoExporting && (
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(94%,360px)] bg-[#1C2621]/95 text-white p-3 rounded-2xl shadow-2xl border border-[#F4D37E]/75 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-extrabold text-[#F4D37E]">
+                    🎬 Video Ready to Save!
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setReadyVideoExport((prev) => {
+                        if (prev?.url) URL.revokeObjectURL(prev.url);
+                        return null;
+                      })
+                    }
+                    className="w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-bold flex items-center justify-center cursor-pointer touch-manipulation"
+                    title="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => triggerSyncVideoShareOrDownload(readyVideoExport)}
+                    className="flex-1 py-2 px-3 rounded-xl bg-[#D46A4E] hover:bg-[#BE583D] text-white text-xs font-extrabold shadow-sm cursor-pointer touch-manipulation text-center"
+                  >
+                    📲 Save to Camera Roll
+                  </button>
+                  <a
+                    href={readyVideoExport.url}
+                    download={readyVideoExport.fileName}
+                    className="py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold text-center cursor-pointer touch-manipulation"
+                  >
+                    ⬇ Download ({readyVideoExport.ext.toUpperCase()})
+                  </a>
+                </div>
               </div>
             )}
             {/* Interactive Stage */}
@@ -5641,9 +8816,21 @@ const SocialStudio: React.FC = () => {
                     width: geom.cardW,
                     height: geom.cardH,
                     background: geom.cardBg,
-                    border: `2px solid ${geom.cardBorder}`,
-                    borderRadius: `${geom.cardTopR}px ${geom.cardTopR}px ${geom.cardBottomR}px ${geom.cardBottomR}px`,
-                    boxShadow: '0 24px 60px rgba(28,38,33,0.12)',
+                    border:
+                      geom.chamferCut > 0
+                        ? 'none'
+                        : `${geom.cardBorderWidth}px solid ${geom.cardBorder}`,
+                    borderRadius:
+                      geom.chamferCut > 0
+                        ? 0
+                        : `${geom.cardTopR}px ${geom.cardTopR}px ${geom.cardBottomR}px ${geom.cardBottomR}px`,
+                    clipPath:
+                      geom.chamferCut > 0
+                        ? `polygon(${geom.chamferCut}px 0, calc(100% - ${geom.chamferCut}px) 0, 100% ${geom.chamferCut}px, 100% calc(100% - ${geom.chamferCut}px), calc(100% - ${geom.chamferCut}px) 100%, ${geom.chamferCut}px 100%, 0 calc(100% - ${geom.chamferCut}px), 0 ${geom.chamferCut}px)`
+                        : undefined,
+                    boxShadow: geom.cardHardShadowColor
+                      ? `12px 12px 0px ${geom.cardHardShadowColor}`
+                      : '0 24px 60px rgba(28,38,33,0.12)',
                     overflow: 'hidden'
                   }}
                 />
@@ -5658,7 +8845,7 @@ const SocialStudio: React.FC = () => {
                     BG_STYLES['cream-editorial'];
                   const outerTheme =
                     BG_STYLES[activeSlide.bgStyle || 'forest-luxe'] || BG_STYLES['forest-luxe'];
-                  const accentStroke = winTheme.darkText
+                  const accentStroke = geom.winDarkText
                     ? 'rgba(46,90,68,0.22)'
                     : 'rgba(244,211,126,0.32)';
                   const deselect = () => {
@@ -5724,7 +8911,8 @@ const SocialStudio: React.FC = () => {
                           height: 148,
                           borderRadius: '38px 38px 0 0',
                           background:
-                            outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1,
+                            activeSlide.customBgColor ||
+                            (outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1),
                           borderBottom: '4px solid #F4D37E'
                         }}
                       />
@@ -5742,14 +8930,16 @@ const SocialStudio: React.FC = () => {
                           width: geom.cardW,
                           height: splitH,
                           borderRadius: '38px 38px 0 0',
-                          background: outerTheme.darkText ? '#2E5A44' : outerTheme.bg1,
+                          background:
+                            activeSlide.customBgColor ||
+                            (outerTheme.darkText ? '#2E5A44' : outerTheme.bg1),
                           borderBottom: '3px solid #F4D37E'
                         }}
                       />
                     );
                   }
                   if (tTheme === 'minimal-luxe') {
-                    const lineStroke = outerTheme.darkText
+                    const lineStroke = geom.winDarkText
                       ? 'rgba(46,90,68,0.28)'
                       : 'rgba(244,211,126,0.38)';
                     return (
@@ -5783,43 +8973,650 @@ const SocialStudio: React.FC = () => {
                   );
                 })()
               ) : (
-                <div
-                  onPointerDown={(e) => {
-                    if (!e.isPrimary || pinchRef.current.active) return;
-                    setSelectedLayerId(null);
-                    setEditingLayerId(null);
-                    dragModeRef.current = {
-                      type: 'photo',
-                      sx: e.clientX,
-                      sy: e.clientY,
-                      bx: activeSlide.panX,
-                      by: activeSlide.panY,
-                      bWidth: 0,
-                      bHeight: 0,
-                      bPadY: 0,
-                      moved: false,
-                      recordedUndo: false
-                    };
-                  }}
-                  style={{
-                    position: 'absolute',
-                    left: geom.photoX,
-                    top: geom.photoY,
-                    width: geom.photoW,
-                    height: geom.photoH,
-                    borderRadius:
-                      activeSlide.preset === 'cameo'
-                        ? '50%'
-                        : `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
-                    boxShadow:
-                      activeSlide.preset === 'cameo'
-                        ? `0 0 0 10px ${geom.cardBg}, 0 0 0 14px ${(BG_STYLES[activeSlide.windowStyle || 'pure-white'] || BG_STYLES['pure-white']).accent}`
-                        : undefined,
-                    overflow: 'hidden',
-                    background: '#EFECE4',
-                    cursor: photoLocked ? 'default' : 'grab'
-                  }}
-                >
+                <>
+                  {activeSlide.preset === 'filmstrip' &&
+                    (() => {
+                      const railH = geom.photoY + geom.photoH - 2;
+                      const sprockets: number[] = [];
+                      for (let sy = 62; sy < geom.photoY + geom.photoH - 28; sy += 52) {
+                        sprockets.push(sy);
+                      }
+                      return (
+                        <>
+                          {[26, 992].map((rx) => (
+                            <div
+                              key={rx}
+                              style={{
+                                position: 'absolute',
+                                left: rx,
+                                top: 34,
+                                width: 62,
+                                height: railH,
+                                borderRadius: 14,
+                                background: 'rgba(15, 12, 10, 0.62)',
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              {sprockets.map((sy) => (
+                                <div
+                                  key={sy}
+                                  style={{
+                                    position: 'absolute',
+                                    left: 18,
+                                    top: sy - 34,
+                                    width: 26,
+                                    height: 18,
+                                    borderRadius: 4,
+                                    background: geom.cardBg
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          ))}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: 128,
+                              top: 62,
+                              height: 24,
+                              display: 'flex',
+                              alignItems: 'center',
+                              fontFamily: "'DM Sans', sans-serif",
+                              fontWeight: 800,
+                              fontSize: 20,
+                              color: '#F4D37E',
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            FRAME 01A • {activeBrandTheme.shortName.toUpperCase()} REEL
+                          </div>
+                        </>
+                      );
+                    })()}
+                  {geom.hasCard && activeSlide.preset === 'split-header' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: geom.cardX + 32,
+                        top: geom.cardY + geom.headerH,
+                        width: geom.cardW - 64,
+                        height: 3,
+                        background: applyColorAlpha(geom.cardAccent, 0.45),
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  {geom.hasCard &&
+                    activeSlide.preset === 'apothecary' &&
+                    (() => {
+                      const innerCut = Math.max(12, geom.chamferCut - 10);
+                      return (
+                        <>
+                          <svg
+                            width={geom.cardW}
+                            height={geom.cardH}
+                            viewBox={`0 0 ${geom.cardW} ${geom.cardH}`}
+                            style={{
+                              position: 'absolute',
+                              left: geom.cardX,
+                              top: geom.cardY,
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            <polygon
+                              points={`${geom.chamferCut},1 ${geom.cardW - geom.chamferCut},1 ${geom.cardW - 1},${geom.chamferCut} ${geom.cardW - 1},${geom.cardH - geom.chamferCut} ${geom.cardW - geom.chamferCut},${geom.cardH - 1} ${geom.chamferCut},${geom.cardH - 1} 1,${geom.cardH - geom.chamferCut} 1,${geom.chamferCut}`}
+                              fill="none"
+                              stroke={geom.cardBorder}
+                              strokeWidth={2}
+                            />
+                            <polygon
+                              points={`${16 + innerCut},16 ${geom.cardW - 16 - innerCut},16 ${geom.cardW - 16},${16 + innerCut} ${geom.cardW - 16},${geom.cardH - 16 - innerCut} ${geom.cardW - 16 - innerCut},${geom.cardH - 16} ${16 + innerCut},${geom.cardH - 16} 16,${geom.cardH - 16 - innerCut} 16,${16 + innerCut}`}
+                              fill="none"
+                              stroke={applyColorAlpha(geom.cardAccent, 0.55)}
+                              strokeWidth={1.5}
+                            />
+                            <line
+                              x1={58}
+                              y1={84}
+                              x2={geom.cardW - 58}
+                              y2={84}
+                              stroke={applyColorAlpha(geom.cardAccent, 0.35)}
+                              strokeWidth={1.5}
+                            />
+                          </svg>
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: geom.cardX,
+                              top: geom.cardY + 42,
+                              width: geom.cardW,
+                              height: 24,
+                              lineHeight: '24px',
+                              textAlign: 'center',
+                              fontFamily: "'DM Sans', sans-serif",
+                              fontWeight: 800,
+                              fontSize: 18,
+                              letterSpacing: 1.5,
+                              color: geom.winDarkText ? '#5E5045' : '#F4D37E',
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            MAISON DE BOULEDOGUE • {activeBrandTheme.shortName.toUpperCase()}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  {geom.hasCard && activeSlide.preset === 'keyhole' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: geom.cardX + 16,
+                        top: geom.cardY + 16,
+                        width: geom.cardW - 32,
+                        height: geom.cardH - 32,
+                        borderRadius: 34,
+                        border: `2px solid ${applyColorAlpha(geom.cardAccent, 0.38)}`,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  {geom.hasCard && activeSlide.preset === 'stud-crest' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: geom.cardX + 14,
+                        top: geom.cardY + 14,
+                        width: geom.cardW - 28,
+                        height: geom.cardH - 28,
+                        borderRadius: 28,
+                        border: `2px solid ${applyColorAlpha(geom.cardAccent, 0.45)}`,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  {geom.hasCard && activeSlide.preset === 'magazine' && (
+                    <>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX,
+                          top: geom.cardY + 18,
+                          width: geom.cardW,
+                          height: 56,
+                          lineHeight: '56px',
+                          textAlign: 'center',
+                          fontFamily: "'Playfair Display', serif",
+                          fontWeight: 700,
+                          fontSize: 48,
+                          letterSpacing: 2,
+                          color: geom.winDarkText ? '#1C2621' : '#FFFFFF',
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        {activeBrandTheme.magazineMasthead.toUpperCase()}
+                      </div>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX,
+                          top: geom.cardY + 78,
+                          width: geom.cardW,
+                          height: 20,
+                          lineHeight: '20px',
+                          textAlign: 'center',
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontWeight: 800,
+                          fontSize: 16,
+                          letterSpacing: 2,
+                          color: geom.cardAccent,
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        OKLAHOMA CITY • GENETIC BOUTIQUE EDITION
+                      </div>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX + 28,
+                          top: geom.cardY + 108,
+                          width: geom.cardW - 56,
+                          height: 2,
+                          background: applyColorAlpha(geom.cardAccent, 0.5),
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    </>
+                  )}
+                  {geom.hasCard &&
+                    activeSlide.preset === 'lookbook' &&
+                    (() => {
+                      const spineOuterTheme =
+                        BG_STYLES[activeSlide.bgStyle || activeBrandTheme.defaultPuppyBg] ||
+                        BG_STYLES['forest-luxe'];
+                      const spineWinTheme =
+                        BG_STYLES[activeSlide.windowStyle || activeBrandTheme.defaultPuppyWindow] ||
+                        BG_STYLES['cream-editorial'];
+                      return (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: geom.cardX + 28,
+                            top: geom.photoY,
+                            width: geom.spineWidth,
+                            height: geom.photoH,
+                            borderRadius: 28,
+                            background:
+                              activeSlide.customBgColor ||
+                              (spineOuterTheme.swatch === spineWinTheme.swatch
+                                ? '#8C2F2B'
+                                : geom.outerBg2),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <span
+                            style={{
+                              transform: 'rotate(-90deg)',
+                              whiteSpace: 'nowrap',
+                              fontFamily: "'DM Sans', sans-serif",
+                              fontWeight: 800,
+                              fontSize: 26,
+                              letterSpacing: 3,
+                              color: '#F9E4E2'
+                            }}
+                          >
+                            {activeBrandTheme.lookbookLabel.toUpperCase()}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  {geom.hasCard && activeSlide.preset === 'coastal' && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: geom.cardX + 36,
+                        top: geom.cardY + 36,
+                        height: 24,
+                        display: 'flex',
+                        alignItems: 'center',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontWeight: 800,
+                        fontSize: 19,
+                        letterSpacing: 1,
+                        color: geom.winDarkText ? '#234152' : '#F4D37E',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      🪪 OFFICIAL PUPPY PASSPORT • {activeBrandTheme.shortName.toUpperCase()}
+                    </div>
+                  )}
+                  {geom.hasCard &&
+                    (activeSlide.preset === 'rp-showroom' ||
+                      activeSlide.preset === 'k9ss-athlete-stage') &&
+                    (() => {
+                      const isK9Preset = activeSlide.preset === 'k9ss-athlete-stage';
+                      return (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: geom.cardX + 36,
+                            top: geom.cardY + 26,
+                            width: geom.cardW - 72,
+                            height: 36,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontFamily: "'DM Sans', sans-serif",
+                            fontWeight: 800,
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              fontSize: 18,
+                              color: geom.winDarkText ? '#111317' : '#E5E7EB'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 14,
+                                height: 14,
+                                borderRadius: 999,
+                                background: isK9Preset ? '#D32F2F' : '#10B981'
+                              }}
+                            />
+                            {isK9Preset
+                              ? 'K9 SUPER SUPPLEMENTS // ATHLETE DIVISION'
+                              : 'RAW & PAW // CHAMPIONSHIP NUTRITION'}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 16,
+                              color: isK9Preset ? '#EF4444' : '#00ADC7'
+                            }}
+                          >
+                            {isK9Preset ? 'HIGH-OUTPUT FORMULA' : 'CLINICAL SHOWCASE'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  {geom.hasCard &&
+                    (activeSlide.preset === 'rp-product-spotlight' ||
+                      activeSlide.preset === 'rp-naturals-pedestal' ||
+                      activeSlide.preset === 'k9ss-titanium-pedestal') &&
+                    (() => {
+                      const isK9Ped = activeSlide.preset === 'k9ss-titanium-pedestal';
+                      const isNatPed = activeSlide.preset === 'rp-naturals-pedestal';
+                      return (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: geom.cardX + 36,
+                            top: geom.cardY + 29,
+                            width: geom.cardW - 70,
+                            height: 38,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontFamily: "'DM Sans', sans-serif",
+                            fontWeight: 800,
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 18,
+                              color: isK9Ped ? '#D32F2F' : isNatPed ? '#C96400' : '#007F94'
+                            }}
+                          >
+                            {isK9Ped
+                              ? 'K9SS // TITANIUM SERIES'
+                              : isNatPed
+                                ? 'RAW & PAW // NATURALS APOTHECARY'
+                                : 'RAW & PAW // CLINICAL SHOWCASE'}
+                          </span>
+                          <span
+                            style={{
+                              padding: '0 18px',
+                              height: 38,
+                              lineHeight: '34px',
+                              borderRadius: 19,
+                              background: isK9Ped
+                                ? '#D32F2F'
+                                : isNatPed
+                                  ? '#FFF3E0'
+                                  : '#E6F4F7',
+                              border: `2px solid ${
+                                isK9Ped ? '#EF4444' : isNatPed ? '#FF8A00' : '#00ADC7'
+                              }`,
+                              color: isK9Ped ? '#FFFFFF' : '#111317',
+                              fontSize: 16
+                            }}
+                          >
+                            ★ EARN 50 PTS
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  {geom.hasCard &&
+                    (activeSlide.preset === 'rp-protocol-stack' ||
+                      activeSlide.preset === 'k9ss-red-brutalist') &&
+                    (() => {
+                      const isK9Brut = activeSlide.preset === 'k9ss-red-brutalist';
+                      return (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: geom.cardX,
+                            top: geom.cardY,
+                            width: geom.cardW,
+                            height: 102,
+                            borderTopLeftRadius: geom.cardTopR,
+                            borderTopRightRadius: geom.cardTopR,
+                            background: isK9Brut ? '#14171E' : '#F3FAFB',
+                            borderBottom: `3px solid ${isK9Brut ? '#D32F2F' : '#111317'}`,
+                            padding: '0 32px 0 36px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontFamily: "'DM Sans', sans-serif",
+                            fontWeight: 800,
+                            pointerEvents: 'none'
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 22,
+                              color: isK9Brut ? '#FFFFFF' : '#111317'
+                            }}
+                          >
+                            {isK9Brut
+                              ? 'K9SS ATHLETE STACK // PRO'
+                              : 'CHAMPIONSHIP PROTOCOL STACK'}
+                          </span>
+                          <span
+                            style={{
+                              padding: '0 18px',
+                              height: 40,
+                              lineHeight: '40px',
+                              borderRadius: 20,
+                              background: isK9Brut ? '#D32F2F' : '#111317',
+                              color: isK9Brut ? '#FFFFFF' : '#00E5FF',
+                              fontSize: 16
+                            }}
+                          >
+                            {isK9Brut ? 'STEP 01 // POWER' : 'STEP 01 // DAILY'}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  {geom.hasCard && activeSlide.preset === 'rp-clinical-dossier' && (
+                    <>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX,
+                          top: geom.cardY,
+                          width: geom.cardW,
+                          height: 86,
+                          borderTopLeftRadius: geom.cardTopR,
+                          borderTopRightRadius: geom.cardTopR,
+                          background: '#14161B',
+                          padding: '0 36px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontWeight: 800,
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        <span style={{ fontSize: 22, color: '#FFFFFF' }}>
+                          RAW &amp; PAW // 80/10/10 DOSSIER
+                        </span>
+                        <span style={{ fontSize: 17, color: '#00E5FF' }}>LAB SPEC SHEET</span>
+                      </div>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX + 36,
+                          top: geom.cardY + 98,
+                          width: geom.cardW - 72,
+                          height: 66,
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: 8,
+                          fontFamily: "'DM Sans', sans-serif",
+                          fontWeight: 800,
+                          pointerEvents: 'none'
+                        }}
+                      >
+                        {(
+                          [
+                            ['80%', 'MUSCLE & PROTEIN'],
+                            ['10%', 'EDIBLE BONE MINERAL'],
+                            ['10%', 'SECRETING ORGAN IgG']
+                          ] as const
+                        ).map(([pct, desc]) => (
+                          <div
+                            key={desc}
+                            style={{
+                              borderRadius: 14,
+                              background: '#FFFFFF',
+                              border: '2px solid #CBEBF0',
+                              padding: '8px 14px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <div style={{ fontSize: 23, lineHeight: 1.05, color: '#007F94' }}>
+                              {pct}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#334155', marginTop: 2 }}>
+                              {desc}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  {geom.hasCard &&
+                    (activeSlide.preset === 'rp-bento-grid' ||
+                      activeSlide.preset === 'k9ss-lineup-bento') &&
+                    (() => {
+                      const isK9Bento = activeSlide.preset === 'k9ss-lineup-bento';
+                      return (
+                        <>
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: geom.cardX + 30,
+                              top: geom.cardY + 28,
+                              width: geom.cardW - 60,
+                              height: 64,
+                              borderRadius: 18,
+                              background: isK9Bento ? '#0B0D11' : '#F3FAFB',
+                              border: `2px solid ${isK9Bento ? '#D32F2F' : '#CBEBF0'}`,
+                              padding: '0 24px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              fontFamily: "'DM Sans', sans-serif",
+                              fontWeight: 800,
+                              pointerEvents: 'none'
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 20,
+                                color: isK9Bento ? '#FFFFFF' : '#111317'
+                              }}
+                            >
+                              {isK9Bento
+                                ? 'K9SS PRO ARSENAL // BENTO'
+                                : 'PACK DROP™ // BUNDLE MATRIX'}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 16,
+                                color: isK9Bento ? '#EF4444' : '#FF8A00'
+                              }}
+                            >
+                              SAVE 15% + EARN PTS
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: geom.cardX + 30,
+                              top: geom.cardY + geom.cardH - 166,
+                              width: geom.cardW - 60,
+                              height: 146,
+                              borderRadius: 22,
+                              background: isK9Bento ? '#0B0D11' : '#14161B',
+                              pointerEvents: 'none'
+                            }}
+                          />
+                        </>
+                      );
+                    })()}
+                  <div
+                    onPointerDown={(e) => {
+                      if (!e.isPrimary || pinchRef.current.active) return;
+                      setSelectedLayerId(null);
+                      setEditingLayerId(null);
+                      dragModeRef.current = {
+                        type: 'photo',
+                        sx: e.clientX,
+                        sy: e.clientY,
+                        bx: activeSlide.panX,
+                        by: activeSlide.panY,
+                        bWidth: 0,
+                        bHeight: 0,
+                        bPadY: 0,
+                        moved: false,
+                        recordedUndo: false
+                      };
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: geom.photoX,
+                      top: geom.photoY,
+                      width: geom.photoW,
+                      height: geom.photoH,
+                      borderRadius:
+                        activeSlide.preset === 'cameo'
+                          ? '50%'
+                          : `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
+                      clipPath:
+                        geom.photoChamfer > 0
+                          ? `polygon(${geom.photoChamfer}px 0, ${geom.photoW - geom.photoChamfer}px 0, ${geom.photoW}px ${geom.photoChamfer}px, ${geom.photoW}px ${geom.photoH - geom.photoChamfer}px, ${geom.photoW - geom.photoChamfer}px ${geom.photoH}px, ${geom.photoChamfer}px ${geom.photoH}px, 0 ${geom.photoH - geom.photoChamfer}px, 0 ${geom.photoChamfer}px)`
+                          : undefined,
+                      boxShadow:
+                        activeSlide.preset === 'cameo' || activeSlide.preset === 'keyhole'
+                          ? `0 0 0 ${activeSlide.preset === 'keyhole' ? 8 : 10}px ${geom.cardBg}, 0 0 0 ${activeSlide.preset === 'keyhole' ? 12 : 14}px ${geom.cardAccent}`
+                          : activeSlide.preset === 'stud-crest'
+                            ? `0 0 0 6px ${geom.cardBg}, 0 0 0 9.5px ${geom.cardAccent}`
+                            : activeSlide.preset === 'filmstrip'
+                              ? `0 0 0 6px ${geom.outerBg2}, 0 0 0 8px ${applyColorAlpha(geom.cardAccent, 0.55)}`
+                              : undefined,
+                      overflow: 'hidden',
+                      background: geom.photoBackdrop || '#EFECE4',
+                      cursor: photoLocked ? 'default' : 'grab'
+                    }}
+                  >
+                  {(activeSlide.preset === 'rp-showroom' ||
+                    activeSlide.preset === 'k9ss-athlete-stage') && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 56,
+                        textAlign: 'center',
+                        fontFamily: "'DM Sans', sans-serif",
+                        fontWeight: 800,
+                        fontSize: 94,
+                        lineHeight: 1,
+                        color:
+                          activeSlide.preset === 'k9ss-athlete-stage'
+                            ? 'rgba(211, 47, 47, 0.12)'
+                            : 'rgba(255, 255, 255, 0.05)',
+                        pointerEvents: 'none',
+                        userSelect: 'none'
+                      }}
+                    >
+                      {activeSlide.preset === 'k9ss-athlete-stage'
+                        ? 'K9 SUPER ATHLETE'
+                        : 'CHAMPION NUTRITION'}
+                    </div>
+                  )}
                   {activeSlide.videoSrc ? (
                     <video
                       ref={stageVideoRef}
@@ -5865,6 +9662,10 @@ const SocialStudio: React.FC = () => {
                           height: previewDrawH,
                           maxWidth: 'none',
                           maxHeight: 'none',
+                          filter:
+                            activeSlide.photoFit === 'contain'
+                              ? 'drop-shadow(0 18px 28px rgba(0,0,0,0.36))'
+                              : undefined,
                           pointerEvents: 'none'
                         }}
                       />
@@ -5880,7 +9681,22 @@ const SocialStudio: React.FC = () => {
                       }}
                     />
                   )}
-                </div>
+                  {geom.photoBottomScrim && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: activeSlide.preset === 'magazine' ? 240 : 220,
+                        background:
+                          'linear-gradient(180deg, rgba(20,18,16,0) 0%, rgba(20,18,16,0.78) 100%)',
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  </div>
+                </>
               )}
 
               {/* Center Snap Guides */}
@@ -5918,7 +9734,7 @@ const SocialStudio: React.FC = () => {
                 if (!layer.visible) return null;
                 const isSel = selectedLayerId === layer.id;
                 const isEditing = editingLayerId === layer.id;
-                const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
+                const pal = resolvePillAppearance(layer);
                 const fontSize = layer.fontSize;
                 const padX = pal.hasBg ? 26 : 8;
 
@@ -6067,10 +9883,8 @@ const SocialStudio: React.FC = () => {
                           layer.pill === 'none-light' ||
                           (pal.hasBg && (layer.pillOpacity ?? 1) < 0.35) ||
                           (!pal.hasBg &&
-                            (layer.textColor === '#FFFFFF' ||
-                              layer.textColor === '#F4D37E' ||
-                              layer.textColor === '#F6F4EE' ||
-                              layer.textColor === '#E8DFCE'))
+                            Boolean(layer.textColor || pal.text) &&
+                            !isHexDark(layer.textColor || pal.text))
                             ? '0 4px 16px rgba(0,0,0,0.5)'
                             : 'none',
                         fontFamily:
@@ -6489,9 +10303,11 @@ const SocialStudio: React.FC = () => {
                   };
                 };
 
+                const isCutout = ov.shape === 'cutout';
                 const isPolaroid = ov.shape === 'polaroid';
-                const frameRadius =
-                  ov.shape === 'circle'
+                const frameRadius = isCutout
+                  ? 18
+                  : ov.shape === 'circle'
                     ? '999px'
                     : ov.shape === 'arch'
                       ? `${Math.round(ov.width / 2)}px ${Math.round(ov.width / 2)}px 28px 28px`
@@ -6500,7 +10316,7 @@ const SocialStudio: React.FC = () => {
                         : ov.shape === 'polaroid'
                           ? 18
                           : 10;
-                const borderW = Math.max(0, ov.borderWidth ?? 6);
+                const borderW = isCutout ? 0 : Math.max(0, ov.borderWidth ?? 6);
                 const polaroidSidePad = Math.max(14, borderW + 10);
                 const polaroidBottomPad = Math.max(38, Math.round(ov.height * 0.16));
 
@@ -6558,17 +10374,19 @@ const SocialStudio: React.FC = () => {
                           opacity: ov.opacity ?? 1,
                           borderRadius: frameRadius,
                           boxShadow:
-                            ov.shadow !== false ? '0 14px 36px rgba(0,0,0,0.28)' : 'none',
+                            !isCutout && ov.shadow !== false
+                              ? '0 14px 36px rgba(0,0,0,0.28)'
+                              : 'none',
                           background: isPolaroid ? ov.borderColor || '#FFFFFF' : 'transparent',
                           padding: isPolaroid
                             ? `${polaroidSidePad}px ${polaroidSidePad}px ${polaroidBottomPad}px`
                             : 0,
                           border:
-                            !isPolaroid && borderW > 0
+                            !isCutout && !isPolaroid && borderW > 0
                               ? `${borderW}px solid ${ov.borderColor || '#FFFFFF'}`
                               : 'none',
                           boxSizing: 'border-box',
-                          overflow: 'hidden'
+                          overflow: isCutout ? 'visible' : 'hidden'
                         }}
                       >
                         <div
@@ -6576,13 +10394,14 @@ const SocialStudio: React.FC = () => {
                             width: '100%',
                             height: '100%',
                             borderRadius: isPolaroid ? 8 : 0,
-                            overflow: 'hidden',
+                            overflow: isCutout ? 'visible' : 'hidden',
                             position: 'relative',
-                            background: '#EAE5D9'
+                            background: isCutout ? 'transparent' : '#EAE5D9'
                           }}
                         >
                           {ov.mediaType === 'video' ? (
                             <video
+                              data-overlay-video-id={ov.id}
                               src={ov.src}
                               autoPlay
                               loop
@@ -6591,7 +10410,11 @@ const SocialStudio: React.FC = () => {
                               style={{
                                 width: '100%',
                                 height: '100%',
-                                objectFit: 'cover',
+                                objectFit: isCutout ? 'contain' : 'cover',
+                                filter:
+                                  isCutout && ov.shadow !== false
+                                    ? 'drop-shadow(0 16px 26px rgba(0,0,0,0.40))'
+                                    : undefined,
                                 transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
                                 transformOrigin: 'center center',
                                 pointerEvents: 'none',
@@ -6606,7 +10429,11 @@ const SocialStudio: React.FC = () => {
                               style={{
                                 width: '100%',
                                 height: '100%',
-                                objectFit: 'cover',
+                                objectFit: isCutout ? 'contain' : 'cover',
+                                filter:
+                                  isCutout && ov.shadow !== false
+                                    ? 'drop-shadow(0 16px 26px rgba(0,0,0,0.40))'
+                                    : undefined,
                                 transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
                                 transformOrigin: 'center center',
                                 pointerEvents: 'none',
@@ -7109,6 +10936,88 @@ const SocialStudio: React.FC = () => {
             {/* ==================== TAB 1: THEME, FRAME & COLORS ==================== */}
             {inspectorTab === 'theme' && (
               <div className="space-y-3">
+                {/* Canva-Style Multi-Brand Theme Kit Switcher */}
+                <div className="space-y-1.5 pb-2 border-b border-[#F0ECE1]">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      🎨 Brand Theme Kit
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewThemeForm((v) => !v)}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] text-[#2E5A44] hover:bg-[#EFECE4] cursor-pointer"
+                    >
+                      {showNewThemeForm ? 'Cancel' : '+ Save Current as Theme'}
+                    </button>
+                  </div>
+                  {showNewThemeForm && (
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <input
+                        type="text"
+                        value={newThemeName}
+                        onChange={(e) => setNewThemeName(e.target.value)}
+                        placeholder="Theme name (e.g. Fall Drop)"
+                        className="flex-1 rounded-xl border border-[#DDD6C7] bg-[#F6F4EE] px-2.5 py-1.5 text-xs font-bold text-[#1C2621] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveCustomBrandTheme}
+                        className="px-3 py-1.5 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold cursor-pointer"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {allBrandThemes.map((kit) => {
+                      const isCurrent = activeBrandTheme.id === kit.id;
+                      const dot1 =
+                        kit.customBgHex || BG_STYLES[kit.defaultPuppyBg]?.swatch || '#E8DFCE';
+                      const dot2 =
+                        kit.customWindowHex ||
+                        BG_STYLES[kit.defaultPuppyWindow]?.swatch ||
+                        '#FFFFFF';
+                      return (
+                        <div key={kit.id} className="inline-flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectBrandTheme(kit.id)}
+                            title={kit.tagline}
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                              isCurrent
+                                ? 'bg-[#1C2621] text-[#F4D37E] border-[#1C2621] shadow-xs'
+                                : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                            }`}
+                          >
+                            <span>{kit.icon}</span>
+                            <span>{kit.shortName}</span>
+                            <span className="inline-flex items-center -space-x-1 ml-0.5">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/25"
+                                style={{ background: dot1 }}
+                              />
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/25"
+                                style={{ background: dot2 }}
+                              />
+                            </span>
+                          </button>
+                          {kit.isCustom && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCustomBrandTheme(kit.id)}
+                              title={`Delete ${kit.name}`}
+                              className="w-5 h-5 rounded-full bg-[#F6F4EE] border border-[#DDD6C7] text-[10px] font-bold text-[#8C2F2B] hover:bg-[#F9E4E2] cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* Canva-Style 1-Tap Brand Shuffle Row */}
                 <div className="flex items-center justify-between gap-2">
                   <button
@@ -7116,7 +11025,7 @@ const SocialStudio: React.FC = () => {
                     onClick={() => handleShuffleBrandLook(false)}
                     className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] text-[#F4D37E] text-xs font-extrabold shadow-xs touch-manipulation cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] transition"
                   >
-                    <span>✨ Shuffle Brand Look</span>
+                    <span>✨ Shuffle {activeBrandTheme.shortName}</span>
                     <span className="text-[10px] font-bold text-white/85 truncate max-w-[130px]">
                       ({BRAND_REMIX_RECIPES[remixIdx]?.name})
                     </span>
@@ -7134,13 +11043,15 @@ const SocialStudio: React.FC = () => {
                     )}
                 </div>
 
-                {/* Frame Preset Picker — Wrapped Grid */}
+                {/* Frame Preset Picker — Strictly scoped to the active Brand Theme */}
                 <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    Frame &amp; Layout Template
+                    {activeBrandTheme.shortName} Templates
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
+                    {FRAME_PRESET_OPTIONS.filter((o) =>
+                      activeBrandTheme.featuredTemplates.includes(o.key)
+                    ).map(({ key, label }) => (
                       <button
                         key={key}
                         type="button"
@@ -7156,6 +11067,9 @@ const SocialStudio: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {(activeBrandTheme.id === 'raw-and-paw' || activeBrandTheme.id === 'k9ss') &&
+                  renderProductShowcaseShelf()}
 
                 {/* Text Card Theme Picker (Shown whenever Text Card is active!) */}
                 {activeSlide.preset === 'no-photo' && (
@@ -7185,36 +11099,55 @@ const SocialStudio: React.FC = () => {
                   </div>
                 )}
 
-                {/* Outer Background Color Swatches */}
+                {/* Outer Background Color Swatches (Theme Defaults + All Theme Swatches Toggle + Any Color Picker) */}
                 <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
                       Outer Background
                     </span>
-                    {activeSlide.preset !== 'minimal' &&
-                      !(
-                        activeSlide.preset === 'no-photo' &&
-                        activeSlide.textCardTheme === 'minimal-luxe'
-                      ) && (
-                        <button
-                          type="button"
-                          onClick={handleSwapBgAndWindow}
-                          className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
-                          title="Swap Outer Background and Inner Window colors"
-                        >
-                          ⇄ Swap Outer &amp; Window
-                        </button>
-                      )}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllThemeSwatches((v) => !v)}
+                        className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#3E4D45] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
+                      >
+                        {showAllThemeSwatches ? 'Theme Only' : '+ All Colors'}
+                      </button>
+                      {activeSlide.preset !== 'minimal' &&
+                        !(
+                          activeSlide.preset === 'no-photo' &&
+                          activeSlide.textCardTheme === 'minimal-luxe'
+                        ) && (
+                          <button
+                            type="button"
+                            onClick={handleSwapBgAndWindow}
+                            className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
+                            title="Swap Outer Background and Inner Window colors"
+                          >
+                            ⇄ Swap
+                          </button>
+                        )}
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                      ([bgKey, bgMeta]) => (
+                    {(showAllThemeSwatches
+                      ? (Object.keys(BG_STYLES) as BgStyle[])
+                      : Array.from(
+                          new Set([
+                            ...activeBrandTheme.defaultBgSwatches,
+                            activeSlide.bgStyle
+                          ])
+                        )
+                    ).map((bgKey) => {
+                      const bgMeta = BG_STYLES[bgKey];
+                      if (!bgMeta) return null;
+                      return (
                         <button
                           key={bgKey}
                           type="button"
                           onClick={() => handleSwitchBgTheme(bgKey)}
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                            activeSlide.bgStyle === bgKey
+                            activeSlide.bgStyle === bgKey && !activeSlide.customBgColor
                               ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
                               : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
                           }`}
@@ -7225,7 +11158,40 @@ const SocialStudio: React.FC = () => {
                           />
                           <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
                         </button>
-                      )
+                      );
+                    })}
+                    <label
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                        activeSlide.customBgColor
+                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                          : 'bg-white border-dashed border-[#B5A992] text-[#1C2621] hover:bg-[#EFECE4]'
+                      }`}
+                      title="Pick any custom Outer Background color"
+                    >
+                      <input
+                        type="color"
+                        value={
+                          activeSlide.customBgColor ||
+                          BG_STYLES[activeSlide.bgStyle]?.swatch ||
+                          '#E8DFCE'
+                        }
+                        onChange={(e) => handleSetCustomBgColor(e.target.value)}
+                        className="w-4 h-4 p-0 border-0 rounded-full cursor-pointer bg-transparent"
+                      />
+                      <span>
+                        {activeSlide.customBgColor
+                          ? activeSlide.customBgColor.toUpperCase()
+                          : '🎨 Any Color'}
+                      </span>
+                    </label>
+                    {activeSlide.customBgColor && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetCustomBgColor(undefined)}
+                        className="px-2 py-1 rounded-full text-[11px] font-bold bg-[#F9E4E2] text-[#8C2F2B] cursor-pointer"
+                      >
+                        ✕ Reset
+                      </button>
                     )}
                   </div>
                 </div>
@@ -7241,9 +11207,18 @@ const SocialStudio: React.FC = () => {
                         Inner Window / Card Color
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {(
-                          Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]
-                        ).map(([winKey, winMeta]) => {
+                        {(showAllThemeSwatches
+                          ? (Object.keys(BG_STYLES) as BgStyle[])
+                          : Array.from(
+                              new Set([
+                                ...activeBrandTheme.defaultBgSwatches,
+                                'pure-white' as BgStyle,
+                                (activeSlide.windowStyle || 'pure-white') as BgStyle
+                              ])
+                            )
+                        ).map((winKey) => {
+                          const winMeta = BG_STYLES[winKey];
+                          if (!winMeta) return null;
                           const activeWin = activeSlide.windowStyle || 'pure-white';
                           return (
                             <button
@@ -7251,7 +11226,7 @@ const SocialStudio: React.FC = () => {
                               type="button"
                               onClick={() => handleSwitchWindowTheme(winKey)}
                               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                                activeWin === winKey
+                                activeWin === winKey && !activeSlide.customWindowColor
                                   ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
                                   : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
                               }`}
@@ -7264,6 +11239,39 @@ const SocialStudio: React.FC = () => {
                             </button>
                           );
                         })}
+                        <label
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                            activeSlide.customWindowColor
+                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                              : 'bg-white border-dashed border-[#B5A992] text-[#1C2621] hover:bg-[#EFECE4]'
+                          }`}
+                          title="Pick any custom Inner Window color"
+                        >
+                          <input
+                            type="color"
+                            value={
+                              activeSlide.customWindowColor ||
+                              BG_STYLES[activeSlide.windowStyle || 'pure-white']?.cardBg ||
+                              '#FFFFFF'
+                            }
+                            onChange={(e) => handleSetCustomWindowColor(e.target.value)}
+                            className="w-4 h-4 p-0 border-0 rounded-full cursor-pointer bg-transparent"
+                          />
+                          <span>
+                            {activeSlide.customWindowColor
+                              ? activeSlide.customWindowColor.toUpperCase()
+                              : '🎨 Any Color'}
+                          </span>
+                        </label>
+                        {activeSlide.customWindowColor && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetCustomWindowColor(undefined)}
+                            className="px-2 py-1 rounded-full text-[11px] font-bold bg-[#F9E4E2] text-[#8C2F2B] cursor-pointer"
+                          >
+                            ✕ Reset
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -7738,7 +11746,8 @@ const SocialStudio: React.FC = () => {
                       <div className="flex flex-wrap gap-1.5">
                         {OVERLAY_BORDER_SWATCHES.map((sw) => {
                           const isActive =
-                            (selectedPhotoOverlay.borderColor || '#FFFFFF') === sw.value;
+                            (selectedPhotoOverlay.borderColor || '#FFFFFF').toUpperCase() ===
+                            sw.value.toUpperCase();
                           return (
                             <button
                               key={sw.value}
@@ -7764,6 +11773,40 @@ const SocialStudio: React.FC = () => {
                             </button>
                           );
                         })}
+                        {(() => {
+                          const currentBorder = selectedPhotoOverlay.borderColor || '#FFFFFF';
+                          const isCustomBorder = !OVERLAY_BORDER_SWATCHES.some(
+                            (sw) => sw.value.toUpperCase() === currentBorder.toUpperCase()
+                          );
+                          const pickerHex = currentBorder.startsWith('#') ? currentBorder : '#FFFFFF';
+                          return (
+                            <label
+                              title="Pick any border hex color"
+                              className={`relative flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                isCustomBorder
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              <input
+                                type="color"
+                                value={pickerHex}
+                                onChange={(e) =>
+                                  updatePhotoOverlay(
+                                    selectedPhotoOverlay.id,
+                                    { borderColor: e.target.value },
+                                    true
+                                  )
+                                }
+                                className="w-3.5 h-3.5 p-0 border-0 rounded-full bg-transparent cursor-pointer shrink-0"
+                              />
+                              <span>
+                                🎨 Any Color
+                                {isCustomBorder ? ` (${pickerHex.toUpperCase()})` : ''}
+                              </span>
+                            </label>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -7972,43 +12015,126 @@ const SocialStudio: React.FC = () => {
 
                     {/* Pill Color Swatches — Wrapped Grid */}
                     <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
-                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                        Pill Background Color
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                          Pill Background Color
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAllThemeSwatches((v) => !v)}
+                          className="text-[11px] font-bold text-[#2E5A44] underline decoration-dotted cursor-pointer hover:opacity-80"
+                        >
+                          {showAllThemeSwatches ? 'Theme Only' : '+ All Pills'}
+                        </button>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {(
-                          Object.entries(PILL_PALETTE) as [
-                            PillStyle,
-                            (typeof PILL_PALETTE)[PillStyle]
-                          ][]
-                        ).map(([pKey, pMeta]) => {
-                          const isActive = selectedLayer.pill === pKey;
+                        {(showAllThemeSwatches
+                          ? (Object.keys(PILL_PALETTE) as PillStyle[])
+                          : Array.from(
+                              new Set<PillStyle>([
+                                ...activeBrandTheme.defaultPillPalette,
+                                'none-dark',
+                                'none-light',
+                                selectedLayer.pill
+                              ])
+                            )
+                        )
+                          .filter((pKey) => Boolean(PILL_PALETTE[pKey]))
+                          .map((pKey) => {
+                            const pMeta = PILL_PALETTE[pKey];
+                            const isActive =
+                              selectedLayer.pill === pKey && !selectedLayer.customPillColor;
+                            return (
+                              <button
+                                key={pKey}
+                                type="button"
+                                onClick={() =>
+                                  updateLayer(
+                                    selectedLayer.id,
+                                    { pill: pKey, customPillColor: undefined },
+                                    true
+                                  )
+                                }
+                                title={`Pill Color: ${pMeta.label}`}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                  isActive
+                                    ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                    : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                                }`}
+                              >
+                                <span
+                                  className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                  style={{
+                                    background: pMeta.hasBg
+                                      ? pMeta.swatch
+                                      : pKey === 'none-dark'
+                                        ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
+                                        : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
+                                  }}
+                                />
+                                <span>{pMeta.shortLabel}</span>
+                              </button>
+                            );
+                          })}
+                        {(() => {
+                          const rawSwatch =
+                            selectedLayer.customPillColor ||
+                            PILL_PALETTE[selectedLayer.pill]?.swatch ||
+                            '#FAF6EE';
+                          const pickerHex = rawSwatch.startsWith('#') ? rawSwatch : '#FAF6EE';
+                          const hasCustomPill = Boolean(selectedLayer.customPillColor);
                           return (
-                            <button
-                              key={pKey}
-                              type="button"
-                              onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
-                              title={`Pill Color: ${pMeta.label}`}
-                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
-                                isActive
-                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
-                              }`}
-                            >
-                              <span
-                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                                style={{
-                                  background: pMeta.hasBg
-                                    ? pMeta.swatch
-                                    : pKey === 'none-dark'
-                                      ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
-                                      : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
-                                }}
-                              />
-                              <span>{pMeta.shortLabel}</span>
-                            </button>
+                            <>
+                              <label
+                                title="Pick any pill background hex color"
+                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                  hasCustomPill
+                                    ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                    : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                                }`}
+                              >
+                                <input
+                                  type="color"
+                                  value={pickerHex}
+                                  onChange={(e) => {
+                                    const nextPill: PillStyle = PILL_PALETTE[selectedLayer.pill]
+                                      ?.hasBg
+                                      ? selectedLayer.pill
+                                      : 'cream';
+                                    updateLayer(
+                                      selectedLayer.id,
+                                      { pill: nextPill, customPillColor: e.target.value },
+                                      true
+                                    );
+                                  }}
+                                  className="w-3.5 h-3.5 p-0 border-0 rounded-full bg-transparent cursor-pointer shrink-0"
+                                />
+                                <span>
+                                  🎨 Any Color
+                                  {hasCustomPill
+                                    ? ` (${selectedLayer.customPillColor!.toUpperCase()})`
+                                    : ''}
+                                </span>
+                              </label>
+                              {hasCustomPill && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateLayer(
+                                      selectedLayer.id,
+                                      { customPillColor: undefined },
+                                      true
+                                    )
+                                  }
+                                  title="Clear custom pill color"
+                                  className="px-2.5 py-1 rounded-full border border-[#DDD6C7] bg-[#F6F4EE] text-xs font-bold text-[#7A3E3E] hover:bg-[#EFECE4] cursor-pointer"
+                                >
+                                  ✕ Reset
+                                </button>
+                              )}
+                            </>
                           );
-                        })}
+                        })()}
                       </div>
                     </div>
 
@@ -8019,7 +12145,9 @@ const SocialStudio: React.FC = () => {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {TEXT_COLOR_SWATCHES.map((sw) => {
-                          const isActive = (selectedLayer.textColor || '') === sw.value;
+                          const isActive =
+                            (selectedLayer.textColor || '').toUpperCase() ===
+                            sw.value.toUpperCase();
                           return (
                             <button
                               key={sw.label}
@@ -8046,6 +12174,44 @@ const SocialStudio: React.FC = () => {
                             </button>
                           );
                         })}
+                        {(() => {
+                          const currentTextHex = selectedLayer.textColor || '';
+                          const isCustomText =
+                            Boolean(currentTextHex) &&
+                            !TEXT_COLOR_SWATCHES.some(
+                              (sw) => sw.value.toUpperCase() === currentTextHex.toUpperCase()
+                            );
+                          const pickerHex = currentTextHex.startsWith('#')
+                            ? currentTextHex
+                            : '#1C2621';
+                          return (
+                            <label
+                              title="Pick any text hex color"
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                isCustomText
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              <input
+                                type="color"
+                                value={pickerHex}
+                                onChange={(e) =>
+                                  updateLayer(
+                                    selectedLayer.id,
+                                    { textColor: e.target.value },
+                                    true
+                                  )
+                                }
+                                className="w-3.5 h-3.5 p-0 border-0 rounded-full bg-transparent cursor-pointer shrink-0"
+                              />
+                              <span>
+                                🎨 Any Color
+                                {isCustomText ? ` (${currentTextHex.toUpperCase()})` : ''}
+                              </span>
+                            </label>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -8096,6 +12262,9 @@ const SocialStudio: React.FC = () => {
                     ))}
                   </div>
                 </div>
+
+                {(activeBrandTheme.id === 'raw-and-paw' || activeBrandTheme.id === 'k9ss') &&
+                  renderProductShowcaseShelf()}
 
                 {(contentMode === 'puppies' || contentMode === 'studs') && (
                   <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
@@ -8840,7 +13009,7 @@ const SocialStudio: React.FC = () => {
                       >
                         {videoExporting
                           ? `🎬 ${videoExportProgress}%`
-                          : '📲 Share Video Reel'}
+                          : '📲 Share / Camera Roll'}
                       </button>
                       <button
                         type="button"
@@ -8848,8 +13017,45 @@ const SocialStudio: React.FC = () => {
                         onClick={() => handleExportVideoReel(false)}
                         className="py-2.5 px-2 rounded-xl bg-[#1C2621] text-white text-xs font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
                       >
-                        {videoExporting ? `Saving...` : '⬇ Save Reel (MP4)'}
+                        {videoExporting ? `Recording...` : '⬇ Download Video'}
                       </button>
+                    </div>
+                  )}
+                  {readyVideoExport && !videoExporting && (
+                    <div className="p-2.5 rounded-2xl bg-[#1C2621] text-white space-y-2 border border-[#F4D37E]/60">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-extrabold text-[#F4D37E]">
+                          🎬 Video Ready!
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setReadyVideoExport((prev) => {
+                              if (prev?.url) URL.revokeObjectURL(prev.url);
+                              return null;
+                            })
+                          }
+                          className="text-xs font-bold text-white/75 hover:text-white cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => triggerSyncVideoShareOrDownload(readyVideoExport)}
+                          className="py-2 px-2 rounded-xl bg-[#D46A4E] text-white text-[11px] font-extrabold cursor-pointer touch-manipulation"
+                        >
+                          📲 Save to Camera Roll
+                        </button>
+                        <a
+                          href={readyVideoExport.url}
+                          download={readyVideoExport.fileName}
+                          className="py-2 px-2 rounded-xl bg-white/15 text-white text-[11px] font-extrabold text-center cursor-pointer touch-manipulation"
+                        >
+                          ⬇ Download ({readyVideoExport.ext.toUpperCase()})
+                        </a>
+                      </div>
                     </div>
                   )}
 
