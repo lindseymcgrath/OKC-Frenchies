@@ -34,6 +34,41 @@ const ROUTE_META = {
     image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
     canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
   },
+  '/french-bulldogs': {
+    title: 'Available French Bulldog Puppies in Oklahoma City | OKC Frenchies',
+    description:
+      'Available Fluffy, Pink Carrier, Floodle & Big Rope French Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.',
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
+  },
+  '/frenchies': {
+    title: 'Available French Bulldog Puppies in Oklahoma City | OKC Frenchies',
+    description:
+      'Available Fluffy, Pink Carrier, Floodle & Big Rope French Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.',
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
+  },
+  '/mini-english-bulldog-puppies-for-sale': {
+    title: 'Mini English Bulldog Puppies for Sale in Oklahoma City | OKC Frenchies',
+    description:
+      'Available Chocolate Tri Merle, Lilac Tri Merle & Lilac Tri Mini English Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.',
+    image: `https://okcfrenchies.com/og/mini-english-puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/mini-english-bulldog-puppies-for-sale'
+  },
+  '/mini-english-bulldogs': {
+    title: 'Mini English Bulldog Puppies for Sale in Oklahoma City | OKC Frenchies',
+    description:
+      'Available Chocolate Tri Merle, Lilac Tri Merle & Lilac Tri Mini English Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.',
+    image: `https://okcfrenchies.com/og/mini-english-puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/mini-english-bulldog-puppies-for-sale'
+  },
+  '/english-bulldog-puppies': {
+    title: 'Mini English Bulldog Puppies for Sale in Oklahoma City | OKC Frenchies',
+    description:
+      'Available Chocolate Tri Merle, Lilac Tri Merle & Lilac Tri Mini English Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.',
+    image: `https://okcfrenchies.com/og/mini-english-puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/mini-english-bulldog-puppies-for-sale'
+  },
   '/puppies': {
     title: SEO_DATA.Puppies.title,
     description: SEO_DATA.Puppies.description,

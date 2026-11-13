@@ -4,7 +4,25 @@ import SEO from '../components/SEO';
 import puppiesData from '../data/puppies.json';
 import seoData from '../data/seo.json';
 
-const Puppies: React.FC = () => {
+interface PuppiesProps {
+  initialBreed?: 'French Bulldog' | 'Mini English Bulldog';
+}
+
+const Puppies: React.FC<PuppiesProps> = ({ initialBreed }) => {
+  const isMiniEnglish = initialBreed === 'Mini English Bulldog';
+  const pageTitle = isMiniEnglish
+    ? 'Mini English Bulldog Puppies for Sale in Oklahoma City | OKC Frenchies'
+    : seoData.Puppies.title;
+  const pageDesc = isMiniEnglish
+    ? 'Available Chocolate Tri Merle, Lilac Tri Merle & Lilac Tri Mini English Bulldog puppies raised underfoot in our Oklahoma City home on a raw diet + clinical bovine plasma.'
+    : seoData.Puppies.description;
+  const pageImage = isMiniEnglish
+    ? 'https://okcfrenchies.com/og/mini-english-puppies.jpg'
+    : 'https://okcfrenchies.com/og/puppies.jpg';
+  const pageUrl = isMiniEnglish
+    ? 'https://okcfrenchies.com/mini-english-bulldog-puppies-for-sale'
+    : 'https://okcfrenchies.com/french-bulldog-puppies-for-sale';
+
   const puppiesSchema = [
     {
       "@context": "https://schema.org",
@@ -19,8 +37,8 @@ const Puppies: React.FC = () => {
         {
           "@type": "ListItem",
           "position": 2,
-          "name": "Puppies for Sale",
-          "item": "https://okcfrenchies.com/french-bulldog-puppies-for-sale"
+          "name": isMiniEnglish ? "Mini English Bulldog Puppies" : "Puppies for Sale",
+          "item": pageUrl
         }
       ]
     },
@@ -34,7 +52,7 @@ const Puppies: React.FC = () => {
           "@type": "Product",
           "name": puppy.name,
           "image": puppy.image,
-          "description": puppy.description || `French Bulldog puppy named ${puppy.name}`,
+          "description": puppy.description || `${puppy.breed || 'French Bulldog'} puppy named ${puppy.name}`,
           "offers": {
             "@type": "Offer",
             "priceCurrency": "USD",
@@ -49,17 +67,18 @@ const Puppies: React.FC = () => {
   return (
     <>
       <SEO 
-        title={seoData.Puppies.title}
-        description={seoData.Puppies.description}
-        image="https://okcfrenchies.com/og/puppies.jpg"
-        url="https://okcfrenchies.com/french-bulldog-puppies-for-sale"
+        title={pageTitle}
+        description={pageDesc}
+        image={pageImage}
+        url={pageUrl}
         schema={puppiesSchema}
       />
       <Gallery
         filterType="Puppy"
         sheetName="Puppies"
-        title="Puppy Gallery"
-        subtitle="The Next Generation"
+        title={isMiniEnglish ? 'Mini English Bulldog Puppies' : 'Puppy Gallery'}
+        subtitle={isMiniEnglish ? 'Momma Poppi’s Litter & Available Pups' : 'The Next Generation'}
+        initialBreed={initialBreed}
       />
     </>
   );

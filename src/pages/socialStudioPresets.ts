@@ -212,6 +212,7 @@ export const BG_STYLES: Record<
 export const STAMP_BADGES: { id: string; text: string; pill: PillStyle }[] = [
   { id: 'stamp-new', text: '✨ NEW LITTER', pill: 'gold' },
   { id: 'stamp-avail', text: '🌿 AVAILABLE NOW', pill: 'sage' },
+  { id: 'stamp-raw', text: '🥩 FED RAW + BOVINE PLASMA • RAWANDPAWCO.COM', pill: 'mocha' },
   { id: 'stamp-found', text: '🎉 FOUND MY FAMILY!', pill: 'terracotta' },
   { id: 'stamp-reserved', text: '⏳ RESERVED', pill: 'blush' },
   { id: 'stamp-nanny', text: '✈️ FLIGHT NANNY READY', pill: 'cream' },
@@ -282,12 +283,12 @@ export const STANDARDS_AND_BLOG_ITEMS: TopicCardItem[] = [
   },
   {
     id: 'std-raw',
-    badge: '🥩 NUTRITION PROTOCOL',
-    title: 'Why We Love Raw & Whole Nutrition',
-    body: 'Clean nutrition supports shinier coats, firmer stools, calmer skin, and stronger immune systems from weaning onward.',
-    footer: 'Lifetime Breeder Support • OKCFrenchies.com',
-    bgStyle: 'cream-editorial',
-    shareUrl: 'https://okcfrenchies.com/buyer-education'
+    badge: '🥩 RAW & PAW CO. PROTOCOL',
+    title: 'Fed Raw Diet + Clinical Bovine Plasma',
+    body: 'Every puppy is raised on a raw diet fortified with researched bovine plasma & all-natural supplements you won’t find in big-box stores for gut immunity, joints & coat shine.',
+    footer: 'Shop Supplements & Raw Guides • RawAndPawCo.com',
+    bgStyle: 'espresso-mocha',
+    shareUrl: 'https://rawandpawco.com'
   },
   ...(blogData as any[]).map((b, idx) => ({
     id: `blog-${b.id}`,
@@ -303,6 +304,15 @@ export const STANDARDS_AND_BLOG_ITEMS: TopicCardItem[] = [
 ];
 
 export const DID_YOU_KNOW_ITEMS: TopicCardItem[] = [
+  {
+    id: 'dyk-plasma',
+    badge: '🥩 RAW & PAW CO. SCIENCE',
+    title: 'Why We Add Bovine Plasma to Every Raw Bowl',
+    body: 'Bovine plasma is a heavily researched bioactive protein packed with immunoglobulins that fortify puppy gut immunity, joint cartilage & plush coat shine!',
+    footer: 'All-Natural Supplements • RawAndPawCo.com',
+    bgStyle: 'espresso-mocha',
+    shareUrl: 'https://rawandpawco.com'
+  },
   {
     id: 'dyk-1',
     badge: '💡 DID YOU KNOW?',

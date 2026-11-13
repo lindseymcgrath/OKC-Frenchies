@@ -516,6 +516,19 @@ const buildLayersForDog = (
       font: 'serif-italic'
     },
     {
+      id: 'nutrition',
+      label: 'Raw & Plasma Pill',
+      visible: false,
+      text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
+      x: 540,
+      y: canvasH - geom.cardY - 102,
+      fontSize: 20,
+      pillWidth: 660,
+      padY: 11,
+      pill: 'mocha',
+      font: 'sans'
+    },
+    {
       id: 'contact',
       label: 'Contact Pill',
       visible: true,
@@ -545,15 +558,16 @@ const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
       '',
       `🐾 Breed: ${dog.breed || 'French Bulldog'} Proven Sire`,
       dog.dna ? `🧬 Genetics: ${dog.dna}` : '',
+      `🥩 Fueled by a raw diet + researched bovine plasma & all-natural supplements from @rawandpawco (RawAndPawCo.com)`,
       `✈️ Same-day nationwide airport shipping & local OKC AI support available!`,
       '',
       `💬 Which trait are you looking to add to your next pairing? Drop a comment or text us! 👇`,
       '',
       `📲 Text Lindsey or Eric: 405.300.8482`,
       `📩 Email: info@okcfrenchies.com`,
-      `🌐 OKCFrenchies.com`,
+      `🌐 OKCFrenchies.com • RawAndPawCo.com`,
       '',
-      `#okcfrenchies #frenchbulldogstud #frenchiegenetics #pinkfrenchie #fluffyfrenchie #oklahomacity`
+      `#okcfrenchies #rawandpawco #frenchbulldogstud #frenchiegenetics #pinkfrenchie #fluffyfrenchie #oklahomacity`
     ]
       .filter((l, idx, arr) => l !== '' || arr[idx - 1] !== '')
       .join('\n');
@@ -567,13 +581,14 @@ const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
     age ? `🎂 Age: ${age}` : '',
     dog.dna ? `🎨 Coat: ${dog.dna}` : '',
     dog.dna_technical ? `🧬 DNA: ${dog.dna_technical}` : '',
+    `🥩 Fed a raw diet with our high-end all-natural supplements—including researched bovine plasma for gut immunity & coat shine (@rawandpawco • RawAndPawCo.com)`,
     `✈️ Raised underfoot in our OKC home • Live FaceTime & Flight Nanny available!`,
     '',
     `📲 Text Lindsey or Eric: 405.300.8482`,
     `📩 Email: info@okcfrenchies.com`,
-    `🌐 OKCFrenchies.com`,
+    `🌐 OKCFrenchies.com • RawAndPawCo.com`,
     '',
-    `#okcfrenchies #frenchbulldog #minibulldog #oklahomacity #frenchiepuppy #rarefrenchies`
+    `#okcfrenchies #rawandpawco #frenchbulldog #minibulldog #oklahomacity #frenchiepuppy #rawfeddogs`
   ]
     .filter((l, idx, arr) => l !== '' || arr[idx - 1] !== '')
     .join('\n');
@@ -1070,7 +1085,7 @@ const SocialStudio: React.FC = () => {
     );
   };
 
-  // Handle Template Preset Switch on Active Slide (Preserves custom text, colors & visibility!)
+  // Handle Template Preset Switch on Active Slide (Preserves custom text & custom stickers while applying the new template's layout & visibility!)
   const handleSwitchPreset = (nextPreset: FramePreset) => {
     const defaultArch =
       ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
@@ -1104,10 +1119,8 @@ const SocialStudio: React.FC = () => {
           return {
             ...tl,
             text: prev.text,
-            visible: prev.visible,
             font: prev.font,
-            textColor: prev.textColor,
-            pill: prev.pill === 'none-dark' || prev.pill === 'none-light' ? tl.pill : prev.pill
+            textColor: prev.textColor
           };
         }),
         ...customLayers
@@ -2413,7 +2426,7 @@ const SocialStudio: React.FC = () => {
             </button>
           </div>
 
-          {/* Quick Thumb Layer Picker Bar */}
+          {/* Quick Thumb Layer Picker & 1-Tap Remove Bar */}
           <div className="w-full max-w-[520px] flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
             <button
               type="button"
@@ -2421,7 +2434,7 @@ const SocialStudio: React.FC = () => {
                 setSelectedLayerId(null);
                 setEditingLayerId(null);
               }}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border transition ${
+              className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
                 !selectedLayerId
                   ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
                   : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
@@ -2432,20 +2445,58 @@ const SocialStudio: React.FC = () => {
             {activeSlide.layers
               .filter((l) => l.visible)
               .map((l) => (
-                <button
+                <div
                   key={l.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedLayerId(l.id);
-                    setEditingLayerId(null);
-                  }}
-                  className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border transition ${
+                  className={`shrink-0 inline-flex items-center rounded-full text-xs font-extrabold border transition ${
                     selectedLayerId === l.id
                       ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
                       : 'bg-white text-[#1C2621] border-[#DDD6C7]'
                   }`}
                 >
-                  {l.label}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLayerId(l.id);
+                      setEditingLayerId(null);
+                    }}
+                    className="pl-2.5 pr-1.5 py-1 touch-manipulation cursor-pointer"
+                  >
+                    {l.label}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateLayer(l.id, { visible: false }, true);
+                      if (selectedLayerId === l.id) {
+                        setSelectedLayerId(null);
+                        setEditingLayerId(null);
+                      }
+                    }}
+                    title={`Remove ${l.label} from card`}
+                    className={`pr-2.5 pl-1 py-1 font-black touch-manipulation cursor-pointer ${
+                      selectedLayerId === l.id ? 'text-white/90 hover:text-white' : 'text-[#991B1B]'
+                    }`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            {activeSlide.layers
+              .filter((l) => !l.visible)
+              .map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => {
+                    updateLayer(l.id, { visible: true }, true);
+                    setSelectedLayerId(l.id);
+                    setEditingLayerId(null);
+                  }}
+                  title={`Add ${l.label} to card`}
+                  className="shrink-0 px-2.5 py-1 rounded-full text-xs font-bold border border-dashed border-[#BDB5A4] bg-[#F6F4EE]/80 text-[#5C6B63] touch-manipulation cursor-pointer"
+                >
+                  + {l.label}
                 </button>
               ))}
           </div>
@@ -2613,12 +2664,15 @@ const SocialStudio: React.FC = () => {
             onTouchStart={handleTouchStartStage}
             onTouchMove={handleTouchMoveStage}
             onTouchEnd={handleTouchEndStage}
+            onTouchCancel={handleTouchEndStage}
             style={{
               width: stageWidth,
               height: stageHeight,
-              touchAction: 'none'
+              touchAction: photoLocked && !selectedLayerId ? 'pan-y' : 'none',
+              contain: 'layout paint',
+              isolation: 'isolate'
             }}
-            className="relative overflow-hidden rounded-2xl shadow-2xl select-none"
+            className="relative overflow-hidden rounded-2xl shadow-2xl select-none shrink-0"
           >
             <div
               onPointerMove={(e) => {
@@ -2682,13 +2736,27 @@ const SocialStudio: React.FC = () => {
                 setSnapVertical(false);
                 setSnapHorizontal(false);
               }}
+              onPointerCancel={() => {
+                dragModeRef.current.type = 'none';
+                setSnapVertical(false);
+                setSnapHorizontal(false);
+              }}
+              onPointerLeave={() => {
+                if (dragModeRef.current.type !== 'none') {
+                  dragModeRef.current.type = 'none';
+                  setSnapVertical(false);
+                  setSnapHorizontal(false);
+                }
+              }}
               style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
                 width: 1080,
                 height: canvasH,
                 transform: `scale(${stageScale})`,
                 transformOrigin: 'top left',
-                background: `linear-gradient(155deg, ${geom.outerBg1}, ${geom.outerBg2})`,
-                position: 'relative'
+                background: `linear-gradient(155deg, ${geom.outerBg1}, ${geom.outerBg2})`
               }}
             >
               {geom.hasCard && (
@@ -2743,7 +2811,6 @@ const SocialStudio: React.FC = () => {
                       moved: false,
                       recordedUndo: false
                     };
-                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                   }}
                   style={{
                     position: 'absolute',
@@ -2857,7 +2924,6 @@ const SocialStudio: React.FC = () => {
                     moved: false,
                     recordedUndo: false
                   };
-                  (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                 };
 
                 return (
@@ -2879,7 +2945,6 @@ const SocialStudio: React.FC = () => {
                         moved: false,
                         recordedUndo: false
                       };
-                      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
                     }}
                     onDoubleClick={(e) => {
                       e.stopPropagation();
@@ -3095,12 +3160,111 @@ const SocialStudio: React.FC = () => {
                               ▼
                             </span>
                           </div>
+
+                          {/* 1-Tap Delete / Hide Button on Top-Right Corner of Selected Pill */}
+                          <div
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              updateLayer(layer.id, { visible: false }, true);
+                              setSelectedLayerId(null);
+                              setEditingLayerId(null);
+                            }}
+                            title="Remove this pill from card"
+                            style={{
+                              position: 'absolute',
+                              top: -30,
+                              right: -30,
+                              width: 56,
+                              height: 56,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 38,
+                                height: 38,
+                                borderRadius: 999,
+                                background: '#991B1B',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 18,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.35)'
+                              }}
+                            >
+                              ✕
+                            </span>
+                          </div>
                         </>
                       )}
                     </div>
                   </div>
                 );
               })}
+            </div>
+          </div>
+
+          {/* Quick 1-Tap Frame & Theme Bar right below Canvas (Instant iPhone Taps!) */}
+          <div className="w-full max-w-[520px] bg-white border border-[#EAE5D9] rounded-2xl p-2 space-y-1.5 shadow-xs">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
+                Frame:
+              </span>
+              {(
+                [
+                  ['arch', '🌿 Arch'],
+                  ['cameo', '🪞 Cameo'],
+                  ['editorial', '🖼️ Polaroid'],
+                  ['sage', '🌲 Mat'],
+                  ['minimal', '✨ Full Bleed'],
+                  ['no-photo', '📝 Text Card']
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleSwitchPreset(key)}
+                  className={`shrink-0 px-2.5 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                    activeSlide.preset === key
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                      : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
+              <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
+                Bg:
+              </span>
+              {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                ([bgKey, bgMeta]) => (
+                  <button
+                    key={bgKey}
+                    type="button"
+                    onClick={() => handleSwitchBgTheme(bgKey)}
+                    className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                      activeSlide.bgStyle === bgKey
+                        ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                        : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                      style={{ background: bgMeta.swatch }}
+                    />
+                    <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                  </button>
+                )
+              )}
             </div>
           </div>
         </main>

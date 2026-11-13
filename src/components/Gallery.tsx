@@ -66,6 +66,7 @@ interface GalleryProps {
   title: string;
   subtitle: string;
   sheetName: string;
+  initialBreed?: string;
 }
 
 const isActiveDogStatus = (status?: string): boolean => {
@@ -106,7 +107,7 @@ const getGardenPill = (dog: DogData): string => {
   return `✨ Available ${dog.gender || 'Puppy'}`;
 };
 
-const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetName }) => {
+const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetName, initialBreed }) => {
   const navigate = useNavigate();
   const { dogSlug } = useParams<{ dogSlug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -115,9 +116,29 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
   const [error, setError] = useState<string | null>(null);
   const [selectedDog, setSelectedDog] = useState<DogData | null>(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const [activeBreedFilter, setActiveBreedFilter] = useState<string>('All');
+  const [activeBreedFilter, setActiveBreedFilter] = useState<string>(() => {
+    if (initialBreed) return initialBreed;
+    const bParam = (searchParams.get('breed') || '').toLowerCase();
+    if (bParam.includes('mini') || bParam.includes('english')) return 'Mini English Bulldog';
+    if (bParam.includes('french')) return 'French Bulldog';
+    return 'All';
+  });
+  const [copiedBreedLink, setCopiedBreedLink] = useState<string>('');
   const [cardPhotoIndex, setCardPhotoIndex] = useState<Record<string, number>>({});
   const [copiedDogLink, setCopiedDogLink] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (initialBreed) {
+      setActiveBreedFilter(initialBreed);
+      return;
+    }
+    const bParam = (searchParams.get('breed') || '').toLowerCase();
+    if (bParam.includes('mini') || bParam.includes('english')) {
+      setActiveBreedFilter('Mini English Bulldog');
+    } else if (bParam.includes('french')) {
+      setActiveBreedFilter('French Bulldog');
+    }
+  }, [initialBreed, searchParams]);
 
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [modalImageError, setModalImageError] = useState(false);
@@ -301,7 +322,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
           </div>
 
           {!loading && !error && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setActiveBreedFilter('All')}
                 className={`px-5 py-2.5 text-sm font-bold border rounded-full transition-all cursor-pointer ${
@@ -325,6 +346,26 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                   {breed}s
                 </button>
               ))}
+              {filterType === 'Puppy' && activeBreedFilter !== 'All' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shareUrl =
+                      activeBreedFilter === 'Mini English Bulldog'
+                        ? 'https://okcfrenchies.com/mini-english-bulldogs'
+                        : 'https://okcfrenchies.com/frenchies';
+                    navigator.clipboard.writeText(shareUrl);
+                    setCopiedBreedLink(activeBreedFilter);
+                    setTimeout(() => setCopiedBreedLink(''), 2200);
+                  }}
+                  className="px-4 py-2.5 text-xs font-extrabold border border-[#2E5A44]/40 bg-[#E3EFE8] text-[#2E5A44] rounded-full transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Share2 size={13} />
+                  {copiedBreedLink === activeBreedFilter
+                    ? '✓ Direct Breed Link Copied!'
+                    : `Copy Direct ${activeBreedFilter === 'Mini English Bulldog' ? 'Mini English' : 'Frenchies'} Link`}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -368,32 +409,57 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                     </h2>
 
                     {breed === 'Mini English Bulldog' && filterType === 'Puppy' && (
-                      <div className="mb-8 bg-white rounded-3xl p-4 sm:p-6 border border-[#EAE5D9] shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-                        <div className="md:col-span-5 grid grid-cols-2 gap-3">
-                          <div className="rounded-2xl overflow-hidden aspect-[4/4] bg-[#EFECE4] border border-[#EAE5D9]">
+                      <div className="mb-8 bg-white rounded-3xl p-4 sm:p-6 border border-[#EAE5D9] shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                        <div className="lg:col-span-6 grid grid-cols-3 gap-2.5 sm:gap-3">
+                          <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
                             <img
                               src="/images/puppies/poppi.webp"
                               alt="Poppi - Mini English Bulldog Dam at OKC Frenchies"
                               className="w-full h-full object-cover"
                             />
+                            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#1C2621]/85 text-[#F6F4EE] font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                              Dam: Poppi
+                            </span>
                           </div>
-                          <div className="rounded-2xl overflow-hidden aspect-[4/4] bg-[#EFECE4] border border-[#EAE5D9]">
+                          <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
                             <img
-                              src="/images/puppies/poppi-litter.webp"
-                              alt="Momma Poppi's Mini English Bulldog Litter at OKC Frenchies"
+                              src="/images/puppies/cafecito.webp"
+                              alt="Sire Cafecito by @bulldogcartelsd - Mini English Bulldog Sire"
                               className="w-full h-full object-cover"
                             />
+                            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#3B2B23]/90 text-[#F4D37E] font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                              Sire: Cafecito
+                            </span>
+                          </div>
+                          <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
+                            <img
+                              src="/images/puppies/poppi-litter.webp"
+                              alt="Poppi x Cafecito Mini English Bulldog Litter at OKC Frenchies"
+                              className="w-full h-full object-cover"
+                            />
+                            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#2E5A44]/90 text-white font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                              Full Litter
+                            </span>
                           </div>
                         </div>
-                        <div className="md:col-span-7">
+                        <div className="lg:col-span-6">
                           <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3 py-1 rounded-full mb-2">
-                            🐾 Meet Momma Poppi &amp; The Full Litter
+                            🐾 Meet the Parents &amp; Full Litter
                           </span>
                           <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C2621]">
-                            Poppi’s Chocolate &amp; Lilac Tri Mini English Bulldog Litter
+                            Poppi × Cafecito Mini English Bulldog Litter
                           </h3>
                           <p className="font-sans text-sm text-[#5C6B63] mt-2 leading-relaxed">
-                            Meet sweet Momma <strong>Poppi</strong> (left) and her entire Mini English Bulldog litter (right) — featuring our keeper female <strong>Phatty Patty</strong>, retained/co-own boy <strong>Jellyroll</strong>, and littermates <strong>Brew</strong>, <strong>Bean</strong>, <strong>Biscotti</strong>, and <strong>Brulee</strong>.
+                            Meet sweet Momma <strong>Poppi</strong> (Dam) and outside stud <strong>Cafecito</strong> by{' '}
+                            <a
+                              href="https://www.instagram.com/bulldogcartelsd"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-bold text-[#2E5A44] underline"
+                            >
+                              @bulldogcartelsd
+                            </a>{' '}
+                            (Sire), along with their Chocolate &amp; Lilac Tri Mini English Bulldog litter — featuring our keeper female <strong>Phatty Patty</strong>, retained/co-own boy <strong>Jellyroll</strong>, and littermates <strong>Brew</strong>, <strong>Bean</strong>, <strong>Biscotti</strong>, and <strong>Brulee</strong>.
                           </p>
                         </div>
                       </div>
@@ -500,9 +566,20 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                               </div>
                             )}
 
-                            <p className="font-sans text-[#5C6B63] text-[13px] leading-snug mt-2 mb-4 px-2 min-h-[36px] flex items-center justify-center">
+                            <p className="font-sans text-[#5C6B63] text-[13px] leading-snug mt-2 mb-2.5 px-2 min-h-[36px] flex items-center justify-center">
                               {dog.dna}
                             </p>
+
+                            <a
+                              href="https://rawandpawco.com"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="mx-auto mb-3 inline-flex items-center gap-1 bg-[#F6F4EE] hover:bg-[#E3EFE8] border border-[#E2DDD2] text-[#2E5A44] font-sans font-bold text-[11px] px-3 py-1 rounded-full transition-colors"
+                              title="Learn about our Raw Diet & Bovine Plasma supplements at RawAndPawCo.com"
+                            >
+                              🥩 Raw Diet + Bovine Plasma • <span className="underline">RawAndPawCo.com</span>
+                            </a>
 
                             <div className="mt-auto pt-3 px-2 border-t border-[#F0ECE1] flex items-center justify-between">
                               <span className="font-sans font-extrabold text-[18px] text-[#D46A4E]">
@@ -519,6 +596,31 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                   </div>
                 );
               })}
+
+            {/* Raw & Paw Co. — Raw Diet & Bovine Plasma Feature Banner */}
+            <div className="bg-[#1C2621] text-[#F6F4EE] rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-[#2E5A44]/40">
+              <div className="max-w-2xl">
+                <span className="inline-block bg-[#F4D37E] text-[#1C2621] font-sans font-extrabold text-xs uppercase tracking-wider px-3.5 py-1 rounded-full mb-3">
+                  🥩 Raised on Raw &amp; Clinical Bovine Plasma
+                </span>
+                <h3 className="font-display text-2xl sm:text-3xl font-bold text-white">
+                  Fueled from day one by Raw &amp; Paw Co.
+                </h3>
+                <p className="font-sans text-sm text-[#DCE5DF] mt-2 leading-relaxed">
+                  All of our puppies and studs are fed a raw diet fortified with our high-end, all-natural supplements—including <strong className="text-[#F4D37E]">bovine plasma</strong>, a heavily researched bioactive protein clinically proven to support gut health, immune defense, joint development, and plush coat shine. Explore raw feeding guides and small-batch supplements you can’t find in big-box stores.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <a
+                  href="https://rawandpawco.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#F4D37E] hover:bg-[#e8c364] text-[#1C2621] font-sans text-sm font-extrabold transition-colors shadow-sm"
+                >
+                  Visit RawAndPawCo.com <ArrowUpRight size={18} />
+                </a>
+              </div>
+            </div>
 
             {/* PREVIOUSLY SOLD ARCHIVE */}
             {(() => {
@@ -776,6 +878,24 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                     {selectedDog.price}
                   </span>
                 </div>
+              </div>
+
+              {/* Raw & Paw Co. Modal Callout */}
+              <div className="bg-[#E3EFE8]/70 border border-[#C5DFD0] rounded-2xl p-3.5 mb-5">
+                <div className="font-sans font-extrabold text-xs text-[#2E5A44] mb-1">
+                  🥩 Fed Raw Diet + Clinical Bovine Plasma
+                </div>
+                <p className="font-sans text-xs text-[#3E4D45] leading-relaxed">
+                  {selectedDog.name} is raised on a raw diet with our high-end all-natural supplements—including researched <strong>bovine plasma</strong> for gut health, immunity &amp; coat shine.{' '}
+                  <a
+                    href="https://rawandpawco.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-extrabold text-[#2E5A44] underline"
+                  >
+                    Explore RawAndPawCo.com →
+                  </a>
+                </p>
               </div>
 
               <div className="mt-auto space-y-3">

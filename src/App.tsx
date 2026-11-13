@@ -63,6 +63,11 @@ const App: React.FC = () => {
             
             {/* 🎯 SEO Long-Tail Slugs - Keep these for Vercel/Google indexing */}
             <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
+            <Route path="/mini-english-bulldog-puppies-for-sale" element={<Puppies initialBreed="Mini English Bulldog" />} />
+            <Route path="/mini-english-bulldogs" element={<Puppies initialBreed="Mini English Bulldog" />} />
+            <Route path="/english-bulldog-puppies" element={<Puppies initialBreed="Mini English Bulldog" />} />
+            <Route path="/french-bulldogs" element={<Puppies initialBreed="French Bulldog" />} />
+            <Route path="/frenchies" element={<Puppies initialBreed="French Bulldog" />} />
             <Route path="/french-bulldog-stud-service" element={<Studs />} />
             <Route path="/french-bulldog-coat-color-genetics" element={<Genetics />} />
             <Route path="/french-bulldog-breeding-blog" element={<Blog />} />
