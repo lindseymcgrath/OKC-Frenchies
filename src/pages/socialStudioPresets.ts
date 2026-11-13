@@ -8,21 +8,30 @@ export type BgStyle =
   | 'pure-white'
   | 'cream-editorial'
   | 'oat-latte'
-  | 'espresso-mocha'
-  | 'forest-luxe'
-  | 'sage-mist'
-  | 'blush-botanical'
   | 'warm-sand'
-  | 'terracotta-clay';
+  | 'gold-luxe'
+  | 'sage-mist'
+  | 'forest-luxe'
+  | 'espresso-mocha'
+  | 'charcoal-ink'
+  | 'terracotta-clay'
+  | 'blush-botanical'
+  | 'berry-wine';
 export type PillStyle =
   | 'none-dark'
   | 'none-light'
+  | 'white'
   | 'cream'
-  | 'mocha'
-  | 'sage'
+  | 'oat'
+  | 'champagne'
   | 'gold'
+  | 'sage-mist'
+  | 'sage'
+  | 'mocha'
+  | 'charcoal'
   | 'terracotta'
   | 'blush'
+  | 'berry'
   | 'frosted';
 export type FontKind = 'sans' | 'serif' | 'serif-italic';
 
@@ -61,6 +70,7 @@ export interface SlideState {
   bgStyle: BgStyle;
   windowStyle?: BgStyle;
   dogId?: string;
+  customPhotoDogId?: string;
   slideMode?: ContentMode;
   topicId?: string;
   photoSrc: string;
@@ -205,6 +215,39 @@ export const BG_STYLES: Record<
     matOuter: '#B8543A',
     border: 'rgba(255,255,255,0.28)',
     accent: '#F4D37E',
+    darkText: false
+  },
+  'gold-luxe': {
+    label: '✨ Warm Gold',
+    swatch: '#F4D37E',
+    bg1: '#F7DF97',
+    bg2: '#EBCB6E',
+    cardBg: '#F9E6AC',
+    matOuter: '#E5C165',
+    border: '#D9B451',
+    accent: '#3B2B23',
+    darkText: true
+  },
+  'charcoal-ink': {
+    label: '🖤 Charcoal Ink',
+    swatch: '#1C2621',
+    bg1: '#232F29',
+    bg2: '#141C18',
+    cardBg: '#1C2621',
+    matOuter: '#121815',
+    border: 'rgba(244,211,126,0.3)',
+    accent: '#F4D37E',
+    darkText: false
+  },
+  'berry-wine': {
+    label: '🍷 Deep Berry',
+    swatch: '#8C2F2B',
+    bg1: '#993530',
+    bg2: '#6E221F',
+    cardBg: '#8C2F2B',
+    matOuter: '#631E1B',
+    border: 'rgba(249,228,226,0.34)',
+    accent: '#F9E4E2',
     darkText: false
   }
 };
@@ -389,10 +432,35 @@ export const DID_YOU_KNOW_ITEMS: TopicCardItem[] = [
 
 export const buildTopicLayers = (
   item: TopicCardItem,
-  canvasH: number
+  canvasH: number,
+  windowStyle?: BgStyle,
+  mode?: ContentMode
 ): TextLayer[] => {
-  const isDarkBg = !BG_STYLES[item.bgStyle].darkText;
+  const surfaceStyle = windowStyle || item.bgStyle;
+  const isDarkSurface = !(BG_STYLES[surfaceStyle] || BG_STYLES['cream-editorial']).darkText;
   const centerY = Math.round(canvasH * 0.5);
+
+  const badgePill: PillStyle = isDarkSurface
+    ? 'gold'
+    : mode === 'didyouknow'
+      ? 'mocha'
+      : mode === 'standards'
+        ? 'sage'
+        : 'sage';
+
+  const bodyPill: PillStyle = isDarkSurface
+    ? 'frosted'
+    : mode === 'didyouknow'
+      ? 'white'
+      : mode === 'glossary'
+        ? 'oat'
+        : 'cream';
+
+  const footerPill: PillStyle = isDarkSurface
+    ? 'cream'
+    : mode === 'standards'
+      ? 'mocha'
+      : 'terracotta';
 
   return [
     {
@@ -401,11 +469,11 @@ export const buildTopicLayers = (
       visible: true,
       text: item.badge,
       x: 540,
-      y: centerY - 270,
+      y: centerY - 255,
       fontSize: 24,
-      pillWidth: 520,
+      pillWidth: 540,
       padY: 14,
-      pill: isDarkBg ? 'gold' : 'sage',
+      pill: badgePill,
       font: 'sans'
     },
     {
@@ -414,11 +482,11 @@ export const buildTopicLayers = (
       visible: true,
       text: item.title,
       x: 540,
-      y: centerY - 85,
-      fontSize: 58,
-      pillWidth: 880,
+      y: centerY - 80,
+      fontSize: 56,
+      pillWidth: 820,
       padY: 14,
-      pill: isDarkBg ? 'none-light' : 'none-dark',
+      pill: isDarkSurface ? 'none-light' : 'none-dark',
       font: 'serif'
     },
     {
@@ -428,10 +496,10 @@ export const buildTopicLayers = (
       text: item.body,
       x: 540,
       y: centerY + 135,
-      fontSize: 31,
-      pillWidth: 860,
+      fontSize: 30,
+      pillWidth: 810,
       padY: 28,
-      pill: isDarkBg ? 'frosted' : 'cream',
+      pill: bodyPill,
       font: 'sans'
     },
     {
@@ -440,11 +508,11 @@ export const buildTopicLayers = (
       visible: true,
       text: item.footer,
       x: 540,
-      y: canvasH - 120,
-      fontSize: 23,
+      y: canvasH - 135,
+      fontSize: 22,
       pillWidth: 680,
       padY: 14,
-      pill: isDarkBg ? 'cream' : 'terracotta',
+      pill: footerPill,
       font: 'sans'
     },
     {
@@ -453,11 +521,11 @@ export const buildTopicLayers = (
       visible: true,
       text: '@okcfrenchies',
       x: 540,
-      y: 95,
+      y: 118,
       fontSize: 22,
       pillWidth: 250,
       padY: 10,
-      pill: isDarkBg ? 'none-light' : 'none-dark',
+      pill: isDarkSurface ? 'none-light' : 'none-dark',
       font: 'sans'
     }
   ];

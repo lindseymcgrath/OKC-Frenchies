@@ -42,41 +42,176 @@ const DEFAULT_QUOTES: Record<string, string> = {
 
 const PILL_PALETTE: Record<
   PillStyle,
-  { label: string; bg: string; text: string; border: string; hasBg: boolean; shadow?: boolean }
+  { label: string; shortLabel: string; swatch: string; bg: string; text: string; border: string; hasBg: boolean; shadow?: boolean }
 > = {
-  cream: { label: 'Cream Pill', bg: '#F6F4EE', text: '#1C2621', border: '#E2DCCD', hasBg: true, shadow: true },
-  mocha: { label: 'Mocha Pill', bg: '#3B2B23', text: '#F4D37E', border: '#5A4337', hasBg: true, shadow: true },
-  sage: { label: 'Forest Pill', bg: '#2E5A44', text: '#FFFFFF', border: '#2E5A44', hasBg: true, shadow: true },
-  gold: { label: 'Gold Pill', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
-  terracotta: { label: 'Terracotta', bg: '#D46A4E', text: '#FFFFFF', border: '#D46A4E', hasBg: true, shadow: true },
-  blush: { label: 'Soft Rose', bg: '#F9E4E2', text: '#8C2F2B', border: '#EBC6C2', hasBg: true, shadow: true },
+  white: { label: 'Crisp White', shortLabel: 'White', swatch: '#FFFFFF', bg: '#FFFFFF', text: '#1C2621', border: '#EAE5D9', hasBg: true, shadow: true },
+  cream: { label: 'Botanical Cream', shortLabel: 'Cream', swatch: '#F6F4EE', bg: '#F6F4EE', text: '#1C2621', border: '#E2DCCD', hasBg: true, shadow: true },
+  oat: { label: 'Warm Oat Latte', shortLabel: 'Oat Latte', swatch: '#E8DEC8', bg: '#E8DEC8', text: '#1C2621', border: '#D5C7B0', hasBg: true, shadow: true },
+  champagne: { label: 'Sunlit Champagne', shortLabel: 'Champagne', swatch: '#EFE2C6', bg: '#EFE2C6', text: '#1C2621', border: '#E2CFA8', hasBg: true, shadow: true },
+  gold: { label: 'Warm Gold', shortLabel: 'Gold', swatch: '#F4D37E', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
+  'sage-mist': { label: 'Sage Mist', shortLabel: 'Sage Mist', swatch: '#CFE0D6', bg: '#CFE0D6', text: '#1C2621', border: '#B8D2C3', hasBg: true, shadow: true },
+  sage: { label: 'Deep Forest', shortLabel: 'Forest', swatch: '#2E5A44', bg: '#2E5A44', text: '#FFFFFF', border: '#2E5A44', hasBg: true, shadow: true },
+  mocha: { label: 'Espresso Mocha', shortLabel: 'Mocha', swatch: '#3B2B23', bg: '#3B2B23', text: '#F4D37E', border: '#5A4337', hasBg: true, shadow: true },
+  charcoal: { label: 'Charcoal Ink', shortLabel: 'Charcoal', swatch: '#1C2621', bg: '#1C2621', text: '#F6F4EE', border: '#34443C', hasBg: true, shadow: true },
+  terracotta: { label: 'Warm Terracotta', shortLabel: 'Terracotta', swatch: '#D46A4E', bg: '#D46A4E', text: '#FFFFFF', border: '#D46A4E', hasBg: true, shadow: true },
+  blush: { label: 'Soft Rose', shortLabel: 'Soft Rose', swatch: '#F9E4E2', bg: '#F9E4E2', text: '#8C2F2B', border: '#EBC6C2', hasBg: true, shadow: true },
+  berry: { label: 'Deep Berry', shortLabel: 'Berry', swatch: '#8C2F2B', bg: '#8C2F2B', text: '#F9E4E2', border: '#A33E39', hasBg: true, shadow: true },
   frosted: {
     label: 'Dark Glass',
+    shortLabel: 'Glass',
+    swatch: 'rgba(28,38,33,0.84)',
     bg: 'rgba(28,38,33,0.84)',
     text: '#FFFFFF',
     border: 'rgba(255,255,255,0.22)',
     hasBg: true,
     shadow: true
   },
-  'none-dark': { label: 'No Pill (Dark Text)', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
-  'none-light': { label: 'No Pill (Light Text)', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
+  'none-dark': { label: 'No Pill (Dark Text)', shortLabel: 'No Pill (Dark)', swatch: 'transparent', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
+  'none-light': { label: 'No Pill (Light Text)', shortLabel: 'No Pill (Light)', swatch: 'transparent', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
 };
 
 const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
   { value: '', label: 'Auto', hex: 'linear-gradient(135deg,#1C2621 50%,#F4D37E 50%)' },
-  { value: '#1C2621', label: 'Charcoal', hex: '#1C2621' },
   { value: '#FFFFFF', label: 'White', hex: '#FFFFFF' },
+  { value: '#F6F4EE', label: 'Cream', hex: '#F6F4EE' },
+  { value: '#E8DEC8', label: 'Oat Latte', hex: '#E8DEC8' },
+  { value: '#EFE2C6', label: 'Champagne', hex: '#EFE2C6' },
+  { value: '#F4D37E', label: 'Gold', hex: '#F4D37E' },
+  { value: '#CFE0D6', label: 'Sage Mist', hex: '#CFE0D6' },
   { value: '#2E5A44', label: 'Forest', hex: '#2E5A44' },
   { value: '#3B2B23', label: 'Mocha', hex: '#3B2B23' },
-  { value: '#F4D37E', label: 'Gold', hex: '#F4D37E' },
+  { value: '#1C2621', label: 'Charcoal', hex: '#1C2621' },
   { value: '#D46A4E', label: 'Terracotta', hex: '#D46A4E' },
-  { value: '#8C2F2B', label: 'Berry', hex: '#8C2F2B' },
-  { value: '#F6F4EE', label: 'Cream', hex: '#F6F4EE' },
-  { value: '#F9E4E2', label: 'Blush', hex: '#F9E4E2' }
+  { value: '#F9E4E2', label: 'Soft Rose', hex: '#F9E4E2' },
+  { value: '#8C2F2B', label: 'Berry', hex: '#8C2F2B' }
 ];
 
 const SAVED_PRESETS_KEY = 'okcfrenchies_studio_saved_layouts_v1';
-const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v2';
+const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v3';
+const SAVED_AI_CARDS_KEY = 'okcfrenchies_studio_ai_history_v1';
+
+const FRAME_PRESET_OPTIONS: { key: FramePreset; label: string }[] = [
+  { key: 'arch', label: '🌿 Botanical Arch' },
+  { key: 'cameo', label: '🪞 Oval Cameo' },
+  { key: 'editorial', label: '🖼️ Editorial Polaroid' },
+  { key: 'sage', label: '🌲 Gallery Mat' },
+  { key: 'minimal', label: '✨ Full Bleed' },
+  { key: 'no-photo', label: '📝 Text Card' }
+];
+
+interface BrandRemixRecipe {
+  name: string;
+  preset: FramePreset;
+  bgStyle: BgStyle;
+  windowStyle: BgStyle;
+  photoDim?: number;
+  pills: Partial<Record<string, PillStyle>>;
+  showQuote: boolean;
+  showNutrition: boolean;
+}
+
+const BRAND_REMIX_RECIPES: BrandRemixRecipe[] = [
+  {
+    name: 'Botanical Arch',
+    preset: 'arch',
+    bgStyle: 'sage-mist',
+    windowStyle: 'cream-editorial',
+    pills: { breedAge: 'cream', coat: 'sage', nutrition: 'mocha', status: 'cream' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Emerald Cameo',
+    preset: 'cameo',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'cream-editorial',
+    pills: { breedAge: 'gold', coat: 'sage', nutrition: 'mocha', status: 'sage' },
+    showQuote: true,
+    showNutrition: true
+  },
+  {
+    name: 'Mocha Polaroid',
+    preset: 'editorial',
+    bgStyle: 'espresso-mocha',
+    windowStyle: 'oat-latte',
+    pills: { breedAge: 'mocha', coat: 'gold', nutrition: 'sage', status: 'mocha' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Blush & Berry Arch',
+    preset: 'arch',
+    bgStyle: 'blush-botanical',
+    windowStyle: 'pure-white',
+    pills: { breedAge: 'berry', coat: 'blush', nutrition: 'sage', status: 'charcoal' },
+    showQuote: true,
+    showNutrition: false
+  },
+  {
+    name: 'Magazine Cover',
+    preset: 'minimal',
+    bgStyle: 'charcoal-ink',
+    windowStyle: 'pure-white',
+    photoDim: 0.14,
+    pills: { breedAge: 'frosted', coat: 'gold', nutrition: 'mocha', status: 'white' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Champagne Gallery',
+    preset: 'sage',
+    bgStyle: 'warm-sand',
+    windowStyle: 'pure-white',
+    pills: { breedAge: 'champagne', coat: 'mocha', nutrition: 'sage', status: 'gold' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Terracotta Cameo',
+    preset: 'cameo',
+    bgStyle: 'terracotta-clay',
+    windowStyle: 'warm-sand',
+    pills: { breedAge: 'mocha', coat: 'terracotta', nutrition: 'sage', status: 'white' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Forest Luxe Arch',
+    preset: 'arch',
+    bgStyle: 'cream-editorial',
+    windowStyle: 'forest-luxe',
+    pills: { breedAge: 'gold', coat: 'sage-mist', nutrition: 'gold', status: 'frosted' },
+    showQuote: true,
+    showNutrition: true
+  },
+  {
+    name: 'Oat & Espresso Mat',
+    preset: 'sage',
+    bgStyle: 'oat-latte',
+    windowStyle: 'espresso-mocha',
+    pills: { breedAge: 'oat', coat: 'gold', nutrition: 'sage', status: 'cream' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Berry Velvet Cameo',
+    preset: 'cameo',
+    bgStyle: 'berry-wine',
+    windowStyle: 'cream-editorial',
+    pills: { breedAge: 'blush', coat: 'berry', nutrition: 'charcoal', status: 'oat' },
+    showQuote: false,
+    showNutrition: true
+  },
+  {
+    name: 'Crisp Sage Polaroid',
+    preset: 'editorial',
+    bgStyle: 'sage-mist',
+    windowStyle: 'pure-white',
+    pills: { breedAge: 'sage', coat: 'sage-mist', nutrition: 'mocha', status: 'sage' },
+    showQuote: true,
+    showNutrition: false
+  }
+];
 
 const extractAge = (dog: DogRecord): string => {
   const m = (dog.description || '').match(/(\d+)-(month|week)-old/i);
@@ -171,15 +306,15 @@ const getFrameGeometry = (
     return {
       outerBg1: outerTheme.bg1,
       outerBg2: outerTheme.bg2,
-      hasCard: false,
+      hasCard: true,
       hasPhoto: false,
-      cardX: 0,
-      cardY: 0,
-      cardW: 1080,
-      cardH: canvasH,
-      cardBg: outerTheme.cardBg,
-      cardBorder: outerTheme.border,
-      cardTopR: 0,
+      cardX: 50,
+      cardY: 50,
+      cardW: 1080 - 100,
+      cardH: canvasH - 100,
+      cardBg: winTheme.cardBg,
+      cardBorder: winTheme.border,
+      cardTopR: 220,
       photoX: 0,
       photoY: 0,
       photoW: 0,
@@ -629,6 +764,9 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
 
 const inferDogFromSlide = (slide: SlideState | undefined, allDogs: DogRecord[]): DogRecord | undefined => {
   if (!slide) return undefined;
+  if (slide.slideMode && slide.slideMode !== 'puppies' && slide.slideMode !== 'studs') {
+    return undefined;
+  }
   if (slide.dogId) {
     const byId = allDogs.find((d) => d.id === slide.dogId);
     if (byId) return byId;
@@ -784,6 +922,7 @@ const SocialStudio: React.FC = () => {
   const [newPresetName, setNewPresetName] = useState<string>('');
 
   // Selection, Snap Guides & UI Tabs
+  const [remixIdx, setRemixIdx] = useState<number>(0);
   const [photoLocked, setPhotoLocked] = useState<boolean>(false);
   const [imgNat, setImgNat] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
@@ -807,6 +946,16 @@ const SocialStudio: React.FC = () => {
   const [aiCategory, setAiCategory] = useState<string>('did-you-know');
   const [aiLoading, setAiLoading] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>('');
+  const [savedAiCards, setSavedAiCards] = useState<{ item: TopicCardItem; caption: string }[]>(
+    () => {
+      try {
+        const raw = localStorage.getItem(SAVED_AI_CARDS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+  );
   const [copiedCaption, setCopiedCaption] = useState<boolean>(false);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
   const [draftSavedAt, setDraftSavedAt] = useState<string>('');
@@ -862,73 +1011,249 @@ const SocialStudio: React.FC = () => {
     });
   };
 
-  // Reset Studio back to the fresh default Phatty Patty Botanical Arch theme
-  const handleResetStudioDefault = () => {
-    const defaultDog = defaultStudioDog;
-    if (!defaultDog) return;
+  // Signature Default Theme & Template Builder for EVERY Mode (Puppies, Studs, Coat & DNA, Standards, Did You Know)
+  const buildDefaultSlideForMode = (
+    targetMode: ContentMode,
+    targetRatio: CanvasRatio = ratio,
+    slideId = `slide-${Date.now()}`,
+    useDefaultEntity = false
+  ): { slide: SlideState; dog?: DogRecord; topic?: TopicCardItem } => {
+    const ch = getCanvasHeight(targetRatio);
+
+    if (targetMode === 'puppies') {
+      const dog =
+        !useDefaultEntity && selectedDog?.category === 'Puppy'
+          ? selectedDog
+          : defaultStudioDog;
+      const archH = targetRatio === 'story' ? 1180 : targetRatio === 'square' ? 600 : 800;
+      return {
+        dog,
+        slide: {
+          id: slideId,
+          preset: 'arch',
+          bgStyle: 'sage-mist',
+          windowStyle: 'cream-editorial',
+          dogId: dog.id,
+          slideMode: 'puppies',
+          photoSrc: dog.image || '',
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: archH,
+          layers: buildLayersForDog(dog, 'arch', ch, archH, 'sage-mist', 'cream-editorial')
+        }
+      };
+    }
+
+    if (targetMode === 'studs') {
+      const stud =
+        (!useDefaultEntity && selectedDog?.category === 'Stud' ? selectedDog : allStuds[0]) ||
+        defaultStudioDog;
+      const archH = targetRatio === 'story' ? 1180 : targetRatio === 'square' ? 580 : 800;
+      const baseLayers = buildLayersForDog(stud, 'cameo', ch, archH, 'forest-luxe', 'oat-latte').map(
+        (l) => {
+          if (l.id === 'breedAge') return { ...l, pill: 'gold' as PillStyle };
+          if (l.id === 'coat') return { ...l, pill: 'sage' as PillStyle };
+          if (l.id === 'nutrition') return { ...l, pill: 'mocha' as PillStyle };
+          if (l.id === 'status') return { ...l, pill: 'mocha' as PillStyle };
+          return l;
+        }
+      );
+      return {
+        dog: stud,
+        slide: {
+          id: slideId,
+          preset: 'cameo',
+          bgStyle: 'forest-luxe',
+          windowStyle: 'oat-latte',
+          dogId: stud.id,
+          slideMode: 'studs',
+          photoSrc: stud.image || '',
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: archH,
+          layers: baseLayers
+        }
+      };
+    }
+
+    if (targetMode === 'glossary') {
+      const item =
+        (!useDefaultEntity && GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId)) ||
+        GLOSSARY_ITEMS[0];
+      return {
+        topic: item,
+        slide: {
+          id: slideId,
+          preset: 'no-photo',
+          bgStyle: 'forest-luxe',
+          windowStyle: 'cream-editorial',
+          slideMode: 'glossary',
+          topicId: item.id,
+          photoSrc: '',
+          photoDim: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: buildTopicLayers(item, ch, 'cream-editorial', 'glossary')
+        }
+      };
+    }
+
+    if (targetMode === 'standards') {
+      const item =
+        (!useDefaultEntity && STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId)) ||
+        STANDARDS_AND_BLOG_ITEMS[0];
+      const hasImg = Boolean(item.image);
+      return {
+        topic: item,
+        slide: {
+          id: slideId,
+          preset: hasImg ? 'minimal' : 'no-photo',
+          bgStyle: hasImg ? 'forest-luxe' : 'sage-mist',
+          windowStyle: 'pure-white',
+          slideMode: 'standards',
+          topicId: item.id,
+          photoSrc: item.image || '',
+          photoDim: hasImg ? 0.52 : 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1,
+          archHeight: 800,
+          layers: buildTopicLayers(
+            item,
+            ch,
+            hasImg ? 'forest-luxe' : 'pure-white',
+            'standards'
+          )
+        }
+      };
+    }
+
+    // 'didyouknow' Default Template: Espresso Mocha + Warm Oat Latte Boutique Arch
+    const dykItem =
+      DID_YOU_KNOW_ITEMS[(useDefaultEntity ? 0 : selectedDykIndex) % DID_YOU_KNOW_ITEMS.length] ||
+      DID_YOU_KNOW_ITEMS[0];
+    return {
+      topic: dykItem,
+      slide: {
+        id: slideId,
+        preset: 'no-photo',
+        bgStyle: 'espresso-mocha',
+        windowStyle: 'oat-latte',
+        slideMode: 'didyouknow',
+        topicId: dykItem.id,
+        photoSrc: '',
+        photoDim: 0,
+        panX: 0,
+        panY: 0,
+        zoom: 1,
+        archHeight: 800,
+        layers: buildTopicLayers(dykItem, ch, 'oat-latte', 'didyouknow')
+      }
+    };
+  };
+
+  // Reset Active Slide to the Signature Default Template of the Current Mode!
+  const handleResetActiveSlideToModeDefault = () => {
+    const built = buildDefaultSlideForMode(contentMode, ratio, activeSlide.id, false);
     pushHistory(slides);
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-    setRatio('feed');
-    setContentMode('puppies');
-    setFilterMode('available');
-    setSelectedDogId(defaultDog.id);
-    setSlides([makeInitialSlide(defaultDog, 'feed')]);
-    setActiveSlideIdx(0);
-    setCaptionText(buildDefaultDogCaption(defaultDog));
+    setSlides((prev) => prev.map((s, idx) => (idx === activeSlideIdx ? built.slide : s)));
+    if (built.dog) {
+      setSelectedDogId(built.dog.id);
+      setCaptionText(buildDefaultDogCaption(built.dog));
+    } else if (built.topic) {
+      setCaptionText(buildTopicCaption(built.topic));
+    }
     setSelectedLayerId(null);
     setEditingLayerId(null);
-    setDraftSavedAt('Default Restored');
+    setDraftSavedAt('Slide Reset');
+  };
+
+  // Switch Mode Pill & Automatically Load That Mode's Signature Default Template onto Active Slide!
+  const handleSelectContentMode = (nextMode: ContentMode) => {
+    setContentMode(nextMode);
+    setMobileTab('source');
+    if (activeSlide.slideMode === nextMode) return;
+    const built = buildDefaultSlideForMode(nextMode, ratio, activeSlide.id, false);
+    pushHistory(slides);
+    setSlides((prev) => prev.map((s, idx) => (idx === activeSlideIdx ? built.slide : s)));
+    if (built.dog) {
+      setSelectedDogId(built.dog.id);
+      setCaptionText(buildDefaultDogCaption(built.dog));
+    } else if (built.topic) {
+      setCaptionText(buildTopicCaption(built.topic));
+    }
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
   };
 
   // Load draft once on mount if present
   const didMountRef = useRef(false);
   useEffect(() => {
     try {
+      // Clean up legacy v2 draft that could hold an orphan uploaded photo without dogId sync
+      localStorage.removeItem('okcfrenchies_studio_draft_v2');
       const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.slides) && parsed.slides.length > 0) {
-          // Repair any slide where a saved layout updated text/dogId to one dog (e.g. Shuffin) but left another dog's catalog photo
+          const isDogVisibleInDefaultFilter = (d: DogRecord) => {
+            const st = (d.status || '').toLowerCase();
+            return (
+              st === 'available' ||
+              st === 'pending' ||
+              st.includes('keeper') ||
+              st.includes('retained') ||
+              st.includes('co-own')
+            );
+          };
+
+          // Keep every puppy/stud slide's photo strictly synced to its dog (unless custom-uploaded specifically for that dog)
           const repairedSlides: SlideState[] = parsed.slides.map((s: SlideState) => {
-            const dog = inferDogFromSlide(s, allDogs);
+            const isTopicSlide =
+              s.slideMode && s.slideMode !== 'puppies' && s.slideMode !== 'studs';
+            if (isTopicSlide) return s;
+
+            const dog = inferDogFromSlide(s, allDogs) || defaultStudioDog;
             if (!dog) return s;
             const belongsToDog =
               s.photoSrc === dog.image ||
-              (dog.media || []).some((m) => m.url === s.photoSrc);
-            const belongsToOtherDog =
-              !belongsToDog &&
-              Boolean(s.photoSrc) &&
-              allDogs.some(
-                (other) =>
-                  other.id !== dog.id &&
-                  (other.image === s.photoSrc ||
-                    (other.media || []).some((m) => m.url === s.photoSrc))
-              );
+              (dog.media || []).some((m) => m.url === s.photoSrc) ||
+              (Boolean(s.photoSrc?.startsWith('data:')) && s.customPhotoDogId === dog.id);
+
             return {
               ...s,
               dogId: dog.id,
-              photoSrc: belongsToOtherDog || !s.photoSrc ? dog.image || s.photoSrc : s.photoSrc
+              photoSrc: belongsToDog ? s.photoSrc : dog.image || s.photoSrc
             };
           });
           setSlides(repairedSlides);
           if (parsed.ratio) setRatio(parsed.ratio);
           if (parsed.captionText) setCaptionText(parsed.captionText);
           const firstSlide: SlideState = repairedSlides[0];
-          const inferredDog = inferDogFromSlide(firstSlide, allDogs);
-          if (inferredDog) {
-            setSelectedDogId(inferredDog.id);
-            setContentMode(inferredDog.category === 'Stud' ? 'studs' : 'puppies');
-            if (
-              inferredDog.category !== 'Stud' &&
-              inferredDog.status !== 'Available' &&
-              inferredDog.status !== 'Pending'
-            ) {
-              setFilterMode('all');
-            }
-          } else if (firstSlide.slideMode) {
+          const isFirstTopic =
+            firstSlide.slideMode &&
+            firstSlide.slideMode !== 'puppies' &&
+            firstSlide.slideMode !== 'studs';
+          if (isFirstTopic && firstSlide.slideMode) {
             setContentMode(firstSlide.slideMode);
-          } else if (parsed.contentMode) {
-            setContentMode(parsed.contentMode);
+          } else {
+            const inferredDog = inferDogFromSlide(firstSlide, allDogs) || defaultStudioDog;
+            if (inferredDog) {
+              setSelectedDogId(inferredDog.id);
+              setContentMode(inferredDog.category === 'Stud' ? 'studs' : 'puppies');
+              if (
+                inferredDog.category !== 'Stud' &&
+                !isDogVisibleInDefaultFilter(inferredDog)
+              ) {
+                setFilterMode('all');
+              }
+            }
           }
         }
       }
@@ -938,7 +1263,7 @@ const SocialStudio: React.FC = () => {
     setTimeout(() => {
       didMountRef.current = true;
     }, 100);
-  }, [allDogs]);
+  }, [allDogs, defaultStudioDog]);
 
   // Keep sidebar dog/mode synced with whichever slide the user selects!
   useEffect(() => {
@@ -962,7 +1287,14 @@ const SocialStudio: React.FC = () => {
         setContentMode('studs');
       } else {
         setContentMode('puppies');
-        if (inferred.status !== 'Available' && inferred.status !== 'Pending') {
+        const st = (inferred.status || '').toLowerCase();
+        const inDefault =
+          st === 'available' ||
+          st === 'pending' ||
+          st.includes('keeper') ||
+          st.includes('retained') ||
+          st.includes('co-own');
+        if (!inDefault) {
           setFilterMode('all');
         }
       }
@@ -1036,6 +1368,7 @@ const SocialStudio: React.FC = () => {
         bgStyle: currentBg,
         windowStyle: currentWin,
         dogId: dog.id,
+        customPhotoDogId: undefined,
         slideMode: dog.category === 'Stud' ? 'studs' : 'puppies',
         topicId: undefined,
         photoSrc: dog.image || '',
@@ -1051,24 +1384,62 @@ const SocialStudio: React.FC = () => {
     setEditingLayerId(null);
   };
 
-  // Load a Topic (Coat & DNA, Standards/Blog, Did You Know) into ONLY the active slide without touching other slides!
-  const loadTopicIntoCard = (item: TopicCardItem, targetRatio?: CanvasRatio) => {
+  // Load a Topic (Coat & DNA, Standards/Blog, Did You Know) into ONLY the active slide using that mode's default theme (or preserving current custom theme unless resetTheme is true)!
+  const loadTopicIntoCard = (
+    item: TopicCardItem,
+    targetRatio?: CanvasRatio,
+    resetTheme = false
+  ) => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
     const hasImg = Boolean(item.image);
+    const defaultBgForMode: BgStyle =
+      contentMode === 'didyouknow'
+        ? 'espresso-mocha'
+        : contentMode === 'glossary'
+          ? 'forest-luxe'
+          : 'sage-mist';
+    const defaultWinForMode: BgStyle =
+      contentMode === 'didyouknow'
+        ? 'oat-latte'
+        : contentMode === 'glossary'
+          ? 'cream-editorial'
+          : 'pure-white';
+
+    const keepExistingTopicColors =
+      !resetTheme &&
+      activeSlide.slideMode === contentMode &&
+      activeSlide.preset === 'no-photo' &&
+      !hasImg;
+
+    const chosenBg: BgStyle = hasImg
+      ? 'forest-luxe'
+      : keepExistingTopicColors
+        ? activeSlide.bgStyle
+        : defaultBgForMode;
+    const chosenWin: BgStyle = keepExistingTopicColors
+      ? activeSlide.windowStyle || defaultWinForMode
+      : defaultWinForMode;
+
     updateActiveSlide(
       {
         preset: hasImg ? 'minimal' : 'no-photo',
-        bgStyle: item.bgStyle,
+        bgStyle: chosenBg,
+        windowStyle: chosenWin,
         slideMode: contentMode,
         topicId: item.id,
-        photoSrc: item.image || activeSlide.photoSrc || selectedDog?.image || '',
-        photoDim: hasImg ? 0.5 : 0,
+        photoSrc: item.image || '',
+        photoDim: hasImg ? 0.52 : 0,
         panX: 0,
         panY: 0,
         zoom: 1,
         archHeight: 800,
-        layers: buildTopicLayers(item, ch)
+        layers: buildTopicLayers(
+          item,
+          ch,
+          hasImg ? chosenBg : chosenWin,
+          contentMode
+        )
       },
       true
     );
@@ -1098,7 +1469,7 @@ const SocialStudio: React.FC = () => {
     );
   };
 
-  // Handle Template Preset Switch on Active Slide (Preserves custom text & custom stickers while applying the new template's layout & visibility!)
+  // Handle Template Preset Switch on Active Slide (Preserves ALL AI/Topic text or custom stickers while switching frame!)
   const handleSwitchPreset = (nextPreset: FramePreset) => {
     const defaultArch =
       ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
@@ -1110,10 +1481,13 @@ const SocialStudio: React.FC = () => {
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
         : 'pure-white';
-    const hasDogLayers = activeSlide.layers.some(
-      (l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex'
-    );
-    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog && hasDogLayers) {
+    const isDogSlide =
+      (!activeSlide.slideMode ||
+        activeSlide.slideMode === 'puppies' ||
+        activeSlide.slideMode === 'studs') &&
+      activeSlide.layers.some((l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex');
+
+    if (isDogSlide && selectedDog) {
       const templateLayers = buildLayersForDog(
         selectedDog,
         nextPreset,
@@ -1149,94 +1523,88 @@ const SocialStudio: React.FC = () => {
         },
         true
       );
-    } else {
-      updateActiveSlide(
-        {
-          preset: nextPreset,
-          windowStyle: currentWin,
-          photoSrc: activeSlide.photoSrc || selectedDog?.image || '',
-          archHeight: defaultArch
-        },
-        true
-      );
+      return;
     }
+
+    // Topic / AI Card Frame Switch: Keep 100% of text layers intact & auto-adjust photo dimming + readability!
+    const fallbackPhoto =
+      activeSlide.photoSrc || selectedDog?.image || defaultStudioDog?.image || '';
+    const nextPhotoDim =
+      nextPreset === 'no-photo'
+        ? 0
+        : activeSlide.photoDim >= 0.2
+          ? activeSlide.photoDim
+          : 0.48;
+
+    const overDarkPhoto = nextPreset !== 'no-photo';
+    const winDarkText = BG_STYLES[currentWin].darkText;
+    const adjustedTopicLayers = activeSlide.layers.map((l) => {
+      if (overDarkPhoto) {
+        if (l.pill === 'none-dark') return { ...l, pill: 'none-light' as PillStyle };
+        if (l.id === 'body' && (l.pill === 'white' || l.pill === 'cream' || l.pill === 'oat')) {
+          return { ...l, pill: 'frosted' as PillStyle };
+        }
+        return l;
+      }
+      // Returning to 'no-photo' arched text card: match windowStyle brightness!
+      if (l.pill === 'none-light' && winDarkText) return { ...l, pill: 'none-dark' as PillStyle };
+      if (l.pill === 'none-dark' && !winDarkText) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.id === 'body' && l.pill === 'frosted' && winDarkText) {
+        return { ...l, pill: 'white' as PillStyle };
+      }
+      return l;
+    });
+
+    updateActiveSlide(
+      {
+        preset: nextPreset,
+        bgStyle: currentBg,
+        windowStyle: currentWin,
+        photoSrc: nextPreset === 'no-photo' ? activeSlide.photoSrc : fallbackPhoto,
+        photoDim: nextPhotoDim,
+        archHeight: defaultArch,
+        layers: adjustedTopicLayers
+      },
+      true
+    );
   };
 
-  // Change ONLY the Outer Background Color (keeps Inner Window / Card color untouched!)
+  // Change ONLY the Outer Background Color (NEVER resets card or replaces layers!)
   const handleSwitchBgTheme = (nextBg: BgStyle) => {
     const currentWin: BgStyle =
       activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
         ? activeSlide.windowStyle
         : 'pure-white';
-    const nextPreset: FramePreset =
-      activeSlide.preset === 'minimal' ? 'arch' : activeSlide.preset;
-    const dark = BG_STYLES[nextBg].darkText;
-    const updatedLayers = activeSlide.layers.map((l) => {
-      if (nextPreset !== 'no-photo') return l;
-      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
-      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
-      return l;
-    });
-    if (
-      activeSlide.preset === 'minimal' &&
-      (contentMode === 'puppies' || contentMode === 'studs') &&
-      selectedDog
-    ) {
-      const defaultArch = ratio === 'story' ? 1180 : ratio === 'square' ? 580 : 800;
-      updateActiveSlide(
-        {
-          preset: 'arch',
-          bgStyle: nextBg,
-          windowStyle: currentWin,
-          archHeight: defaultArch,
-          layers: buildLayersForDog(selectedDog, 'arch', canvasH, defaultArch, nextBg, currentWin)
-        },
-        true
-      );
-      return;
-    }
     updateActiveSlide(
-      { preset: nextPreset, bgStyle: nextBg, windowStyle: currentWin, layers: updatedLayers },
+      {
+        bgStyle: nextBg,
+        windowStyle: currentWin
+      },
       true
     );
   };
 
-  // Change ONLY the Inner Window / Card Color (keeps Outer Background untouched!)
+  // Change ONLY the Inner Window / Card Color (NEVER resets card or replaces layers!)
   const handleSwitchWindowTheme = (nextWin: BgStyle) => {
     const currentBg: BgStyle =
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
         : 'cream-editorial';
-    const nextPreset: FramePreset =
-      activeSlide.preset === 'minimal' || activeSlide.preset === 'no-photo'
-        ? 'arch'
-        : activeSlide.preset;
     const dark = BG_STYLES[nextWin].darkText;
-    if (
-      (activeSlide.preset === 'minimal' || activeSlide.preset === 'no-photo') &&
-      (contentMode === 'puppies' || contentMode === 'studs') &&
-      selectedDog
-    ) {
-      const defaultArch = ratio === 'story' ? 1180 : ratio === 'square' ? 580 : 800;
-      updateActiveSlide(
-        {
-          preset: 'arch',
-          bgStyle: currentBg,
-          windowStyle: nextWin,
-          archHeight: defaultArch,
-          layers: buildLayersForDog(selectedDog, 'arch', canvasH, defaultArch, currentBg, nextWin)
-        },
-        true
-      );
-      return;
-    }
-    const updatedLayers = activeSlide.layers.map((l) => {
-      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
-      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
-      return l;
-    });
+    const adjustUnpilledContrast = activeSlide.preset !== 'minimal';
+    const updatedLayers = adjustUnpilledContrast
+      ? activeSlide.layers.map((l) => {
+          if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+          if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+          return l;
+        })
+      : activeSlide.layers;
     updateActiveSlide(
-      { preset: nextPreset, windowStyle: nextWin, layers: updatedLayers },
+      {
+        bgStyle: currentBg,
+        windowStyle: nextWin,
+        layers: updatedLayers
+      },
       true
     );
   };
@@ -1262,10 +1630,134 @@ const SocialStudio: React.FC = () => {
     updateActiveSlide({ bgStyle: nextBg, windowStyle: nextWin, layers: updatedLayers }, true);
   };
 
+  // Canva-Style 1-Tap Brand Kit Shuffle (Mix & Match Frame, Outer/Inner Colors, Pills & Optional Photo!)
+  const handleShuffleBrandLook = (alsoRotatePhoto = false) => {
+    const nextIdx = (remixIdx + 1) % BRAND_REMIX_RECIPES.length;
+    setRemixIdx(nextIdx);
+    const recipe = BRAND_REMIX_RECIPES[nextIdx];
+
+    let nextPhotoSrc = activeSlide.photoSrc || selectedDog?.image || '';
+    let nextCustomPhotoDogId = activeSlide.customPhotoDogId;
+    if (alsoRotatePhoto && galleryPhotos.length > 1) {
+      // Filter out parent/litter photos unless user taps them manually, or cycle puppy's own photos first!
+      const puppyOwnPhotos = galleryPhotos.filter(
+        (u) => !u.includes('poppi') && !u.includes('cafecito')
+      );
+      const pool = puppyOwnPhotos.length > 1 ? puppyOwnPhotos : galleryPhotos;
+      const curPhotoIdx = pool.indexOf(activeSlide.photoSrc);
+      nextPhotoSrc = pool[(curPhotoIdx + 1) % pool.length];
+      nextCustomPhotoDogId = undefined;
+    }
+
+    const isDogSlide =
+      (!activeSlide.slideMode ||
+        activeSlide.slideMode === 'puppies' ||
+        activeSlide.slideMode === 'studs') &&
+      activeSlide.layers.some((l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex');
+
+    if (isDogSlide && selectedDog) {
+      const defaultArch =
+        ratio === 'story'
+          ? 1180
+          : ratio === 'square'
+            ? 580
+            : recipe.preset === 'sage'
+              ? 740
+              : 800;
+
+      const freshLayers = buildLayersForDog(
+        selectedDog,
+        recipe.preset,
+        canvasH,
+        defaultArch,
+        recipe.bgStyle,
+        recipe.windowStyle
+      );
+
+      const customLayers = activeSlide.layers.filter(
+        (el) => !freshLayers.some((fl) => fl.id === el.id)
+      );
+
+      const remixedLayers: TextLayer[] = [
+        ...freshLayers.map((fl) => {
+          const prev = activeSlide.layers.find((el) => el.id === fl.id);
+          const pillOverride = recipe.pills[fl.id];
+          let visible = fl.visible;
+          if (fl.id === 'quote') visible = recipe.showQuote && Boolean(fl.text.trim());
+          if (fl.id === 'nutrition') visible = recipe.showNutrition;
+          return {
+            ...fl,
+            visible,
+            text: prev?.text || fl.text,
+            pill: pillOverride || fl.pill,
+            textColor: undefined
+          };
+        }),
+        ...customLayers
+      ];
+
+      updateActiveSlide(
+        {
+          preset: recipe.preset,
+          bgStyle: recipe.bgStyle,
+          windowStyle: recipe.windowStyle,
+          dogId: selectedDog.id,
+          customPhotoDogId: nextCustomPhotoDogId,
+          photoSrc: nextPhotoSrc,
+          photoDim: recipe.photoDim ?? 0,
+          archHeight: defaultArch,
+          layers: remixedLayers
+        },
+        true
+      );
+      setSelectedLayerId(null);
+      setEditingLayerId(null);
+      return;
+    }
+
+    // Topic / AI card shuffle (cycles outer bgStyle + inner windowStyle + pill contrast while keeping 100% of text!)
+    const overPhoto = activeSlide.preset !== 'no-photo';
+    const dark = overPhoto ? false : BG_STYLES[recipe.windowStyle].darkText;
+    const topicLayers = activeSlide.layers.map((l) => {
+      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      if (l.id.includes('badge') || l.id === 'tag') {
+        return {
+          ...l,
+          pill: (recipe.pills.breedAge || (dark ? 'sage' : 'gold')) as PillStyle
+        };
+      }
+      if (l.id === 'body') {
+        return { ...l, pill: (dark ? 'cream' : 'frosted') as PillStyle };
+      }
+      if (l.id === 'footer') {
+        return {
+          ...l,
+          pill: (recipe.pills.coat || (dark ? 'terracotta' : 'gold')) as PillStyle
+        };
+      }
+      return l;
+    });
+    updateActiveSlide(
+      {
+        bgStyle: recipe.bgStyle,
+        windowStyle: recipe.windowStyle,
+        layers: topicLayers
+      },
+      true
+    );
+  };
+
   // Multi-Slide Carousel Builder
   const handleBuildAutoCarousel = () => {
     pushHistory(slides);
-    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog) {
+    const isDogSlide =
+      (!activeSlide.slideMode ||
+        activeSlide.slideMode === 'puppies' ||
+        activeSlide.slideMode === 'studs') &&
+      activeSlide.layers.some((l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex');
+
+    if (isDogSlide && selectedDog) {
       const slug = selectedDog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const quote =
         DEFAULT_QUOTES[slug] || '"Raised underfoot in our OKC home with 24/7 love & care."';
@@ -1592,7 +2084,16 @@ const SocialStudio: React.FC = () => {
     }
   };
 
-  const addBlankOrDuplicateSlide = () => {
+  const addNewDefaultSlide = () => {
+    pushHistory(slides);
+    const built = buildDefaultSlideForMode(contentMode, ratio, `slide-${Date.now()}`, false);
+    setSlides((prev) => [...prev, built.slide]);
+    setActiveSlideIdx(slides.length);
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+  };
+
+  const duplicateCurrentSlide = () => {
     pushHistory(slides);
     const cloned: SlideState = JSON.parse(JSON.stringify(activeSlide));
     cloned.id = `slide-${Date.now()}`;
@@ -1718,7 +2219,9 @@ const SocialStudio: React.FC = () => {
       isDogMode &&
       selectedDog &&
       (activeSlide.photoSrc === selectedDog.image ||
-        (selectedDog.media || []).some((m) => m.url === activeSlide.photoSrc));
+        (selectedDog.media || []).some((m) => m.url === activeSlide.photoSrc) ||
+        (Boolean(activeSlide.photoSrc?.startsWith('data:')) &&
+          activeSlide.customPhotoDogId === selectedDog.id));
 
     updateActiveSlide(
       {
@@ -1730,6 +2233,9 @@ const SocialStudio: React.FC = () => {
         ...(isDogMode && selectedDog
           ? {
               dogId: selectedDog.id,
+              customPhotoDogId: currentPhotoBelongsToSelectedDog
+                ? activeSlide.customPhotoDogId
+                : undefined,
               photoSrc: currentPhotoBelongsToSelectedDog
                 ? activeSlide.photoSrc
                 : selectedDog.image || activeSlide.photoSrc
@@ -1973,23 +2479,47 @@ const SocialStudio: React.FC = () => {
         shareUrl: 'https://okcfrenchies.com'
       };
 
+      const keepPhotoOverlay =
+        activeSlide.slideMode === 'didyouknow' && activeSlide.preset !== 'no-photo' && Boolean(activeSlide.photoSrc);
+      const targetPreset: FramePreset = keepPhotoOverlay ? activeSlide.preset : 'no-photo';
+      const targetWin: BgStyle = activeSlide.windowStyle || 'oat-latte';
+      const baseAiLayers = buildTopicLayers(generatedItem, canvasH, targetWin, 'didyouknow').map((l) => {
+        if (!keepPhotoOverlay) return l;
+        if (l.pill === 'none-dark') return { ...l, pill: 'none-light' as PillStyle };
+        if (l.id === 'body') return { ...l, pill: 'frosted' as PillStyle };
+        return l;
+      });
+
       updateActiveSlide(
         {
-          preset: 'no-photo',
+          preset: targetPreset,
           bgStyle: chosenBg,
+          windowStyle: targetWin,
           slideMode: 'didyouknow',
           topicId: generatedItem.id,
-          photoSrc: activeSlide.photoSrc,
-          photoDim: 0,
+          photoSrc: keepPhotoOverlay ? activeSlide.photoSrc : '',
+          photoDim: keepPhotoOverlay ? Math.max(0.45, activeSlide.photoDim) : 0,
           panX: 0,
           panY: 0,
           zoom: 1,
-          archHeight: 800,
-          layers: buildTopicLayers(generatedItem, canvasH)
+          archHeight: activeSlide.archHeight || 800,
+          layers: baseAiLayers
         },
         true
       );
-      if (cardData.caption) setCaptionText(cardData.caption);
+      const nextCaption = cardData.caption || buildTopicCaption(generatedItem);
+      setCaptionText(nextCaption);
+
+      // Save to Recent AI Cards history so you never lose a generated AI card!
+      setSavedAiCards((prev) => {
+        const nextList = [{ item: generatedItem, caption: nextCaption }, ...prev].slice(0, 10);
+        try {
+          localStorage.setItem(SAVED_AI_CARDS_KEY, JSON.stringify(nextList));
+        } catch {
+          // ignore storage quota
+        }
+        return nextList;
+      });
     } catch (err: any) {
       setAiError(err?.message || 'Could not generate AI card.');
     } finally {
@@ -2058,10 +2588,10 @@ const SocialStudio: React.FC = () => {
     }
 
     if (!geom.hasPhoto) {
-      const bgTheme = BG_STYLES[slide.bgStyle] || BG_STYLES['cream-editorial'];
+      const winTheme = BG_STYLES[slide.windowStyle || 'cream-editorial'] || BG_STYLES['cream-editorial'];
       ctx.save();
-      roundRectPath(ctx, 42, 42, 1080 - 84, canvasH - 84, 220, 220, 36, 36);
-      ctx.strokeStyle = bgTheme.darkText ? 'rgba(46,90,68,0.18)' : 'rgba(244,211,126,0.28)';
+      roundRectPath(ctx, 76, 76, 1080 - 152, canvasH - 152, 196, 196, 28, 28);
+      ctx.strokeStyle = winTheme.darkText ? 'rgba(46,90,68,0.18)' : 'rgba(244,211,126,0.28)';
       ctx.lineWidth = 3;
       ctx.stroke();
       ctx.restore();
@@ -2143,7 +2673,7 @@ const SocialStudio: React.FC = () => {
             : `800 ${fontSize}px 'DM Sans', sans-serif`;
       ctx.font = fontSpec;
 
-      const pal = PILL_PALETTE[layer.pill];
+      const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
       const padX = pal.hasBg ? 26 : 8;
       const innerMaxW = Math.max(60, layer.pillWidth - padX * 2);
       const textLines = wrapLines(ctx, layer.text, innerMaxW);
@@ -2300,11 +2830,19 @@ const SocialStudio: React.FC = () => {
           <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
-              onClick={handleResetStudioDefault}
-              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] transition"
-              title="Reset Studio to default Phatty Patty Botanical Arch theme"
+              onClick={() => handleShuffleBrandLook(false)}
+              className="px-3 py-1.5 rounded-full text-xs font-extrabold border bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] border-[#2E5A44] text-[#F4D37E] shadow-xs hover:opacity-95 touch-manipulation cursor-pointer transition"
+              title="Canva-style Brand Shuffle: auto-mixes frames, brand colors & pills around your photo"
             >
-              🔄 Default (Phatty Patty)
+              ✨ Shuffle Look
+            </button>
+            <button
+              type="button"
+              onClick={handleResetActiveSlideToModeDefault}
+              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] touch-manipulation cursor-pointer transition"
+              title="Reset current slide to this section's default template & theme"
+            >
+              🔄 Reset
             </button>
             <button
               type="button"
@@ -2370,11 +2908,8 @@ const SocialStudio: React.FC = () => {
             <button
               key={modeKey}
               type="button"
-              onClick={() => {
-                setContentMode(modeKey);
-                setMobileTab('source');
-              }}
-              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-extrabold border transition shadow-2xs ${
+              onClick={() => handleSelectContentMode(modeKey)}
+              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition shadow-2xs ${
                 contentMode === modeKey
                   ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
                   : 'bg-white text-[#3E4D45] border-[#DDD6C7] hover:bg-[#F6F4EE]'
@@ -2412,11 +2947,19 @@ const SocialStudio: React.FC = () => {
               ))}
               <button
                 type="button"
-                onClick={addBlankOrDuplicateSlide}
-                className="shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[#F6F4EE] text-[#2E5A44] border border-[#D4CEC0]"
-                title="Duplicate current slide to add another carousel page"
+                onClick={addNewDefaultSlide}
+                className="shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[#E4EFE8] text-[#2E5A44] border border-[#2E5A44]/30 touch-manipulation cursor-pointer"
+                title="Add a fresh slide using this section's default template"
               >
                 + Slide
+              </button>
+              <button
+                type="button"
+                onClick={duplicateCurrentSlide}
+                className="shrink-0 px-2 py-1 rounded-xl text-xs font-bold bg-[#F6F4EE] text-[#5C6B63] border border-[#D4CEC0] touch-manipulation cursor-pointer"
+                title="Duplicate current slide"
+              >
+                ⧉ Copy
               </button>
               {slides.length > 1 && (
                 <button
@@ -2578,6 +3121,43 @@ const SocialStudio: React.FC = () => {
                 >
                   🗑️
                 </button>
+              </div>
+
+              {/* Pill Background Swatches (Matches all 12 Background & Text Colors!) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
+                <span className="text-[11px] font-extrabold text-[#3E4D45] shrink-0">
+                  Pill Color:
+                </span>
+                {(Object.entries(PILL_PALETTE) as [PillStyle, (typeof PILL_PALETTE)[PillStyle]][]).map(
+                  ([pKey, pMeta]) => {
+                    const isActive = selectedLayer.pill === pKey;
+                    return (
+                      <button
+                        key={pKey}
+                        type="button"
+                        onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
+                        title={`Pill Color: ${pMeta.label}`}
+                        className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
+                          isActive
+                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                          style={{
+                            background: pMeta.hasBg
+                              ? pMeta.swatch
+                              : pKey === 'none-dark'
+                                ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
+                                : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
+                          }}
+                        />
+                        <span>{pMeta.shortLabel}</span>
+                      </button>
+                    );
+                  }
+                )}
               </div>
 
               {/* Text Color Swatches (Works WITH or WITHOUT a Pill!) */}
@@ -2797,13 +3377,16 @@ const SocialStudio: React.FC = () => {
                   }}
                   style={{
                     position: 'absolute',
-                    left: 42,
-                    top: 42,
-                    right: 42,
-                    bottom: 42,
-                    borderRadius: '220px 220px 36px 36px',
+                    left: 76,
+                    top: 76,
+                    right: 76,
+                    bottom: 76,
+                    borderRadius: '196px 196px 28px 28px',
                     border: `3px solid ${
-                      (BG_STYLES[activeSlide.bgStyle] || BG_STYLES['cream-editorial']).darkText
+                      (
+                        BG_STYLES[activeSlide.windowStyle || 'cream-editorial'] ||
+                        BG_STYLES['cream-editorial']
+                      ).darkText
                         ? 'rgba(46,90,68,0.18)'
                         : 'rgba(244,211,126,0.28)'
                     }`
@@ -2912,7 +3495,7 @@ const SocialStudio: React.FC = () => {
                 if (!layer.visible) return null;
                 const isSel = selectedLayerId === layer.id;
                 const isEditing = editingLayerId === layer.id;
-                const pal = PILL_PALETTE[layer.pill];
+                const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
                 const fontSize = layer.fontSize;
                 const padX = pal.hasBg ? 26 : 8;
 
@@ -3224,21 +3807,36 @@ const SocialStudio: React.FC = () => {
           </div>
 
           {/* Quick 1-Tap Frame & Theme Bar right below Canvas (Instant iPhone Taps!) */}
-          <div className="w-full max-w-[520px] bg-white border border-[#EAE5D9] rounded-2xl p-2 space-y-1.5 shadow-xs">
+          <div className="w-full max-w-[520px] bg-white border border-[#EAE5D9] rounded-2xl p-2.5 space-y-2 shadow-xs">
+            {/* Canva-Style 1-Tap Brand Shuffle Row */}
+            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[#F0ECE1]">
+              <button
+                type="button"
+                onClick={() => handleShuffleBrandLook(false)}
+                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] text-[#F4D37E] text-xs font-extrabold shadow-xs touch-manipulation cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] transition"
+              >
+                <span>✨ Shuffle Brand Look</span>
+                <span className="text-[10px] font-bold text-white/85">
+                  ({BRAND_REMIX_RECIPES[remixIdx]?.name})
+                </span>
+              </button>
+              {(contentMode === 'puppies' || contentMode === 'studs') && galleryPhotos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleShuffleBrandLook(true)}
+                  className="shrink-0 py-2 px-3 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#1C2621] text-xs font-extrabold touch-manipulation cursor-pointer active:scale-[0.99] transition"
+                  title="Shuffle theme, colors AND cycle through this puppy's photos!"
+                >
+                  🎲 + Swap Photo
+                </button>
+              )}
+            </div>
+
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
                 Frame:
               </span>
-              {(
-                [
-                  ['arch', '🌿 Arch'],
-                  ['cameo', '🪞 Cameo'],
-                  ['editorial', '🖼️ Polaroid'],
-                  ['sage', '🌲 Mat'],
-                  ['minimal', '✨ Full Bleed'],
-                  ['no-photo', '📝 Text Card']
-                ] as const
-              ).map(([key, label]) => (
+              {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
                 <button
                   key={key}
                   type="button"
@@ -3256,7 +3854,7 @@ const SocialStudio: React.FC = () => {
 
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
               <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
-                Bg:
+                Outer:
               </span>
               {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
                 ([bgKey, bgMeta]) => (
@@ -3279,6 +3877,45 @@ const SocialStudio: React.FC = () => {
                 )
               )}
             </div>
+
+            {activeSlide.preset !== 'minimal' && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
+                <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
+                  Window:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSwapBgAndWindow}
+                  className="shrink-0 px-2 py-1 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer"
+                  title="Swap Outer Background and Inner Window colors"
+                >
+                  ⇄ Swap
+                </button>
+                {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                  ([winKey, winMeta]) => {
+                    const activeWin = activeSlide.windowStyle || 'pure-white';
+                    return (
+                      <button
+                        key={winKey}
+                        type="button"
+                        onClick={() => handleSwitchWindowTheme(winKey)}
+                        className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                          activeWin === winKey
+                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                          style={{ background: winMeta.swatch }}
+                        />
+                        <span>{winMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            )}
           </div>
         </main>
 
@@ -3347,9 +3984,9 @@ const SocialStudio: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => selectedDog && loadDogIntoCard(selectedDog, undefined, undefined, true)}
-                      className="py-1.5 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold"
-                      title="Reset pill positions on this slide to default"
+                      onClick={handleResetActiveSlideToModeDefault}
+                      className="py-1.5 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                      title="Reset slide to default template & theme"
                     >
                       🔄 Reset
                     </button>
@@ -3370,6 +4007,8 @@ const SocialStudio: React.FC = () => {
                               updateActiveSlide(
                                 {
                                   preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
+                                  dogId: selectedDog?.id,
+                                  customPhotoDogId: undefined,
                                   photoSrc: url,
                                   panX: 0,
                                   panY: 0
@@ -3410,16 +4049,26 @@ const SocialStudio: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const item = GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) || GLOSSARY_ITEMS[0];
-                      if (item) loadTopicIntoCard(item);
-                    }}
-                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
-                  >
-                    ✓ Load Term onto Slide {activeSlideIdx + 1}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const item = GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) || GLOSSARY_ITEMS[0];
+                        if (item) loadTopicIntoCard(item);
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                    >
+                      ✓ Load Term onto Slide {activeSlideIdx + 1}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetActiveSlideToModeDefault}
+                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                      title="Reset slide to Coat & DNA default template"
+                    >
+                      🔄 Reset
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -3443,18 +4092,28 @@ const SocialStudio: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const item =
-                        STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
-                        STANDARDS_AND_BLOG_ITEMS[0];
-                      if (item) loadTopicIntoCard(item);
-                    }}
-                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
-                  >
-                    ✓ Load Guide onto Slide {activeSlideIdx + 1}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const item =
+                          STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
+                          STANDARDS_AND_BLOG_ITEMS[0];
+                        if (item) loadTopicIntoCard(item);
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                    >
+                      ✓ Load Guide onto Slide {activeSlideIdx + 1}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetActiveSlideToModeDefault}
+                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                      title="Reset slide to Standards & Blog default template"
+                    >
+                      🔄 Reset
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -3493,13 +4152,23 @@ const SocialStudio: React.FC = () => {
                     ))}
                   </select>
 
-                  <button
-                    type="button"
-                    onClick={() => loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length])}
-                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
-                  >
-                    ✓ Load Fact onto Slide {activeSlideIdx + 1}
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length])}
+                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                    >
+                      ✓ Load Fact onto Slide {activeSlideIdx + 1}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetActiveSlideToModeDefault}
+                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                      title="Reset slide to Did You Know default template"
+                    >
+                      🔄 Reset
+                    </button>
+                  </div>
 
                   <div className="border-t border-[#EAE5D9] pt-3 space-y-2">
                     <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
@@ -3547,6 +4216,106 @@ const SocialStudio: React.FC = () => {
                         {aiError}
                       </div>
                     )}
+
+                    {savedAiCards.length > 0 && (
+                      <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
+                        <div className="text-[11px] font-extrabold text-[#2E5A44]">
+                          📌 Recent AI Cards (Tap to Reload Anytime)
+                        </div>
+                        <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                          {savedAiCards.map((entry) => (
+                            <button
+                              key={entry.item.id}
+                              type="button"
+                              onClick={() => {
+                                loadTopicIntoCard(entry.item);
+                                if (entry.caption) setCaptionText(entry.caption);
+                              }}
+                              className="w-full text-left px-2.5 py-1.5 rounded-xl bg-[#F6F4EE] hover:bg-[#E4EFE8] border border-[#DDD6C7] text-xs font-bold text-[#1C2621] truncate touch-manipulation cursor-pointer transition"
+                            >
+                              {entry.item.badge} — {entry.item.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 1-Tap Puppy / Sire Background Photo Overlay for Topic & AI Cards! */}
+              {contentMode !== 'puppies' && contentMode !== 'studs' && (
+                <div className="border-t border-[#F0ECE1] pt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      🐾 Overlay Text Over a Dimmed Puppy / Sire Photo
+                    </span>
+                    {activeSlide.preset !== 'no-photo' && (
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchPreset('no-photo')}
+                        className="text-[11px] font-bold text-[#991B1B] underline touch-manipulation cursor-pointer"
+                      >
+                        Back to Text Card
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {allDogs
+                      .filter((d) => Boolean(d.image))
+                      .slice(0, 12)
+                      .map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => {
+                            const nextPreset: FramePreset =
+                              activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset;
+                            const adjustedLayers = activeSlide.layers.map((l) => {
+                              if (l.pill === 'none-dark') {
+                                return { ...l, pill: 'none-light' as PillStyle };
+                              }
+                              if (
+                                l.id === 'body' &&
+                                (l.pill === 'white' || l.pill === 'cream' || l.pill === 'oat')
+                              ) {
+                                return { ...l, pill: 'frosted' as PillStyle };
+                              }
+                              return l;
+                            });
+                            updateActiveSlide(
+                              {
+                                preset: nextPreset,
+                                photoSrc: d.image || '',
+                                photoDim: activeSlide.photoDim >= 0.2 ? activeSlide.photoDim : 0.48,
+                                panX: 0,
+                                panY: 0,
+                                layers: adjustedLayers
+                              },
+                              true
+                            );
+                          }}
+                          title={`Overlay card text on ${d.name}`}
+                          className={`shrink-0 flex flex-col items-center gap-0.5 touch-manipulation cursor-pointer ${
+                            activeSlide.photoSrc === d.image && activeSlide.preset !== 'no-photo'
+                              ? 'opacity-100'
+                              : 'opacity-85 hover:opacity-100'
+                          }`}
+                        >
+                          <img
+                            src={d.image}
+                            alt={d.name}
+                            className={`w-12 h-12 rounded-xl object-cover border-2 ${
+                              activeSlide.photoSrc === d.image && activeSlide.preset !== 'no-photo'
+                                ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                : 'border-[#DDD6C7]'
+                            }`}
+                          />
+                          <span className="text-[10px] font-bold text-[#3E4D45] max-w-[54px] truncate">
+                            {d.name}
+                          </span>
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
@@ -3564,9 +4333,13 @@ const SocialStudio: React.FC = () => {
                       const reader = new FileReader();
                       reader.onload = (ev) => {
                         if (typeof ev.target?.result === 'string') {
+                          const isDogMode = contentMode === 'puppies' || contentMode === 'studs';
                           updateActiveSlide(
                             {
                               preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
+                              ...(isDogMode && selectedDog
+                                ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
+                                : {}),
                               photoSrc: ev.target.result,
                               panX: 0,
                               panY: 0
@@ -3759,16 +4532,7 @@ const SocialStudio: React.FC = () => {
                     1. Frame &amp; Layout Template
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {(
-                      [
-                        ['minimal', '✨ Full Bleed Photo'],
-                        ['arch', '🌿 Botanical Arch'],
-                        ['cameo', '🪞 Oval Cameo'],
-                        ['editorial', '🖼️ Editorial Card'],
-                        ['sage', '🌲 Classic Mat Frame'],
-                        ['no-photo', '📝 No-Photo Graphic Card']
-                      ] as const
-                    ).map(([key, label]) => (
+                    {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
                       <button
                         key={key}
                         type="button"
