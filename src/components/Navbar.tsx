@@ -76,7 +76,7 @@ const Navbar: React.FC = () => {
         <div className="hidden lg:flex items-center gap-7 relative z-50">
           <NavLink
             to="/french-bulldog-puppies-for-sale"
-            aliases={['/puppies']}
+            aliases={['/puppies', '/puppies-for-sale']}
             label={`The Nursery (${availableCount} Available)`}
           />
           <NavLink

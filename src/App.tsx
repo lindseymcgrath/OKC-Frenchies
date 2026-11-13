@@ -75,6 +75,7 @@ const App: React.FC = () => {
 
             {/* 🔗 Legacy Redirects & Direct Dog Modal Links */}
             <Route path="/puppies" element={<Puppies />} />
+            <Route path="/puppies-for-sale" element={<Puppies />} />
             <Route path="/puppies/:dogSlug" element={<Puppies />} />
             <Route path="/french-bulldog-puppies-for-sale/:dogSlug" element={<Puppies />} />
             <Route path="/studs" element={<Studs />} />

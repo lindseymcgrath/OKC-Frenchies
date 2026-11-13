@@ -6,7 +6,7 @@ import {
   SEO_DATA
 } from './_htmlTemplate.mjs';
 
-const OG_VER = 'v=4';
+const OG_VER = 'v=5';
 
 const slugify = (s) =>
   String(s || '')
@@ -25,82 +25,104 @@ const ROUTE_META = {
   '/': {
     title: SEO_DATA.Home.title,
     description: SEO_DATA.Home.description,
-    image: `https://okcfrenchies.com/og/home.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/home.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/'
   },
   '/french-bulldog-puppies-for-sale': {
     title: SEO_DATA.Puppies.title,
     description: SEO_DATA.Puppies.description,
-    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
   },
   '/puppies': {
     title: SEO_DATA.Puppies.title,
     description: SEO_DATA.Puppies.description,
-    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
+  },
+  '/puppies-for-sale': {
+    title: SEO_DATA.Puppies.title,
+    description: SEO_DATA.Puppies.description,
+    image: `https://okcfrenchies.com/og/puppies.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-puppies-for-sale'
   },
   '/french-bulldog-stud-service': {
     title: SEO_DATA.Studs.title,
     description: SEO_DATA.Studs.description,
-    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-stud-service'
   },
   '/studs': {
     title: SEO_DATA.Studs.title,
     description: SEO_DATA.Studs.description,
-    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/studs.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-stud-service'
   },
   '/french-bulldog-coat-color-genetics': {
     title: SEO_DATA.Genetics.title,
     description: SEO_DATA.Genetics.description,
-    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-coat-color-genetics'
   },
   '/genetics': {
     title: SEO_DATA.Genetics.title,
     description: SEO_DATA.Genetics.description,
-    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/genetics.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-coat-color-genetics'
   },
   '/french-bulldog-breeding-blog': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-breeding-blog'
   },
   '/blog': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-breeding-blog'
   },
   '/journal': {
     title: SEO_DATA.Blog.title,
     description: SEO_DATA.Blog.description,
-    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/blog.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-breeding-blog'
   },
   '/french-bulldog-breeding-protocol': {
     title: SEO_DATA.Protocol.title,
     description: SEO_DATA.Protocol.description,
-    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-breeding-protocol'
   },
   '/protocol': {
     title: SEO_DATA.Protocol.title,
     description: SEO_DATA.Protocol.description,
-    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/protocol.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/french-bulldog-breeding-protocol'
   },
   '/buyer-education': {
     title: SEO_DATA.BuyerEducation.title,
     description: SEO_DATA.BuyerEducation.description,
-    image: `https://okcfrenchies.com/og/buyer-education.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/buyer-education.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/buyer-education'
   },
   '/puppy-inquiry-form': {
     title: SEO_DATA.Inquiry.title,
     description: SEO_DATA.Inquiry.description,
-    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/puppy-inquiry-form'
   },
   '/inquiry': {
     title: SEO_DATA.Inquiry.title,
     description: SEO_DATA.Inquiry.description,
-    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/inquiry.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/puppy-inquiry-form'
   },
   '/application': {
     title: SEO_DATA.Application.title,
     description: SEO_DATA.Application.description,
-    image: `https://okcfrenchies.com/og/application.jpg?${OG_VER}`
+    image: `https://okcfrenchies.com/og/application.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/application'
   }
 };
 
@@ -123,6 +145,7 @@ export default function handler(req, res) {
     let title = meta.title;
     let description = meta.description;
     let image = meta.image;
+    let canonical = meta.canonical || `https://okcfrenchies.com${pathname}`;
     const pageUrl = `https://okcfrenchies.com${pathname}${cleanSearch}`;
 
     // Support both /puppies/:slug, /studs/:slug AND ?dog=Name
@@ -142,6 +165,7 @@ export default function handler(req, res) {
         title = `Meet ${match.name} (${match.breed}) | OKC Frenchies`;
         description = `${match.status || match.type} • ${match.gender || ''} • ${match.dna}. ${match.description || 'Raised in-home in Oklahoma City. Text 405.300.8482.'}`.trim();
         image = `https://okcfrenchies.com/og/dogs/${slugify(match.name)}.jpg?${OG_VER}`;
+        canonical = pageUrl;
       }
     }
 
@@ -166,15 +190,15 @@ export default function handler(req, res) {
 
     let html = INDEX_HTML;
     html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeHtml(title)}</title>`);
+    html = html.replace(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${escapeHtml(canonical)}">`);
     html = html.replace(/<meta name="title" content="[^"]*">/, `<meta name="title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${escapeHtml(description)}">`);
     html = html.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${escapeHtml(pageUrl)}">`);
     html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${escapeHtml(description)}">`);
     html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${escapeHtml(image)}">`);
-    html = html.replace(/<meta property="twitter:title" content="[^"]*">/, `<meta property="twitter:title" content="${escapeHtml(title)}">`);
-    html = html.replace(/<meta property="twitter:description" content="[^"]*">/, `<meta property="twitter:description" content="${escapeHtml(description)}">`);
-    html = html.replace(/<meta property="twitter:image" content="[^"]*">/, `<meta property="twitter:image" content="${escapeHtml(image)}">`);
+    html = html.replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHtml(title)}">`);
+    html = html.replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(description)}">`);
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
