@@ -13,6 +13,8 @@ import {
   DogRecord,
   FramePreset,
   GLOSSARY_ITEMS,
+  OverlayShape,
+  PhotoOverlayLayer,
   PillStyle,
   STAMP_BADGES,
   STANDARDS_AND_BLOG_ITEMS,
@@ -108,6 +110,29 @@ const TEXT_CARD_THEME_OPTIONS: { key: TextCardTheme; label: string }[] = [
   { key: 'ribbon-banner', label: '🏷️ Top Header Card' },
   { key: 'split-quote', label: '🌗 Split Two-Tone' },
   { key: 'minimal-luxe', label: '✨ Minimal Full-Bleed' }
+];
+
+const OVERLAY_SHAPE_OPTIONS: { key: OverlayShape; label: string }[] = [
+  { key: 'circle', label: '⭕ Circle' },
+  { key: 'rounded', label: '▢ Rounded' },
+  { key: 'arch', label: '🏛️ Arch' },
+  { key: 'polaroid', label: '📸 Polaroid' },
+  { key: 'square', label: '⬛ Square' }
+];
+
+const OVERLAY_BORDER_SWATCHES: { value: string; label: string }[] = [
+  { value: '#FFFFFF', label: 'White' },
+  { value: '#E8DFCE', label: 'Cream' },
+  { value: '#F4D37E', label: 'Gold' },
+  { value: '#2E5A44', label: 'Forest' },
+  { value: '#8B9D83', label: 'Olive Sage' },
+  { value: '#3B2B23', label: 'Mocha' },
+  { value: '#1C2621', label: 'Charcoal' },
+  { value: '#D46A4E', label: 'Terracotta' },
+  { value: '#F9E4E2', label: 'Soft Rose' },
+  { value: '#5A7385', label: 'Slate Blue' },
+  { value: '#B59E99', label: 'Lilac Taupe' },
+  { value: '#8C2F2B', label: 'Berry' }
 ];
 
 const applyColorAlpha = (color: string, opacity?: number): string => {
@@ -1707,6 +1732,141 @@ const SocialStudio: React.FC = () => {
     });
   };
 
+  const updatePhotoOverlay = (
+    id: string,
+    patch: Partial<PhotoOverlayLayer>,
+    recordUndo = false
+  ) => {
+    setSlides((prev) => {
+      if (recordUndo) pushHistory(prev);
+      return prev.map((s, idx) =>
+        idx === activeSlideIdx
+          ? {
+              ...s,
+              photoOverlays: (s.photoOverlays || []).map((o) =>
+                o.id === id ? { ...o, ...patch } : o
+              )
+            }
+          : s
+      );
+    });
+  };
+
+  const addPhotoOverlay = (src: string, label?: string, shape: OverlayShape = 'circle') => {
+    if (!src) return;
+    const existing = activeSlide.photoOverlays || [];
+    const maxZ = Math.max(
+      20,
+      ...activeSlide.layers.map((l, i) => l.zIndex ?? 20 + i),
+      ...existing.map((o, i) => o.zIndex ?? 25 + i)
+    );
+    const id = `overlay-${Date.now()}`;
+    const idxOffset = (existing.length % 3) * 54;
+    const newOverlay: PhotoOverlayLayer = {
+      id,
+      label: label ? `📸 ${label}` : `📸 Photo ${existing.length + 1}`,
+      visible: true,
+      src,
+      x: Math.min(880, 770 - idxOffset),
+      y: Math.min(canvasH - 220, 320 + idxOffset),
+      width: shape === 'polaroid' ? 300 : 310,
+      height: shape === 'polaroid' ? 360 : 310,
+      shape,
+      borderColor: '#FFFFFF',
+      borderWidth: 8,
+      opacity: 1,
+      rotation: existing.length % 2 === 1 ? -4 : 0,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      shadow: true,
+      zIndex: maxZ + 2
+    };
+    updateActiveSlide({ photoOverlays: [...existing, newOverlay] }, true);
+    setSelectedLayerId(id);
+    setEditingLayerId(null);
+    setInspectorTab('pill');
+  };
+
+  const removePhotoOverlay = (id: string) => {
+    updateActiveSlide(
+      { photoOverlays: (activeSlide.photoOverlays || []).filter((o) => o.id !== id) },
+      true
+    );
+    if (selectedLayerId === id) {
+      setSelectedLayerId(null);
+      setEditingLayerId(null);
+    }
+  };
+
+  const duplicatePhotoOverlay = (id: string) => {
+    const existing = activeSlide.photoOverlays || [];
+    const srcOv = existing.find((o) => o.id === id);
+    if (!srcOv) return;
+    const maxZ = Math.max(
+      20,
+      ...activeSlide.layers.map((l, i) => l.zIndex ?? 20 + i),
+      ...existing.map((o, i) => o.zIndex ?? 25 + i)
+    );
+    const copyId = `overlay-${Date.now()}`;
+    const copy: PhotoOverlayLayer = {
+      ...srcOv,
+      id: copyId,
+      label: `${srcOv.label} Copy`,
+      x: Math.min(920, srcOv.x + 45),
+      y: Math.min(canvasH - 180, srcOv.y + 45),
+      zIndex: maxZ + 2
+    };
+    updateActiveSlide({ photoOverlays: [...existing, copy] }, true);
+    setSelectedLayerId(copyId);
+  };
+
+  const shiftLayerZOrder = (
+    targetId: string,
+    direction: 'front' | 'forward' | 'backward' | 'back'
+  ) => {
+    const textEntries = activeSlide.layers.map((l, i) => ({
+      id: l.id,
+      kind: 'text' as const,
+      visible: l.visible,
+      z: l.zIndex ?? 10 + i * 2
+    }));
+    const overlayEntries = (activeSlide.photoOverlays || []).map((o, i) => ({
+      id: o.id,
+      kind: 'overlay' as const,
+      visible: o.visible,
+      z: o.zIndex ?? 30 + i * 2
+    }));
+    const allSorted = [...textEntries, ...overlayEntries].sort((a, b) => a.z - b.z);
+    const visibleSorted = allSorted.filter((item) => item.visible);
+    const hiddenItems = allSorted.filter((item) => !item.visible);
+    const curIdx = visibleSorted.findIndex((item) => item.id === targetId);
+    if (curIdx === -1) return;
+
+    const reordered = [...visibleSorted];
+    const [picked] = reordered.splice(curIdx, 1);
+    if (direction === 'front') reordered.push(picked);
+    else if (direction === 'back') reordered.unshift(picked);
+    else if (direction === 'forward') reordered.splice(Math.min(reordered.length, curIdx + 1), 0, picked);
+    else reordered.splice(Math.max(0, curIdx - 1), 0, picked);
+
+    const zMap = new Map<string, number>();
+    [...hiddenItems, ...reordered].forEach((item, idx) => {
+      zMap.set(item.id, 10 + idx * 2);
+    });
+
+    updateActiveSlide(
+      {
+        layers: activeSlide.layers.map((l) => ({ ...l, zIndex: zMap.get(l.id) ?? l.zIndex })),
+        photoOverlays: (activeSlide.photoOverlays || []).map((o) => ({
+          ...o,
+          zIndex: zMap.get(o.id) ?? o.zIndex
+        }))
+      },
+      true
+    );
+  };
+
   // Signature Default Theme & Template Builder for EVERY Mode (Puppies, Studs, Coat & DNA, Standards, Did You Know)
   const buildDefaultSlideForMode = (
     targetMode: ContentMode,
@@ -3274,7 +3434,8 @@ const SocialStudio: React.FC = () => {
       layers: activeSlide.layers.map(({ text, ...rest }) => ({
         ...rest,
         sampleText: text
-      }))
+      })),
+      photoOverlays: (activeSlide.photoOverlays || []).map((o) => ({ ...o }))
     };
     const next = [presetItem, ...savedLayouts];
     setSavedLayouts(next);
@@ -3315,6 +3476,7 @@ const SocialStudio: React.FC = () => {
       pillOpacity: sl.pillOpacity,
       font: sl.font,
       textColor: sl.textColor,
+      zIndex: sl.zIndex,
       text: freshTextMap.get(sl.id) || sl.sampleText || sl.label
     }));
 
@@ -3346,7 +3508,8 @@ const SocialStudio: React.FC = () => {
                 : selectedDog.image || activeSlide.photoSrc
             }
           : {}),
-        layers: mergedLayers
+        layers: mergedLayers,
+        ...(saved.photoOverlays ? { photoOverlays: saved.photoOverlays.map((o) => ({ ...o })) } : {})
       },
       true
     );
@@ -3363,7 +3526,12 @@ const SocialStudio: React.FC = () => {
     [activeSlide.layers, selectedLayerId]
   );
 
-  // Unified Drag & 4-Way Handle + Offset Crosshair State
+  const selectedPhotoOverlay = useMemo(
+    () => (activeSlide.photoOverlays || []).find((o) => o.id === selectedLayerId) || null,
+    [activeSlide.photoOverlays, selectedLayerId]
+  );
+
+  // Unified Drag & 4-Way Handle + Offset Crosshair State (Works for BOTH Text Pills & Secondary Photo Overlays!)
   const dragModeRef = useRef<{
     type:
       | 'none'
@@ -3373,12 +3541,14 @@ const SocialStudio: React.FC = () => {
       | 'handle-right'
       | 'handle-top'
       | 'handle-bottom';
+    targetKind?: 'text' | 'overlay';
     layerId?: string;
     sx: number;
     sy: number;
     bx: number;
     by: number;
     bWidth: number;
+    bHeight: number;
     bPadY: number;
     moved: boolean;
     recordedUndo: boolean;
@@ -3392,6 +3562,7 @@ const SocialStudio: React.FC = () => {
     bx: 0,
     by: 0,
     bWidth: 400,
+    bHeight: 320,
     bPadY: 14,
     moved: false,
     recordedUndo: false
@@ -3403,12 +3574,18 @@ const SocialStudio: React.FC = () => {
     startDist: number;
     baseZoom: number;
     baseFontSize: number;
+    baseOvWidth: number;
+    baseOvHeight: number;
+    targetKind: 'text' | 'overlay' | null;
     targetLayerId: string | null;
   }>({
     active: false,
     startDist: 0,
     baseZoom: 1,
     baseFontSize: 30,
+    baseOvWidth: 320,
+    baseOvHeight: 320,
+    targetKind: null,
     targetLayerId: null
   });
 
@@ -3423,6 +3600,9 @@ const SocialStudio: React.FC = () => {
         startDist: dist,
         baseZoom: activeSlide.zoom,
         baseFontSize: selectedLayer?.fontSize || 30,
+        baseOvWidth: selectedPhotoOverlay?.width || 320,
+        baseOvHeight: selectedPhotoOverlay?.height || 320,
+        targetKind: selectedPhotoOverlay ? 'overlay' : selectedLayer ? 'text' : null,
         targetLayerId: selectedLayerId
       };
       dragModeRef.current.type = 'none';
@@ -3435,7 +3615,15 @@ const SocialStudio: React.FC = () => {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const ratioDist = Math.hypot(dx, dy) / pinchRef.current.startDist;
-      if (pinchRef.current.targetLayerId) {
+      if (pinchRef.current.targetLayerId && pinchRef.current.targetKind === 'overlay') {
+        const nextW = Math.round(
+          Math.max(120, Math.min(980, pinchRef.current.baseOvWidth * ratioDist))
+        );
+        const nextH = Math.round(
+          Math.max(120, Math.min(1200, pinchRef.current.baseOvHeight * ratioDist))
+        );
+        updatePhotoOverlay(pinchRef.current.targetLayerId, { width: nextW, height: nextH });
+      } else if (pinchRef.current.targetLayerId) {
         const nextFont = Math.round(
           Math.max(15, Math.min(120, pinchRef.current.baseFontSize * ratioDist))
         );
@@ -3833,8 +4021,113 @@ const SocialStudio: React.FC = () => {
       }
     }
 
-    for (const layer of slide.layers) {
-      if (!layer.visible || !layer.text.trim()) continue;
+    // Render Text Pills + Secondary Photo Overlays in true unified Z-Index order!
+    const exportQueue: (
+      | { kind: 'text'; z: number; layer: TextLayer }
+      | { kind: 'overlay'; z: number; overlay: PhotoOverlayLayer }
+    )[] = [
+      ...slide.layers
+        .map((layer, i) => ({ kind: 'text' as const, z: layer.zIndex ?? 10 + i * 2, layer }))
+        .filter((item) => item.layer.visible && item.layer.text.trim()),
+      ...(slide.photoOverlays || [])
+        .map((overlay, i) => ({
+          kind: 'overlay' as const,
+          z: overlay.zIndex ?? 30 + i * 2,
+          overlay
+        }))
+        .filter((item) => item.overlay.visible && Boolean(item.overlay.src))
+    ].sort((a, b) => a.z - b.z);
+
+    for (const entry of exportQueue) {
+      if (entry.kind === 'overlay') {
+        const ov = entry.overlay;
+        const ovImg = await loadImageElement(ov.src);
+        if (!ovImg || ovImg.naturalWidth <= 0) continue;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.05, Math.min(1, ov.opacity ?? 1));
+        ctx.translate(ov.x, ov.y);
+        if (ov.rotation) ctx.rotate((ov.rotation * Math.PI) / 180);
+
+        const outerW = ov.width;
+        const outerH = ov.shape === 'circle' ? ov.width : ov.height;
+        const ox = -outerW / 2;
+        const oy = -outerH / 2;
+        const radTL =
+          ov.shape === 'circle'
+            ? outerW / 2
+            : ov.shape === 'arch'
+              ? Math.round(outerW / 2)
+              : ov.shape === 'rounded'
+                ? 36
+                : ov.shape === 'polaroid'
+                  ? 18
+                  : 0;
+        const radBR =
+          ov.shape === 'circle'
+            ? outerW / 2
+            : ov.shape === 'arch'
+              ? 28
+              : ov.shape === 'rounded'
+                ? 36
+                : ov.shape === 'polaroid'
+                  ? 18
+                  : 0;
+
+        if (ov.shadow) {
+          ctx.save();
+          ctx.shadowColor = 'rgba(20, 28, 24, 0.28)';
+          ctx.shadowBlur = 32;
+          ctx.shadowOffsetY = 12;
+          roundRectPath(ctx, ox, oy, outerW, outerH, radTL, radTL, radBR, radBR);
+          ctx.fillStyle = ov.borderColor || '#FFFFFF';
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Frame background (supports polaroid bottom lip & borders)
+        roundRectPath(ctx, ox, oy, outerW, outerH, radTL, radTL, radBR, radBR);
+        ctx.fillStyle = ov.borderColor || '#FFFFFF';
+        ctx.fill();
+
+        const padSide = ov.shape === 'polaroid' ? Math.max(14, ov.borderWidth + 8) : ov.borderWidth;
+        const padBottom =
+          ov.shape === 'polaroid'
+            ? Math.max(46, Math.round(outerH * 0.16))
+            : padSide;
+        const iw = Math.max(40, outerW - padSide * 2);
+        const ih = Math.max(40, outerH - padSide - padBottom);
+        const ix = -outerW / 2 + padSide;
+        const iy = -outerH / 2 + padSide;
+        const iRadTL = Math.max(0, radTL - padSide * 0.6);
+        const iRadBR = Math.max(0, radBR - padSide * 0.6);
+
+        ctx.save();
+        if (ov.shape === 'circle') {
+          ctx.beginPath();
+          ctx.ellipse(0, 0, iw / 2, ih / 2, 0, 0, Math.PI * 2);
+          ctx.closePath();
+        } else {
+          roundRectPath(ctx, ix, iy, iw, ih, iRadTL, iRadTL, iRadBR, iRadBR);
+        }
+        ctx.clip();
+        const coverScale = Math.max(iw / ovImg.naturalWidth, ih / ovImg.naturalHeight) * (ov.zoom || 1);
+        const dw = ovImg.naturalWidth * coverScale;
+        const dh = ovImg.naturalHeight * coverScale;
+        ctx.drawImage(ovImg, ix + (iw - dw) / 2 + (ov.panX || 0), iy + (ih - dh) / 2 + (ov.panY || 0), dw, dh);
+        ctx.restore();
+
+        if (ov.borderWidth > 0 && ov.shape !== 'polaroid') {
+          roundRectPath(ctx, ox, oy, outerW, outerH, radTL, radTL, radBR, radBR);
+          ctx.strokeStyle = ov.borderColor || '#FFFFFF';
+          ctx.lineWidth = ov.borderWidth;
+          ctx.stroke();
+        }
+        ctx.restore();
+        continue;
+      }
+
+      const layer = entry.layer;
       const fontSize = layer.fontSize;
       const fontSpec =
         layer.font === 'serif'
@@ -4294,6 +4587,68 @@ const SocialStudio: React.FC = () => {
                     + {l.label}
                   </button>
                 ))}
+              {(activeSlide.photoOverlays || []).map((ov) => (
+                <div
+                  key={ov.id}
+                  className={`shrink-0 flex items-center rounded-full text-[11px] font-extrabold border transition ${
+                    selectedLayerId === ov.id
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                      : 'bg-white text-[#1C2621] border-[#DDD6C7]'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedLayerId(ov.id);
+                      setEditingLayerId(null);
+                      setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                    }}
+                    className="pl-2.5 pr-1 py-0.5 touch-manipulation cursor-pointer"
+                  >
+                    📸 {ov.label}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removePhotoOverlay(ov.id);
+                    }}
+                    title={`Remove ${ov.label}`}
+                    className={`pr-2 pl-0.5 py-0.5 font-black touch-manipulation cursor-pointer ${
+                      selectedLayerId === ov.id ? 'text-white/90 hover:text-white' : 'text-[#991B1B]'
+                    }`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  const candidate =
+                    galleryPhotos.find(
+                      (u) =>
+                        u !== activeSlide.photoSrc &&
+                        !(activeSlide.photoOverlays || []).some((o) => o.src === u)
+                    ) ||
+                    galleryPhotos[0] ||
+                    allDogs.find((d) => d.image && d.image !== activeSlide.photoSrc)?.image ||
+                    allDogs.find((d) => d.image)?.image;
+                  if (candidate) {
+                    addPhotoOverlay(
+                      candidate,
+                      selectedDog ? `${selectedDog.name} Overlay` : 'Photo Overlay'
+                    );
+                    setInspectorTab('pill');
+                  } else {
+                    setInspectorTab('source');
+                  }
+                }}
+                title="Add secondary photo overlay on top of this card"
+                className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-dashed border-[#2E5A44]/50 bg-[#E4EFE8]/70 text-[#2E5A44] touch-manipulation cursor-pointer"
+              >
+                + 📸 Overlay
+              </button>
             </div>
           </div>
 
@@ -4363,19 +4718,43 @@ const SocialStudio: React.FC = () => {
                     } else {
                       setSnapHorizontal(false);
                     }
-                    updateLayer(dm.layerId, { x: nextX, y: nextY });
+                    if (dm.targetKind === 'overlay') {
+                      updatePhotoOverlay(dm.layerId, { x: nextX, y: nextY });
+                    } else {
+                      updateLayer(dm.layerId, { x: nextX, y: nextY });
+                    }
                   } else if (dm.type === 'handle-right' && dm.layerId) {
-                    const nextW = Math.max(140, Math.min(1040, dm.bWidth + dx * 2));
-                    updateLayer(dm.layerId, { pillWidth: nextW });
+                    if (dm.targetKind === 'overlay') {
+                      const nextW = Math.max(90, Math.min(960, dm.bWidth + dx * 2));
+                      updatePhotoOverlay(dm.layerId, { width: nextW });
+                    } else {
+                      const nextW = Math.max(140, Math.min(1040, dm.bWidth + dx * 2));
+                      updateLayer(dm.layerId, { pillWidth: nextW });
+                    }
                   } else if (dm.type === 'handle-left' && dm.layerId) {
-                    const nextW = Math.max(140, Math.min(1040, dm.bWidth - dx * 2));
-                    updateLayer(dm.layerId, { pillWidth: nextW });
+                    if (dm.targetKind === 'overlay') {
+                      const nextW = Math.max(90, Math.min(960, dm.bWidth - dx * 2));
+                      updatePhotoOverlay(dm.layerId, { width: nextW });
+                    } else {
+                      const nextW = Math.max(140, Math.min(1040, dm.bWidth - dx * 2));
+                      updateLayer(dm.layerId, { pillWidth: nextW });
+                    }
                   } else if (dm.type === 'handle-bottom' && dm.layerId) {
-                    const nextPadY = Math.max(4, Math.min(110, dm.bPadY + dy));
-                    updateLayer(dm.layerId, { padY: nextPadY });
+                    if (dm.targetKind === 'overlay') {
+                      const nextH = Math.max(90, Math.min(1200, dm.bHeight + dy * 2));
+                      updatePhotoOverlay(dm.layerId, { height: nextH });
+                    } else {
+                      const nextPadY = Math.max(4, Math.min(110, dm.bPadY + dy));
+                      updateLayer(dm.layerId, { padY: nextPadY });
+                    }
                   } else if (dm.type === 'handle-top' && dm.layerId) {
-                    const nextPadY = Math.max(4, Math.min(110, dm.bPadY - dy));
-                    updateLayer(dm.layerId, { padY: nextPadY });
+                    if (dm.targetKind === 'overlay') {
+                      const nextH = Math.max(90, Math.min(1200, dm.bHeight - dy * 2));
+                      updatePhotoOverlay(dm.layerId, { height: nextH });
+                    } else {
+                      const nextPadY = Math.max(4, Math.min(110, dm.bPadY - dy));
+                      updateLayer(dm.layerId, { padY: nextPadY });
+                    }
                   }
                 }}
                 onPointerUp={() => {
@@ -4576,6 +4955,7 @@ const SocialStudio: React.FC = () => {
                       bx: activeSlide.panX,
                       by: activeSlide.panY,
                       bWidth: 0,
+                      bHeight: 0,
                       bPadY: 0,
                       moved: false,
                       recordedUndo: false
@@ -4664,7 +5044,7 @@ const SocialStudio: React.FC = () => {
               )}
 
               {/* Freeform Pills with Explicit Width/Padding, 4-Way Handles & Offset Move Crosshair */}
-              {activeSlide.layers.map((layer) => {
+              {activeSlide.layers.map((layer, layerIdx) => {
                 if (!layer.visible) return null;
                 const isSel = selectedLayerId === layer.id;
                 const isEditing = editingLayerId === layer.id;
@@ -4733,12 +5113,14 @@ const SocialStudio: React.FC = () => {
                   (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
                   dragModeRef.current = {
                     type: handleType,
+                    targetKind: 'text',
                     layerId: layer.id,
                     sx: e.clientX,
                     sy: e.clientY,
                     bx: layer.x,
                     by: layer.y,
                     bWidth: layer.pillWidth,
+                    bHeight: 0,
                     bPadY: layer.padY,
                     moved: false,
                     recordedUndo: false,
@@ -4756,12 +5138,14 @@ const SocialStudio: React.FC = () => {
                       setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
                       dragModeRef.current = {
                         type: 'layer',
+                        targetKind: 'text',
                         layerId: layer.id,
                         sx: e.clientX,
                         sy: e.clientY,
                         bx: layer.x,
                         by: layer.y,
                         bWidth: layer.pillWidth,
+                        bHeight: 0,
                         bPadY: layer.padY,
                         moved: false,
                         recordedUndo: false,
@@ -4779,7 +5163,7 @@ const SocialStudio: React.FC = () => {
                       top: layer.y,
                       transform: 'translate(-50%, -50%)',
                       padding: 22,
-                      zIndex: isSel ? 30 : 20,
+                      zIndex: layer.zIndex ?? 10 + layerIdx * 2,
                       cursor: isEditing ? 'text' : 'move'
                     }}
                   >
@@ -5093,12 +5477,14 @@ const SocialStudio: React.FC = () => {
                                 setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
                                 dragModeRef.current = {
                                   type: 'layer',
+                                  targetKind: 'text',
                                   layerId: layer.id,
                                   sx: e.clientX,
                                   sy: e.clientY,
                                   bx: layer.x,
                                   by: layer.y,
                                   bWidth: layer.pillWidth,
+                                  bHeight: 0,
                                   bPadY: layer.padY,
                                   moved: false,
                                   recordedUndo: false,
@@ -5162,15 +5548,496 @@ const SocialStudio: React.FC = () => {
                   </div>
                 );
               })}
+
+              {/* Secondary Photo Overlays (Interactive Layers with 5 Shapes, 4-Way Resize & Offset Crosshair) */}
+              {(activeSlide.photoOverlays || []).map((ov, ovIdx) => {
+                const isSel = selectedLayerId === ov.id;
+                const halfW = ov.width / 2;
+                const halfH = ov.height / 2;
+                const belowY = ov.y + halfH + 84;
+                const placeBelow = belowY <= canvasH - 64;
+                const targetCrossY = placeBelow ? belowY : Math.max(64, ov.y - halfH - 84);
+                const targetCrossX = placeBelow
+                  ? ov.x > 740
+                    ? Math.max(68, ov.x - halfW - 58)
+                    : Math.min(1012, ov.x + halfW + 58)
+                  : Math.max(68, ov.x - halfW - 54);
+
+                const parkedOffX = targetCrossX - ov.x;
+                const parkedOffY = targetCrossY - ov.y;
+
+                const isCrosshairDragging =
+                  dragModeRef.current.type === 'layer' &&
+                  dragModeRef.current.layerId === ov.id &&
+                  Boolean(dragModeRef.current.viaCrosshair);
+
+                const activeOffX = isCrosshairDragging
+                  ? (dragModeRef.current.crossOffX ?? parkedOffX)
+                  : parkedOffX;
+                const activeOffY = isCrosshairDragging
+                  ? (dragModeRef.current.crossOffY ?? parkedOffY)
+                  : parkedOffY;
+
+                const renderOffX = Math.max(48 - ov.x, Math.min(1032 - ov.x, activeOffX));
+                const renderOffY = Math.max(
+                  48 - ov.y,
+                  Math.min(canvasH - 48 - ov.y, activeOffY)
+                );
+
+                const edgeRatio = Math.max(
+                  Math.abs(renderOffX) / Math.max(24, halfW + 6),
+                  Math.abs(renderOffY) / Math.max(20, halfH + 6)
+                );
+                const tetherStartScale = edgeRatio > 1 ? 1 / edgeRatio : 1;
+                const tetherStartX = renderOffX * tetherStartScale;
+                const tetherStartY = renderOffY * tetherStartScale;
+
+                const startOverlayHandle = (
+                  handleType:
+                    | 'handle-left'
+                    | 'handle-right'
+                    | 'handle-top'
+                    | 'handle-bottom',
+                  e: React.PointerEvent
+                ) => {
+                  e.stopPropagation();
+                  (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+                  dragModeRef.current = {
+                    type: handleType,
+                    targetKind: 'overlay',
+                    layerId: ov.id,
+                    sx: e.clientX,
+                    sy: e.clientY,
+                    bx: ov.x,
+                    by: ov.y,
+                    bWidth: ov.width,
+                    bHeight: ov.height,
+                    bPadY: 0,
+                    moved: false,
+                    recordedUndo: false,
+                    viaCrosshair: false
+                  };
+                };
+
+                const isPolaroid = ov.shape === 'polaroid';
+                const frameRadius =
+                  ov.shape === 'circle'
+                    ? '999px'
+                    : ov.shape === 'arch'
+                      ? `${Math.round(ov.width / 2)}px ${Math.round(ov.width / 2)}px 28px 28px`
+                      : ov.shape === 'rounded'
+                        ? 34
+                        : ov.shape === 'polaroid'
+                          ? 18
+                          : 10;
+                const borderW = Math.max(0, ov.borderWidth ?? 6);
+                const polaroidSidePad = Math.max(14, borderW + 10);
+                const polaroidBottomPad = Math.max(38, Math.round(ov.height * 0.16));
+
+                return (
+                  <div
+                    key={ov.id}
+                    onPointerDown={(e) => {
+                      e.stopPropagation();
+                      if (!e.isPrimary || pinchRef.current.active) return;
+                      setSelectedLayerId(ov.id);
+                      setEditingLayerId(null);
+                      setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                      dragModeRef.current = {
+                        type: 'layer',
+                        targetKind: 'overlay',
+                        layerId: ov.id,
+                        sx: e.clientX,
+                        sy: e.clientY,
+                        bx: ov.x,
+                        by: ov.y,
+                        bWidth: ov.width,
+                        bHeight: ov.height,
+                        bPadY: 0,
+                        moved: false,
+                        recordedUndo: false,
+                        viaCrosshair: false
+                      };
+                    }}
+                    style={{
+                      position: 'absolute',
+                      left: ov.x,
+                      top: ov.y,
+                      transform: 'translate(-50%, -50%)',
+                      padding: 22,
+                      zIndex: ov.zIndex ?? 30 + ovIdx * 2,
+                      cursor: 'move'
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: ov.width,
+                        height: ov.height,
+                        outline: isSel ? '3px dashed #D46A4E' : 'none',
+                        outlineOffset: 6,
+                        borderRadius: frameRadius
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          transform: `rotate(${ov.rotation || 0}deg)`,
+                          transformOrigin: 'center center',
+                          opacity: ov.opacity ?? 1,
+                          borderRadius: frameRadius,
+                          boxShadow:
+                            ov.shadow !== false ? '0 14px 36px rgba(0,0,0,0.28)' : 'none',
+                          background: isPolaroid ? ov.borderColor || '#FFFFFF' : 'transparent',
+                          padding: isPolaroid
+                            ? `${polaroidSidePad}px ${polaroidSidePad}px ${polaroidBottomPad}px`
+                            : 0,
+                          border:
+                            !isPolaroid && borderW > 0
+                              ? `${borderW}px solid ${ov.borderColor || '#FFFFFF'}`
+                              : 'none',
+                          boxSizing: 'border-box',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            borderRadius: isPolaroid ? 8 : 0,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            background: '#EAE5D9'
+                          }}
+                        >
+                          <img
+                            src={ov.src}
+                            alt={ov.label}
+                            draggable={false}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
+                              transformOrigin: 'center center',
+                              pointerEvents: 'none',
+                              userSelect: 'none'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {isSel && (
+                        <>
+                          <div
+                            onPointerDown={(e) => startOverlayHandle('handle-left', e)}
+                            style={{
+                              position: 'absolute',
+                              left: -34,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ew-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#D46A4E',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ◀
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startOverlayHandle('handle-right', e)}
+                            style={{
+                              position: 'absolute',
+                              right: -34,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ew-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#D46A4E',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▶
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startOverlayHandle('handle-top', e)}
+                            style={{
+                              position: 'absolute',
+                              top: -34,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ns-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#2E5A44',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▲
+                            </span>
+                          </div>
+
+                          <div
+                            onPointerDown={(e) => startOverlayHandle('handle-bottom', e)}
+                            style={{
+                              position: 'absolute',
+                              bottom: -34,
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              width: 64,
+                              height: 64,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'ns-resize'
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: 999,
+                                background: '#2E5A44',
+                                color: '#FFF',
+                                border: '4px solid #FFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 16,
+                                fontWeight: 900,
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.25)'
+                              }}
+                            >
+                              ▼
+                            </span>
+                          </div>
+
+                          {/* Top-Right Remove Overlay Button */}
+                          <button
+                            type="button"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removePhotoOverlay(ov.id);
+                            }}
+                            title={`Remove ${ov.label}`}
+                            style={{
+                              position: 'absolute',
+                              top: -20,
+                              right: -20,
+                              width: 44,
+                              height: 44,
+                              borderRadius: 999,
+                              background: '#991B1B',
+                              color: '#FFFFFF',
+                              border: '4px solid #FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 20,
+                              fontWeight: 900,
+                              cursor: 'pointer',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                            }}
+                          >
+                            ✕
+                          </button>
+
+                          {/* Floating Offset Crosshair Move Handle (Keeps thumb off photo!) */}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: '50%',
+                              width: 0,
+                              height: 0,
+                              pointerEvents: 'none',
+                              zIndex: 45
+                            }}
+                          >
+                            <svg
+                              width={2200}
+                              height={2800}
+                              viewBox="-1100 -1400 2200 2800"
+                              style={{
+                                position: 'absolute',
+                                left: -1100,
+                                top: -1400,
+                                overflow: 'visible',
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              <line
+                                x1={tetherStartX}
+                                y1={tetherStartY}
+                                x2={renderOffX}
+                                y2={renderOffY}
+                                stroke="#1C2621"
+                                strokeWidth={4}
+                                strokeDasharray="8 6"
+                                strokeOpacity={0.7}
+                              />
+                              <circle
+                                cx={tetherStartX}
+                                cy={tetherStartY}
+                                r={6}
+                                fill="#D46A4E"
+                                stroke="#FFFFFF"
+                                strokeWidth={3}
+                              />
+                            </svg>
+
+                            <div
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                if (!e.isPrimary || pinchRef.current.active) return;
+                                (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+                                setSelectedLayerId(ov.id);
+                                setEditingLayerId(null);
+                                setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                                dragModeRef.current = {
+                                  type: 'layer',
+                                  targetKind: 'overlay',
+                                  layerId: ov.id,
+                                  sx: e.clientX,
+                                  sy: e.clientY,
+                                  bx: ov.x,
+                                  by: ov.y,
+                                  bWidth: ov.width,
+                                  bHeight: ov.height,
+                                  bPadY: 0,
+                                  moved: false,
+                                  recordedUndo: false,
+                                  viaCrosshair: true,
+                                  crossOffX: activeOffX,
+                                  crossOffY: activeOffY
+                                };
+                              }}
+                              title={`Drag to move "${ov.label}" without covering it`}
+                              style={{
+                                position: 'absolute',
+                                left: renderOffX,
+                                top: renderOffY,
+                                transform: 'translate(-50%, -50%)',
+                                width: 108,
+                                height: 108,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'grab',
+                                pointerEvents: 'auto',
+                                touchAction: 'none'
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 72,
+                                  height: 72,
+                                  borderRadius: 999,
+                                  background: '#1C2621',
+                                  color: '#F4D37E',
+                                  border: '5px solid #FFFFFF',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                                }}
+                              >
+                                <svg
+                                  width={38}
+                                  height={38}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2.5}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="5 9 2 12 5 15" />
+                                  <polyline points="9 5 12 2 15 5" />
+                                  <polyline points="15 19 12 22 9 19" />
+                                  <polyline points="19 9 22 12 19 15" />
+                                  <line x1="2" y1="12" x2="22" y2="12" />
+                                  <line x1="12" y1="2" x2="12" y2="22" />
+                                </svg>
+                              </span>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           </div>
 
           {/* Fixed 20px Desktop Status Hint — Constant Height So Canvas Never Shifts! */}
           <div className="hidden lg:flex items-center justify-center h-5 shrink-0 text-[11px] font-semibold text-[#5C6B63] truncate max-w-full">
-            {selectedLayer
-              ? `✥ Drag offset crosshair (or pill) to move "${selectedLayer.label}" • Double-click pill to type • Style in right panel`
-              : '👆 Tap any pill to style • Grab ✥ offset crosshair to move without covering text • Pinch to scale'}
+            {selectedPhotoOverlay
+              ? `✥ Drag offset crosshair (or photo overlay) to move "${selectedPhotoOverlay.label}" • 4 handles resize • Style in Layer tab`
+              : selectedLayer
+                ? `✥ Drag offset crosshair (or pill) to move "${selectedLayer.label}" • Double-click pill to type • Style in right panel`
+                : '👆 Tap any pill or photo overlay to style • Grab ✥ offset crosshair to move without covering it • Pinch to scale'}
           </div>
         </main>
 
@@ -5181,7 +6048,7 @@ const SocialStudio: React.FC = () => {
             {(
               [
                 ['theme', '🎨', 'Theme'],
-                ['pill', '✏️', 'Pill'],
+                ['pill', '✏️', 'Layer'],
                 ['source', '🐶', 'Source'],
                 ['fields', '✨', 'Text'],
                 ['layouts', '💾', 'Slides'],
@@ -5189,7 +6056,8 @@ const SocialStudio: React.FC = () => {
               ] as const
             ).map(([tabKey, icon, label]) => {
               const isActive = inspectorTab === tabKey;
-              const showPillDot = tabKey === 'pill' && Boolean(selectedLayer);
+              const showPillDot =
+                tabKey === 'pill' && Boolean(selectedLayer || selectedPhotoOverlay);
               return (
                 <button
                   key={tabKey}
@@ -5446,22 +6314,50 @@ const SocialStudio: React.FC = () => {
               </div>
             )}
 
-            {/* ==================== TAB 2: SELECTED PILL INSPECTOR ==================== */}
+            {/* ==================== TAB 2: SELECTED PILL & PHOTO OVERLAY INSPECTOR ==================== */}
             {inspectorTab === 'pill' && (
               <div className="space-y-3">
-                {/* Quick Pill Selector Row Inside Panel */}
+                {/* Quick Layer Selector Row Inside Panel (Pills + Photo Overlays) */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1.5">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      Select Pill to Style
+                      Select Layer to Style
                     </span>
-                    <button
-                      type="button"
-                      onClick={addCustomText}
-                      className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] text-[#D46A4E] touch-manipulation cursor-pointer"
-                    >
-                      + Custom Pill
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={addCustomText}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] text-[#D46A4E] touch-manipulation cursor-pointer"
+                      >
+                        + Custom Pill
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const candidate =
+                            galleryPhotos.find(
+                              (u) =>
+                                u !== activeSlide.photoSrc &&
+                                !(activeSlide.photoOverlays || []).some((o) => o.src === u)
+                            ) ||
+                            galleryPhotos[0] ||
+                            allDogs.find((d) => d.image && d.image !== activeSlide.photoSrc)
+                              ?.image ||
+                            allDogs.find((d) => d.image)?.image;
+                          if (candidate) {
+                            addPhotoOverlay(
+                              candidate,
+                              selectedDog ? `${selectedDog.name} Overlay` : 'Photo Overlay'
+                            );
+                          } else {
+                            setInspectorTab('source');
+                          }
+                        }}
+                        className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] touch-manipulation cursor-pointer"
+                      >
+                        + 📸 Overlay
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {activeSlide.layers
@@ -5483,10 +6379,431 @@ const SocialStudio: React.FC = () => {
                           {l.label}
                         </button>
                       ))}
+                    {(activeSlide.photoOverlays || []).map((ov) => (
+                      <button
+                        key={ov.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedLayerId(ov.id);
+                          setEditingLayerId(null);
+                        }}
+                        className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                          selectedLayerId === ov.id
+                            ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                            : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                        }`}
+                      >
+                        📸 {ov.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {selectedLayer ? (
+                {/* Shared Layer Stacking / Z-Order Bar */}
+                {(selectedLayer || selectedPhotoOverlay) && (
+                  <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-[#F0ECE1]">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      Layer Stack
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {(
+                        [
+                          ['back', '⏬ Back'],
+                          ['backward', '⬇️ Back 1'],
+                          ['forward', '⬆️ Up 1'],
+                          ['front', '⏫ Front']
+                        ] as const
+                      ).map(([dir, lbl]) => {
+                        const targetId = selectedPhotoOverlay?.id || selectedLayer?.id;
+                        if (!targetId) return null;
+                        return (
+                          <button
+                            key={dir}
+                            type="button"
+                            onClick={() => shiftLayerZOrder(targetId, dir)}
+                            className="px-2 py-1 rounded-lg bg-[#F6F4EE] hover:bg-[#EFECE4] border border-[#DDD6C7] text-[11px] font-extrabold text-[#1C2621] touch-manipulation cursor-pointer"
+                          >
+                            {lbl}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {selectedPhotoOverlay ? (
+                  <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className="text-[11px] font-extrabold text-[#2E5A44] truncate">
+                        📸 Overlay: {selectedPhotoOverlay.label}
+                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, { x: 540 }, true)
+                          }
+                          className="px-2 py-1 rounded-lg bg-[#F6F4EE] text-xs font-extrabold border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                          title="Center horizontally"
+                        >
+                          ┼ Center
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updatePhotoOverlay(
+                              selectedPhotoOverlay.id,
+                              { shadow: selectedPhotoOverlay.shadow === false },
+                              true
+                            )
+                          }
+                          className={`px-2 py-1 rounded-lg text-xs font-extrabold border touch-manipulation cursor-pointer ${
+                            selectedPhotoOverlay.shadow !== false
+                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
+                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#5C6B63]'
+                          }`}
+                          title="Toggle drop shadow"
+                        >
+                          Shadow
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => duplicatePhotoOverlay(selectedPhotoOverlay.id)}
+                          className="px-2 py-1 rounded-lg bg-[#F6F4EE] text-xs font-extrabold border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                          title="Duplicate photo overlay"
+                        >
+                          ⧉ Copy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removePhotoOverlay(selectedPhotoOverlay.id)}
+                          className="px-2 py-1 rounded-lg bg-[#FEE2E2] text-[#991B1B] text-xs font-extrabold touch-manipulation cursor-pointer"
+                          title="Remove photo overlay"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Frame Shape Selector */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Overlay Shape
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {OVERLAY_SHAPE_OPTIONS.map((opt) => {
+                          const active = selectedPhotoOverlay.shape === opt.key;
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              onClick={() => {
+                                const patch: Partial<PhotoOverlayLayer> = { shape: opt.key };
+                                if (opt.key === 'circle' || opt.key === 'square') {
+                                  const avg = Math.round(
+                                    (selectedPhotoOverlay.width + selectedPhotoOverlay.height) / 2
+                                  );
+                                  patch.width = avg;
+                                  patch.height = avg;
+                                }
+                                updatePhotoOverlay(selectedPhotoOverlay.id, patch, true);
+                              }}
+                              className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                                active
+                                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Tilt / Rotation Quick Presets + Slider */}
+                    <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-[#3E4D45]">
+                          Tilt / Rotation ({selectedPhotoOverlay.rotation || 0}°)
+                        </span>
+                        <div className="flex items-center gap-1">
+                          {[-8, 0, 8].map((deg) => (
+                            <button
+                              key={deg}
+                              type="button"
+                              onClick={() =>
+                                updatePhotoOverlay(
+                                  selectedPhotoOverlay.id,
+                                  { rotation: deg },
+                                  true
+                                )
+                              }
+                              className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold border touch-manipulation cursor-pointer ${
+                                (selectedPhotoOverlay.rotation || 0) === deg
+                                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7]'
+                              }`}
+                            >
+                              {deg === -8 ? '↺ -8°' : deg === 8 ? '↻ +8°' : '0°'}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <input
+                        type="range"
+                        min={-30}
+                        max={30}
+                        step={1}
+                        value={selectedPhotoOverlay.rotation || 0}
+                        onChange={(e) =>
+                          updatePhotoOverlay(selectedPhotoOverlay.id, {
+                            rotation: Number(e.target.value)
+                          })
+                        }
+                        className="w-full accent-[#2E5A44]"
+                      />
+                    </div>
+
+                    {/* Dimensions, Opacity, Border & Crop Sliders */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#F0ECE1]">
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Width</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round(selectedPhotoOverlay.width)}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={90}
+                          max={960}
+                          value={selectedPhotoOverlay.width}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              width: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Height</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round(selectedPhotoOverlay.height)}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={90}
+                          max={1200}
+                          value={selectedPhotoOverlay.height}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              height: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Opacity</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round((selectedPhotoOverlay.opacity ?? 1) * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.15}
+                          max={1}
+                          step={0.05}
+                          value={selectedPhotoOverlay.opacity ?? 1}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              opacity: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Border Width</span>
+                          <span className="text-[#D46A4E]">
+                            {selectedPhotoOverlay.borderWidth ?? 6}px
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={28}
+                          value={selectedPhotoOverlay.borderWidth ?? 6}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              borderWidth: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45] col-span-2">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Inner Photo Zoom</span>
+                          <span className="text-[#D46A4E]">
+                            {(selectedPhotoOverlay.zoom || 1).toFixed(2)}×
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={2.6}
+                          step={0.05}
+                          value={selectedPhotoOverlay.zoom || 1}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              zoom: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Inner Pan X</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round(selectedPhotoOverlay.panX || 0)}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-160}
+                          max={160}
+                          step={4}
+                          value={selectedPhotoOverlay.panX || 0}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              panX: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Inner Pan Y</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round(selectedPhotoOverlay.panY || 0)}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-160}
+                          max={160}
+                          step={4}
+                          value={selectedPhotoOverlay.panY || 0}
+                          onChange={(e) =>
+                            updatePhotoOverlay(selectedPhotoOverlay.id, {
+                              panY: Number(e.target.value)
+                            })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Border / Frame Color Swatches */}
+                    <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Border / Frame Color
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {OVERLAY_BORDER_SWATCHES.map((sw) => {
+                          const isActive =
+                            (selectedPhotoOverlay.borderColor || '#FFFFFF') === sw.value;
+                          return (
+                            <button
+                              key={sw.value}
+                              type="button"
+                              onClick={() =>
+                                updatePhotoOverlay(
+                                  selectedPhotoOverlay.id,
+                                  { borderColor: sw.value },
+                                  true
+                                )
+                              }
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                isActive
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                style={{ background: sw.value }}
+                              />
+                              <span>{sw.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Swap Overlay Photo */}
+                    <div className="pt-2 border-t border-[#F0ECE1] space-y-2">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Swap Overlay Photo
+                      </div>
+                      {galleryPhotos.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {galleryPhotos.map((url) => (
+                            <img
+                              key={url}
+                              src={url}
+                              alt="Swap overlay"
+                              onClick={() =>
+                                updatePhotoOverlay(
+                                  selectedPhotoOverlay.id,
+                                  { src: url, panX: 0, panY: 0 },
+                                  true
+                                )
+                              }
+                              className={`w-12 h-12 rounded-xl object-cover cursor-pointer border-2 ${
+                                selectedPhotoOverlay.src === url
+                                  ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                  : 'border-[#DDD6C7]'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      <label className="w-full flex items-center justify-center gap-1.5 bg-[#F6F4EE] border border-dashed border-[#BDB5A4] px-3 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3]">
+                        📷 Upload New Image for This Overlay
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              if (typeof ev.target?.result === 'string') {
+                                updatePhotoOverlay(
+                                  selectedPhotoOverlay.id,
+                                  { src: ev.target.result, panX: 0, panY: 0 },
+                                  true
+                                );
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ) : selectedLayer ? (
                   <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
                     {/* Text Editor + Font / Center / Hide Actions */}
                     <div className="space-y-1.5">
@@ -6149,6 +7466,108 @@ const SocialStudio: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Secondary Photo Overlays (Picture-in-Picture & Stickers) */}
+                <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      📸 Add Secondary Photo Overlay (On Top of Card)
+                    </span>
+                    {(activeSlide.photoOverlays || []).length > 0 && (
+                      <span className="text-[11px] font-extrabold text-[#D46A4E]">
+                        {activeSlide.photoOverlays?.length} on slide
+                      </span>
+                    )}
+                  </div>
+
+                  {galleryPhotos.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-[11px] font-bold text-[#3E4D45]">
+                        From {selectedDog?.name || 'Current'}&apos;s Gallery (Tap to Layer):
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {galleryPhotos.map((url, idx) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => {
+                              addPhotoOverlay(
+                                url,
+                                `${selectedDog?.name || 'Photo'} #${idx + 1}`
+                              );
+                              setInspectorTab('pill');
+                            }}
+                            title={`Layer photo #${idx + 1} onto slide`}
+                            className="relative rounded-xl overflow-hidden border-2 border-[#DDD6C7] hover:border-[#2E5A44] touch-manipulation cursor-pointer"
+                          >
+                            <img
+                              src={url}
+                              alt={`Gallery ${idx + 1}`}
+                              className="w-12 h-12 object-cover"
+                            />
+                            <span className="absolute bottom-0.5 right-0.5 bg-[#2E5A44] text-white text-[9px] font-black px-1 rounded">
+                              +
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <div className="text-[11px] font-bold text-[#3E4D45]">
+                      Any OKC Frenchie / Stud (Tap to Layer on Top):
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {allDogs
+                        .filter((d) => Boolean(d.image))
+                        .slice(0, 12)
+                        .map((d) => (
+                          <button
+                            key={`ov-${d.id}`}
+                            type="button"
+                            onClick={() => {
+                              if (!d.image) return;
+                              addPhotoOverlay(d.image, d.name);
+                              setInspectorTab('pill');
+                            }}
+                            title={`Add ${d.name} as a secondary photo overlay`}
+                            className="flex flex-col items-center gap-0.5 touch-manipulation cursor-pointer opacity-90 hover:opacity-100"
+                          >
+                            <img
+                              src={d.image}
+                              alt={d.name}
+                              className="w-11 h-11 rounded-xl object-cover border-2 border-[#DDD6C7] hover:border-[#2E5A44]"
+                            />
+                            <span className="text-[10px] font-bold text-[#3E4D45] max-w-[50px] truncate">
+                              + {d.name}
+                            </span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+
+                  <label className="w-full flex items-center justify-center gap-2 bg-[#E4EFE8] border-2 border-dashed border-[#2E5A44]/40 text-[#2E5A44] px-4 py-2 rounded-2xl text-xs font-extrabold cursor-pointer hover:bg-[#D5E7DC]">
+                    ➕ Upload Secondary Overlay Photo from Camera Roll
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (typeof ev.target?.result === 'string') {
+                            addPhotoOverlay(ev.target.result, 'Camera Overlay');
+                            setInspectorTab('pill');
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
 
                 {/* Camera Roll Upload & Direct Link */}
                 <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">

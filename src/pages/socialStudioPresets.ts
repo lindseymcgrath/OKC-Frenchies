@@ -41,6 +41,7 @@ export type PillStyle =
   | 'berry'
   | 'frosted';
 export type FontKind = 'sans' | 'serif' | 'serif-italic';
+export type OverlayShape = 'circle' | 'rounded' | 'arch' | 'polaroid' | 'square';
 
 export interface TextLayer {
   id: string;
@@ -56,6 +57,28 @@ export interface TextLayer {
   pillOpacity?: number;
   textColor?: string;
   font: FontKind;
+  zIndex?: number;
+}
+
+export interface PhotoOverlayLayer {
+  id: string;
+  label: string;
+  visible: boolean;
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  shape: OverlayShape;
+  borderColor: string;
+  borderWidth: number;
+  opacity: number;
+  rotation: number;
+  zoom: number;
+  panX: number;
+  panY: number;
+  shadow: boolean;
+  zIndex: number;
 }
 
 export interface DogRecord {
@@ -89,6 +112,7 @@ export interface SlideState {
   zoom: number;
   archHeight: number;
   layers: TextLayer[];
+  photoOverlays?: PhotoOverlayLayer[];
 }
 
 export interface SavedLayoutPreset {
@@ -101,6 +125,7 @@ export interface SavedLayoutPreset {
   photoDim: number;
   archHeight: number;
   layers: (Omit<TextLayer, 'text'> & { sampleText?: string })[];
+  photoOverlays?: PhotoOverlayLayer[];
 }
 
 export interface TopicCardItem {
