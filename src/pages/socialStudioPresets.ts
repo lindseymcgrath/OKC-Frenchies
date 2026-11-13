@@ -64,6 +64,7 @@ export interface PhotoOverlayLayer {
   id: string;
   label: string;
   visible: boolean;
+  mediaType?: 'image' | 'video';
   src: string;
   x: number;
   y: number;
@@ -106,6 +107,8 @@ export interface SlideState {
   slideMode?: ContentMode;
   topicId?: string;
   photoSrc: string;
+  videoSrc?: string;
+  videoMuted?: boolean;
   photoDim: number;
   panX: number;
   panY: number;

@@ -775,6 +775,47 @@ const loadImageElement = (src: string): Promise<HTMLImageElement | null> =>
     img.src = src;
   });
 
+type DrawableMedia = HTMLImageElement | HTMLVideoElement;
+
+const getDrawableDims = (m: DrawableMedia | null): { w: number; h: number } => {
+  if (!m) return { w: 0, h: 0 };
+  if (m instanceof HTMLVideoElement) {
+    return { w: m.videoWidth, h: m.videoHeight };
+  }
+  return { w: m.naturalWidth, h: m.naturalHeight };
+};
+
+const loadVideoElement = (src: string, muted = true): Promise<HTMLVideoElement | null> =>
+  new Promise((resolve) => {
+    if (!src) {
+      resolve(null);
+      return;
+    }
+    const vid = document.createElement('video');
+    if (/^https?:\/\//i.test(src)) vid.crossOrigin = 'anonymous';
+    vid.muted = muted;
+    vid.playsInline = true;
+    vid.preload = 'auto';
+    let settled = false;
+    const finish = (res: HTMLVideoElement | null) => {
+      if (settled) return;
+      settled = true;
+      vid.onloadeddata = null;
+      vid.oncanplay = null;
+      vid.onerror = null;
+      resolve(res);
+    };
+    const onReady = () => {
+      if (vid.videoWidth > 0) finish(vid);
+    };
+    vid.onloadeddata = onReady;
+    vid.oncanplay = onReady;
+    vid.onerror = () => finish(null);
+    vid.src = src;
+    vid.load();
+    setTimeout(() => finish(vid.videoWidth > 0 ? vid : null), 8000);
+  });
+
 const getFrameGeometry = (
   preset: FramePreset,
   canvasH: number,
@@ -1652,6 +1693,11 @@ const SocialStudio: React.FC = () => {
   }>({ active: false, startY: 0, startVh: 50, moved: false });
   const stageHostRef = useRef<HTMLDivElement | null>(null);
   const inspectorScrollRef = useRef<HTMLDivElement | null>(null);
+  const stageVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoPaused, setVideoPaused] = useState<boolean>(false);
+  const [videoExporting, setVideoExporting] = useState<boolean>(false);
+  const [videoExportProgress, setVideoExportProgress] = useState<number>(0);
+  const stopVideoExportRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     inspectorScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -1759,7 +1805,12 @@ const SocialStudio: React.FC = () => {
     });
   };
 
-  const addPhotoOverlay = (src: string, label?: string, shape: OverlayShape = 'circle') => {
+  const addPhotoOverlay = (
+    src: string,
+    label?: string,
+    shape: OverlayShape = 'circle',
+    mediaType: 'image' | 'video' = 'image'
+  ) => {
     if (!src) return;
     const existing = activeSlide.photoOverlays || [];
     const maxZ = Math.max(
@@ -1769,10 +1820,12 @@ const SocialStudio: React.FC = () => {
     );
     const id = `overlay-${Date.now()}`;
     const idxOffset = (existing.length % 3) * 54;
+    const icon = mediaType === 'video' ? '🎬' : '📸';
     const newOverlay: PhotoOverlayLayer = {
       id,
-      label: label ? `📸 ${label}` : `📸 Photo ${existing.length + 1}`,
+      label: label ? `${icon} ${label}` : `${icon} ${mediaType === 'video' ? 'Video' : 'Photo'} ${existing.length + 1}`,
       visible: true,
+      mediaType,
       src,
       x: Math.min(880, 770 - idxOffset),
       y: Math.min(canvasH - 220, 320 + idxOffset),
@@ -2085,23 +2138,35 @@ const SocialStudio: React.FC = () => {
             );
           };
 
-          // Keep every puppy/stud slide's photo strictly synced to its dog (unless custom-uploaded specifically for that dog)
+          // Keep every puppy/stud slide's photo strictly synced to its dog & strip expired blob URLs
           const repairedSlides: SlideState[] = parsed.slides.map((s: SlideState) => {
+            const cleanVideoSrc = s.videoSrc?.startsWith('blob:') ? undefined : s.videoSrc;
+            const cleanOverlays = (s.photoOverlays || []).filter(
+              (o) => !o.src?.startsWith('blob:')
+            );
+            const sanitizedSlide: SlideState = {
+              ...s,
+              videoSrc: cleanVideoSrc,
+              photoOverlays: cleanOverlays
+            };
             const isTopicSlide =
-              s.slideMode && s.slideMode !== 'puppies' && s.slideMode !== 'studs';
-            if (isTopicSlide) return s;
+              sanitizedSlide.slideMode &&
+              sanitizedSlide.slideMode !== 'puppies' &&
+              sanitizedSlide.slideMode !== 'studs';
+            if (isTopicSlide) return sanitizedSlide;
 
-            const dog = inferDogFromSlide(s, allDogs) || defaultStudioDog;
-            if (!dog) return s;
+            const dog = inferDogFromSlide(sanitizedSlide, allDogs) || defaultStudioDog;
+            if (!dog) return sanitizedSlide;
             const belongsToDog =
-              s.photoSrc === dog.image ||
-              (dog.media || []).some((m) => m.url === s.photoSrc) ||
-              (Boolean(s.photoSrc?.startsWith('data:')) && s.customPhotoDogId === dog.id);
+              sanitizedSlide.photoSrc === dog.image ||
+              (dog.media || []).some((m) => m.url === sanitizedSlide.photoSrc) ||
+              (Boolean(sanitizedSlide.photoSrc?.startsWith('data:')) &&
+                sanitizedSlide.customPhotoDogId === dog.id);
 
             return {
-              ...s,
+              ...sanitizedSlide,
               dogId: dog.id,
-              photoSrc: belongsToDog ? s.photoSrc : dog.image || s.photoSrc
+              photoSrc: belongsToDog ? sanitizedSlide.photoSrc : dog.image || sanitizedSlide.photoSrc
             };
           });
           setSlides(repairedSlides);
@@ -2178,9 +2243,14 @@ const SocialStudio: React.FC = () => {
     if (!didMountRef.current) return;
     const t = setTimeout(() => {
       try {
+        const persistableSlides = slides.map((s) => ({
+          ...s,
+          videoSrc: s.videoSrc?.startsWith('blob:') ? undefined : s.videoSrc,
+          photoOverlays: (s.photoOverlays || []).filter((o) => !o.src?.startsWith('blob:'))
+        }));
         localStorage.setItem(
           DRAFT_STORAGE_KEY,
-          JSON.stringify({ slides, ratio, contentMode, captionText })
+          JSON.stringify({ slides: persistableSlides, ratio, contentMode, captionText })
         );
         setDraftSavedAt('Saved');
       } catch {
@@ -3838,17 +3908,13 @@ const SocialStudio: React.FC = () => {
     }
   };
 
-  // Exact 1:1 Canvas PNG Renderer for ANY Slide
-  const renderSlideBlob = async (slide: SlideState): Promise<Blob | null> => {
-    if (document.fonts?.ready) {
-      await document.fonts.ready;
-    }
-    const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = canvasH;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
+  // Shared 1080px Canvas Frame Painter (Used by both PNG Export & Live Video Reel Recorder!)
+  const paintSlideToCanvas = (
+    ctx: CanvasRenderingContext2D,
+    slide: SlideState,
+    mainMedia: DrawableMedia | null,
+    overlayMediaMap: Map<string, DrawableMedia>
+  ) => {
     const tTheme: TextCardTheme = slide.textCardTheme || 'arch-crest';
     const geom = getFrameGeometry(
       slide.preset,
@@ -3991,16 +4057,20 @@ const SocialStudio: React.FC = () => {
       ctx.clip();
       ctx.fillStyle = '#EFECE4';
       ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
-      const loadedImg = await loadImageElement(slide.photoSrc);
-      if (loadedImg && loadedImg.naturalWidth > 0) {
+      const mainDims = getDrawableDims(mainMedia);
+      const mainReady =
+        mainMedia &&
+        mainDims.w > 0 &&
+        mainDims.h > 0 &&
+        !(mainMedia instanceof HTMLVideoElement && mainMedia.readyState < 2);
+      if (mainReady && mainMedia) {
         const coverScale =
-          Math.max(geom.photoW / loadedImg.naturalWidth, geom.photoH / loadedImg.naturalHeight) *
-          slide.zoom;
-        const drawW = loadedImg.naturalWidth * coverScale;
-        const drawH = loadedImg.naturalHeight * coverScale;
+          Math.max(geom.photoW / mainDims.w, geom.photoH / mainDims.h) * slide.zoom;
+        const drawW = mainDims.w * coverScale;
+        const drawH = mainDims.h * coverScale;
         const drawX = geom.photoX + (geom.photoW - drawW) / 2 + slide.panX;
         const drawY = geom.photoY + (geom.photoH - drawH) / 2 + slide.panY;
-        ctx.drawImage(loadedImg, drawX, drawY, drawW, drawH);
+        ctx.drawImage(mainMedia, drawX, drawY, drawW, drawH);
       }
       if (slide.photoDim > 0) {
         ctx.fillStyle = `rgba(20, 28, 24, ${slide.photoDim})`;
@@ -4028,7 +4098,7 @@ const SocialStudio: React.FC = () => {
       }
     }
 
-    // Render Text Pills + Secondary Photo Overlays in true unified Z-Index order!
+    // Render Text Pills + Secondary Photo/Video Overlays in true unified Z-Index order!
     const exportQueue: (
       | { kind: 'text'; z: number; layer: TextLayer }
       | { kind: 'overlay'; z: number; overlay: PhotoOverlayLayer }
@@ -4048,8 +4118,14 @@ const SocialStudio: React.FC = () => {
     for (const entry of exportQueue) {
       if (entry.kind === 'overlay') {
         const ov = entry.overlay;
-        const ovImg = await loadImageElement(ov.src);
-        if (!ovImg || ovImg.naturalWidth <= 0) continue;
+        const ovMedia = overlayMediaMap.get(ov.id) || null;
+        const ovDims = getDrawableDims(ovMedia);
+        const ovReady =
+          ovMedia &&
+          ovDims.w > 0 &&
+          ovDims.h > 0 &&
+          !(ovMedia instanceof HTMLVideoElement && ovMedia.readyState < 2);
+        if (!ovReady || !ovMedia) continue;
 
         ctx.save();
         ctx.globalAlpha = Math.max(0.05, Math.min(1, ov.opacity ?? 1));
@@ -4118,10 +4194,10 @@ const SocialStudio: React.FC = () => {
           roundRectPath(ctx, ix, iy, iw, ih, iRadTL, iRadTL, iRadBR, iRadBR);
         }
         ctx.clip();
-        const coverScale = Math.max(iw / ovImg.naturalWidth, ih / ovImg.naturalHeight) * (ov.zoom || 1);
-        const dw = ovImg.naturalWidth * coverScale;
-        const dh = ovImg.naturalHeight * coverScale;
-        ctx.drawImage(ovImg, ix + (iw - dw) / 2 + (ov.panX || 0), iy + (ih - dh) / 2 + (ov.panY || 0), dw, dh);
+        const coverScale = Math.max(iw / ovDims.w, ih / ovDims.h) * (ov.zoom || 1);
+        const dw = ovDims.w * coverScale;
+        const dh = ovDims.h * coverScale;
+        ctx.drawImage(ovMedia, ix + (iw - dw) / 2 + (ov.panX || 0), iy + (ih - dh) / 2 + (ov.panY || 0), dw, dh);
         ctx.restore();
 
         if (ov.borderWidth > 0 && ov.shape !== 'polaroid') {
@@ -4196,8 +4272,238 @@ const SocialStudio: React.FC = () => {
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
     }
+  };
 
+  // Exact 1:1 Canvas PNG Renderer for ANY Slide
+  const renderSlideBlob = async (slide: SlideState): Promise<Blob | null> => {
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = 1080;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    let mainMedia: DrawableMedia | null = null;
+    if (slide.preset !== 'no-photo') {
+      if (
+        slide.videoSrc &&
+        slide.id === activeSlide.id &&
+        stageVideoRef.current &&
+        stageVideoRef.current.videoWidth > 0
+      ) {
+        mainMedia = stageVideoRef.current;
+      } else if (slide.videoSrc) {
+        mainMedia = await loadVideoElement(slide.videoSrc, true);
+      } else if (slide.photoSrc) {
+        mainMedia = await loadImageElement(slide.photoSrc);
+      }
+    }
+
+    const overlayMediaMap = new Map<string, DrawableMedia>();
+    for (const ov of slide.photoOverlays || []) {
+      if (!ov.visible || !ov.src) continue;
+      const loaded =
+        ov.mediaType === 'video' ? await loadVideoElement(ov.src, true) : await loadImageElement(ov.src);
+      if (loaded) overlayMediaMap.set(ov.id, loaded);
+    }
+
+    paintSlideToCanvas(ctx, slide, mainMedia, overlayMediaMap);
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
+  };
+
+  // Real-Time 1080px Themed Video Reel Recorder & Exporter
+  const handleExportVideoReel = async (preferShare: boolean) => {
+    if (videoExporting) return;
+    if (document.fonts?.ready) {
+      await document.fonts.ready;
+    }
+    const canvas = document.createElement('canvas') as HTMLCanvasElement & {
+      captureStream?: (fps?: number) => MediaStream;
+    };
+    canvas.width = 1080;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || typeof canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') {
+      alert('Video reel export requires a modern Safari, Chrome, or Edge browser.');
+      return;
+    }
+
+    setVideoExporting(true);
+    setVideoExportProgress(0);
+
+    const wasStagePlaying = Boolean(stageVideoRef.current && !stageVideoRef.current.paused);
+    if (stageVideoRef.current && !stageVideoRef.current.paused) {
+      stageVideoRef.current.pause();
+    }
+
+    const videosToCleanup: HTMLVideoElement[] = [];
+    try {
+      let mainMedia: DrawableMedia | null = null;
+      if (activeSlide.preset !== 'no-photo') {
+        if (activeSlide.videoSrc) {
+          const mv = await loadVideoElement(activeSlide.videoSrc, Boolean(activeSlide.videoMuted));
+          if (mv) {
+            videosToCleanup.push(mv);
+            mainMedia = mv;
+          }
+        } else if (activeSlide.photoSrc) {
+          mainMedia = await loadImageElement(activeSlide.photoSrc);
+        }
+      }
+
+      const overlayMediaMap = new Map<string, DrawableMedia>();
+      for (const ov of activeSlide.photoOverlays || []) {
+        if (!ov.visible || !ov.src) continue;
+        if (ov.mediaType === 'video') {
+          const ovVid = await loadVideoElement(ov.src, true);
+          if (ovVid) {
+            ovVid.loop = true;
+            videosToCleanup.push(ovVid);
+            overlayMediaMap.set(ov.id, ovVid);
+          }
+        } else {
+          const ovImg = await loadImageElement(ov.src);
+          if (ovImg) overlayMediaMap.set(ov.id, ovImg);
+        }
+      }
+
+      const primaryVid =
+        mainMedia instanceof HTMLVideoElement
+          ? mainMedia
+          : videosToCleanup.length > 0
+            ? videosToCleanup[0]
+            : null;
+      const rawDur = primaryVid?.duration;
+      const durationSec =
+        rawDur && Number.isFinite(rawDur) && rawDur > 0.4 ? Math.min(60, Math.max(2, rawDur)) : 6;
+
+      paintSlideToCanvas(ctx, activeSlide, mainMedia, overlayMediaMap);
+
+      const stream = canvas.captureStream(30);
+      if (mainMedia instanceof HTMLVideoElement && !activeSlide.videoMuted) {
+        try {
+          const vidAny = mainMedia as HTMLVideoElement & {
+            captureStream?: () => MediaStream;
+            mozCaptureStream?: () => MediaStream;
+          };
+          const audioSrcStream = vidAny.captureStream?.() || vidAny.mozCaptureStream?.();
+          if (audioSrcStream) {
+            audioSrcStream.getAudioTracks().forEach((track) => stream.addTrack(track));
+          }
+        } catch {
+          // Audio track capture not supported on this browser; export video silently
+        }
+      }
+
+      const mimeCandidates = [
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm'
+      ];
+      const chosenMime = mimeCandidates.find((m) => MediaRecorder.isTypeSupported(m)) || '';
+      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(stream, {
+        ...(chosenMime ? { mimeType: chosenMime } : {}),
+        videoBitsPerSecond: 8_000_000
+      });
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+
+      const finishPromise = new Promise<Blob>((resolve) => {
+        recorder.onstop = () => {
+          const actualType = recorder.mimeType || chosenMime || 'video/webm';
+          resolve(new Blob(chunks, { type: actualType }));
+        };
+      });
+
+      for (const v of videosToCleanup) {
+        v.currentTime = 0;
+        try {
+          await v.play();
+        } catch {
+          v.muted = true;
+          await v.play().catch(() => {});
+        }
+      }
+
+      recorder.start(250);
+      const startTime = performance.now();
+      let stopped = false;
+      let rafId = 0;
+
+      const finishRecording = () => {
+        if (stopped) return;
+        stopped = true;
+        cancelAnimationFrame(rafId);
+        stopVideoExportRef.current = null;
+        if (recorder.state !== 'inactive') {
+          recorder.stop();
+        }
+      };
+
+      stopVideoExportRef.current = finishRecording;
+
+      const tick = () => {
+        if (stopped) return;
+        paintSlideToCanvas(ctx, activeSlide, mainMedia, overlayMediaMap);
+        const elapsed = (performance.now() - startTime) / 1000;
+        setVideoExportProgress(Math.min(99, Math.round((elapsed / durationSec) * 100)));
+        if (elapsed >= durationSec || (mainMedia instanceof HTMLVideoElement && mainMedia.ended)) {
+          finishRecording();
+          return;
+        }
+        rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+
+      const blob = await finishPromise;
+      setVideoExportProgress(100);
+      const actualMime = blob.type || chosenMime || 'video/webm';
+      const ext = actualMime.includes('mp4') ? 'mp4' : 'webm';
+      const baseSlug = (
+        contentMode === 'puppies' || contentMode === 'studs'
+          ? selectedDog?.name || 'card'
+          : activeTopicItem?.id || 'okcfrenchies'
+      )
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-');
+      const fileName = `okcfrenchies-${baseSlug}-${ratio}-reel.${ext}`;
+      const file = new File([blob], fileName, { type: actualMime });
+
+      if (preferShare && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'OKC Frenchies Video Reel'
+          });
+        } catch {
+          // User cancelled share sheet
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = fileName;
+        a.href = url;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+    } finally {
+      stopVideoExportRef.current = null;
+      videosToCleanup.forEach((v) => {
+        v.pause();
+        v.removeAttribute('src');
+        v.load();
+      });
+      if (wasStagePlaying && stageVideoRef.current) {
+        stageVideoRef.current.play().catch(() => {});
+      }
+      setVideoExporting(false);
+      setVideoExportProgress(0);
+    }
   };
 
   const handleExportSlides = async (exportAll: boolean, preferShare: boolean) => {
@@ -4254,6 +4560,10 @@ const SocialStudio: React.FC = () => {
     activeSlide.bgStyle,
     activeSlide.windowStyle || 'pure-white',
     activeSlide.textCardTheme || 'arch-crest'
+  );
+  const hasActiveVideo = Boolean(
+    (geom.hasPhoto && activeSlide.videoSrc) ||
+      (activeSlide.photoOverlays || []).some((o) => o.visible && o.mediaType === 'video')
   );
   const previewScale =
     geom.hasPhoto && imgNat.w > 0 && imgNat.h > 0
@@ -4397,6 +4707,26 @@ const SocialStudio: React.FC = () => {
                 {photoLocked ? '🔒' : '🔓'}
                 <span className="hidden md:inline">{photoLocked ? ' Locked' : ' Lock'}</span>
               </button>
+            )}
+            {hasActiveVideo && (
+              <>
+                <button
+                  type="button"
+                  disabled={videoExporting}
+                  onClick={() => handleExportVideoReel(true)}
+                  className="sm:hidden px-2.5 py-1 rounded-full bg-[#D46A4E] text-white text-[11px] font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
+                >
+                  {videoExporting ? `🎬 ${videoExportProgress}%` : '🎬 Reel'}
+                </button>
+                <button
+                  type="button"
+                  disabled={videoExporting}
+                  onClick={() => handleExportVideoReel(false)}
+                  className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-[#D46A4E] text-white text-xs font-extrabold hover:bg-[#BE583D] transition shadow-sm disabled:opacity-60 cursor-pointer"
+                >
+                  {videoExporting ? `🎬 Exporting ${videoExportProgress}%` : '🎬 Export Reel'}
+                </button>
+              </>
             )}
             <button
               type="button"
@@ -4579,8 +4909,44 @@ const SocialStudio: React.FC = () => {
                     : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
                 }`}
               >
-                {geom.hasPhoto ? '🖼️ Photo' : '🎨 Bg'}
+                {geom.hasPhoto ? (activeSlide.videoSrc ? '🎬 Video' : '🖼️ Photo') : '🎨 Bg'}
               </button>
+              {geom.hasPhoto && activeSlide.videoSrc && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const v = stageVideoRef.current;
+                      if (!v) return;
+                      if (v.paused) {
+                        v.play().catch(() => {});
+                      } else {
+                        v.pause();
+                      }
+                    }}
+                    className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-[#DDD6C7] bg-white text-[#1C2621] touch-manipulation cursor-pointer"
+                  >
+                    {videoPaused ? '▶️ Play' : '⏸️ Pause'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateActiveSlide({ videoMuted: !(activeSlide.videoMuted ?? true) }, false)
+                    }
+                    className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-[#DDD6C7] bg-white text-[#1C2621] touch-manipulation cursor-pointer"
+                  >
+                    {activeSlide.videoMuted ?? true ? '🔇 Muted' : '🔊 Audio'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateActiveSlide({ videoSrc: undefined }, true)}
+                    title="Clear video and return to still photo"
+                    className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-extrabold border border-[#FCA5A5] bg-[#FEE2E2] text-[#991B1B] touch-manipulation cursor-pointer"
+                  >
+                    ✕ Clear Video
+                  </button>
+                </>
+              )}
               {activeSlide.layers
                 .filter((l) => l.visible)
                 .map((l) => (
@@ -4714,8 +5080,20 @@ const SocialStudio: React.FC = () => {
                 setEditingLayerId(null);
               }
             }}
-            className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
+            className="relative flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
           >
+            {videoExporting && (
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-[#1C2621]/95 text-white px-3.5 py-2 rounded-full shadow-xl border border-[#F4D37E]/60 text-xs font-extrabold whitespace-nowrap">
+                <span>🎬 Recording Themed Reel... {videoExportProgress}%</span>
+                <button
+                  type="button"
+                  onClick={() => stopVideoExportRef.current?.()}
+                  className="px-2.5 py-0.5 rounded-full bg-[#D46A4E] text-white text-[11px] font-extrabold cursor-pointer touch-manipulation"
+                >
+                  ⏹️ Save Clip Now
+                </button>
+              </div>
+            )}
             {/* Interactive Stage */}
             <div
               onTouchStart={handleTouchStartStage}
@@ -5033,13 +5411,22 @@ const SocialStudio: React.FC = () => {
                     cursor: photoLocked ? 'default' : 'grab'
                   }}
                 >
-                  {activeSlide.photoSrc && (
-                    <img
-                      src={activeSlide.photoSrc}
-                      alt={selectedDog?.name || 'Card'}
-                      onLoad={(e) => {
-                        const im = e.currentTarget;
-                        setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
+                  {activeSlide.videoSrc ? (
+                    <video
+                      ref={stageVideoRef}
+                      key={activeSlide.videoSrc}
+                      src={activeSlide.videoSrc}
+                      autoPlay
+                      loop
+                      muted={activeSlide.videoMuted ?? true}
+                      playsInline
+                      onPlay={() => setVideoPaused(false)}
+                      onPause={() => setVideoPaused(true)}
+                      onLoadedMetadata={(e) => {
+                        const v = e.currentTarget;
+                        if (v.videoWidth > 0 && v.videoHeight > 0) {
+                          setImgNat({ w: v.videoWidth, h: v.videoHeight });
+                        }
                       }}
                       style={{
                         position: 'absolute',
@@ -5052,6 +5439,27 @@ const SocialStudio: React.FC = () => {
                         pointerEvents: 'none'
                       }}
                     />
+                  ) : (
+                    activeSlide.photoSrc && (
+                      <img
+                        src={activeSlide.photoSrc}
+                        alt={selectedDog?.name || 'Card'}
+                        onLoad={(e) => {
+                          const im = e.currentTarget;
+                          setImgNat({ w: im.naturalWidth, h: im.naturalHeight });
+                        }}
+                        style={{
+                          position: 'absolute',
+                          left: previewDrawX,
+                          top: previewDrawY,
+                          width: previewDrawW,
+                          height: previewDrawH,
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          pointerEvents: 'none'
+                        }}
+                      />
+                    )
                   )}
                   {activeSlide.photoDim > 0 && (
                     <div
@@ -5764,20 +6172,39 @@ const SocialStudio: React.FC = () => {
                             background: '#EAE5D9'
                           }}
                         >
-                          <img
-                            src={ov.src}
-                            alt={ov.label}
-                            draggable={false}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                              transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
-                              transformOrigin: 'center center',
-                              pointerEvents: 'none',
-                              userSelect: 'none'
-                            }}
-                          />
+                          {ov.mediaType === 'video' ? (
+                            <video
+                              src={ov.src}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
+                                transformOrigin: 'center center',
+                                pointerEvents: 'none',
+                                userSelect: 'none'
+                              }}
+                            />
+                          ) : (
+                            <img
+                              src={ov.src}
+                              alt={ov.label}
+                              draggable={false}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                transform: `translate(${ov.panX || 0}px, ${ov.panY || 0}px) scale(${ov.zoom || 1})`,
+                                transformOrigin: 'center center',
+                                pointerEvents: 'none',
+                                userSelect: 'none'
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
 
@@ -6931,10 +7358,10 @@ const SocialStudio: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Swap Overlay Photo */}
+                    {/* Swap Overlay Photo or Video */}
                     <div className="pt-2 border-t border-[#F0ECE1] space-y-2">
                       <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                        Swap Overlay Photo
+                        Swap Overlay Photo / Video
                       </div>
                       {galleryPhotos.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
@@ -6946,7 +7373,7 @@ const SocialStudio: React.FC = () => {
                               onClick={() =>
                                 updatePhotoOverlay(
                                   selectedPhotoOverlay.id,
-                                  { src: url, panX: 0, panY: 0 },
+                                  { src: url, mediaType: 'image', panX: 0, panY: 0 },
                                   true
                                 )
                               }
@@ -6960,19 +7387,28 @@ const SocialStudio: React.FC = () => {
                         </div>
                       )}
                       <label className="w-full flex items-center justify-center gap-1.5 bg-[#F6F4EE] border border-dashed border-[#BDB5A4] px-3 py-2 rounded-xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3]">
-                        📷 Upload New Image for This Overlay
+                        📷 / 🎬 Upload New Image or Video for Overlay
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/*"
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
+                            if (file.type.startsWith('video/')) {
+                              const vidUrl = URL.createObjectURL(file);
+                              updatePhotoOverlay(
+                                selectedPhotoOverlay.id,
+                                { src: vidUrl, mediaType: 'video', panX: 0, panY: 0 },
+                                true
+                              );
+                              return;
+                            }
                             const reader = new FileReader();
                             reader.onload = (ev) => {
                               if (typeof ev.target?.result === 'string') {
                                 updatePhotoOverlay(
                                   selectedPhotoOverlay.id,
-                                  { src: ev.target.result, panX: 0, panY: 0 },
+                                  { src: ev.target.result, mediaType: 'image', panX: 0, panY: 0 },
                                   true
                                 );
                               }
@@ -7729,17 +8165,23 @@ const SocialStudio: React.FC = () => {
                   </div>
 
                   <label className="w-full flex items-center justify-center gap-2 bg-[#E4EFE8] border-2 border-dashed border-[#2E5A44]/40 text-[#2E5A44] px-4 py-2 rounded-2xl text-xs font-extrabold cursor-pointer hover:bg-[#D5E7DC]">
-                    ➕ Upload Secondary Overlay Photo from Camera Roll
+                    ➕ Upload Secondary Photo or Video Overlay
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        if (file.type.startsWith('video/')) {
+                          const vidUrl = URL.createObjectURL(file);
+                          addPhotoOverlay(vidUrl, 'Video Overlay', 'rounded', 'video');
+                          setInspectorTab('pill');
+                          return;
+                        }
                         const reader = new FileReader();
                         reader.onload = (ev) => {
                           if (typeof ev.target?.result === 'string') {
-                            addPhotoOverlay(ev.target.result, 'Camera Overlay');
+                            addPhotoOverlay(ev.target.result, 'Camera Overlay', 'circle', 'image');
                             setInspectorTab('pill');
                           }
                         };
@@ -7750,8 +8192,63 @@ const SocialStudio: React.FC = () => {
                   </label>
                 </div>
 
-                {/* Camera Roll Upload & Direct Link */}
+                {/* Camera Roll Photo/Video Upload, Export Reel & Direct Link */}
                 <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                  <label className="w-full flex items-center justify-center gap-2 bg-[#FDF2EC] border-2 border-dashed border-[#D46A4E]/60 text-[#B84D33] px-4 py-2.5 rounded-2xl text-xs font-extrabold cursor-pointer hover:bg-[#FAE7DC]">
+                    🎬 Upload Video from Camera Roll (Themed Reel!)
+                    <input
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/webm,video/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const vidUrl = URL.createObjectURL(file);
+                        const isDogMode =
+                          contentMode === 'puppies' || contentMode === 'studs';
+                        updateActiveSlide(
+                          {
+                            preset:
+                              activeSlide.preset === 'no-photo' ? 'arch' : activeSlide.preset,
+                            ...(isDogMode && selectedDog
+                              ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
+                              : {}),
+                            videoSrc: vidUrl,
+                            videoMuted: activeSlide.videoMuted ?? false,
+                            panX: 0,
+                            panY: 0,
+                            zoom: 1
+                          },
+                          true
+                        );
+                        setVideoPaused(false);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {hasActiveVideo && (
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        disabled={videoExporting}
+                        onClick={() => handleExportVideoReel(true)}
+                        className="py-2.5 px-2 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
+                      >
+                        {videoExporting
+                          ? `🎬 ${videoExportProgress}%`
+                          : '📲 Share Video Reel'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={videoExporting}
+                        onClick={() => handleExportVideoReel(false)}
+                        className="py-2.5 px-2 rounded-xl bg-[#1C2621] text-white text-xs font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
+                      >
+                        {videoExporting ? `Saving...` : '⬇ Save Reel (MP4)'}
+                      </button>
+                    </div>
+                  )}
+
                   <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-2.5 rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3]">
                     📷 Upload Custom Photo from Camera Roll
                     <input
@@ -7775,6 +8272,7 @@ const SocialStudio: React.FC = () => {
                                   ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
                                   : {}),
                                 photoSrc: ev.target.result,
+                                videoSrc: undefined,
                                 panX: 0,
                                 panY: 0
                               },
