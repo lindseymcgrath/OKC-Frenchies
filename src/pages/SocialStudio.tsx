@@ -1642,7 +1642,14 @@ const SocialStudio: React.FC = () => {
   const [inspectorTab, setInspectorTab] = useState<
     'theme' | 'pill' | 'source' | 'fields' | 'layouts' | 'caption'
   >('theme');
-  const [mobileCanvasTall, setMobileCanvasTall] = useState<boolean>(false);
+  const [mobileSheetMode, setMobileSheetMode] = useState<'full-canvas' | 'split' | 'tall-tools'>('split');
+  const [mobileDragCanvasVh, setMobileDragCanvasVh] = useState<number | null>(null);
+  const sheetDragRef = useRef<{
+    active: boolean;
+    startY: number;
+    startVh: number;
+    moved: boolean;
+  }>({ active: false, startY: 0, startVh: 50, moved: false });
   const stageHostRef = useRef<HTMLDivElement | null>(null);
   const inspectorScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -1693,8 +1700,8 @@ const SocialStudio: React.FC = () => {
     const computeSize = () => {
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      const padX = window.innerWidth < 640 ? 12 : 24;
-      const padY = window.innerWidth < 640 ? 8 : 16;
+      const padX = window.innerWidth < 640 ? 4 : 24;
+      const padY = window.innerWidth < 640 ? 4 : 16;
       const maxWFromWidth = Math.max(175, rect.width - padX);
       const maxWFromHeight = Math.max(175, ((rect.height - padY) / canvasH) * 1080);
       const nextW = Math.floor(Math.min(560, maxWFromWidth, maxWFromHeight));
@@ -1708,7 +1715,7 @@ const SocialStudio: React.FC = () => {
       ro.disconnect();
       window.removeEventListener('resize', computeSize);
     };
-  }, [canvasH, mobileCanvasTall]);
+  }, [canvasH, mobileSheetMode, mobileDragCanvasVh]);
 
   const stageScale = stageWidth / 1080;
   const stageHeight = canvasH * stageScale;
@@ -4426,7 +4433,11 @@ const SocialStudio: React.FC = () => {
         </div>
 
         {/* Always-Visible Mobile & Tablet Content Mode Picker Row (Puppies / Studs / DNA / Blog / AI) */}
-        <div className="flex xl:hidden items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 mt-1 border-t border-[#F0ECE1]">
+        <div
+          className={`${
+            mobileSheetMode === 'full-canvas' ? 'hidden sm:flex' : 'flex'
+          } xl:hidden items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 mt-1 border-t border-[#F0ECE1]`}
+        >
           {(
             [
               ['puppies', '🐾 Puppies'],
@@ -4462,9 +4473,20 @@ const SocialStudio: React.FC = () => {
               setEditingLayerId(null);
             }
           }}
+          style={
+            mobileDragCanvasVh !== null && typeof window !== 'undefined' && window.innerWidth < 1024
+              ? { height: `${mobileDragCanvasVh}dvh` }
+              : undefined
+          }
           className={`${
-            mobileCanvasTall ? 'h-[55dvh]' : 'h-[43dvh]'
-          } lg:h-full lg:flex-1 min-w-0 shrink-0 flex flex-col items-center bg-[#EFECE3] border-b lg:border-b-0 lg:border-r border-[#DFD9CA] px-2 sm:px-4 py-1 lg:py-2 overflow-hidden order-1`}
+            mobileDragCanvasVh !== null
+              ? ''
+              : mobileSheetMode === 'full-canvas'
+                ? 'flex-1 min-h-0'
+                : mobileSheetMode === 'tall-tools'
+                  ? 'h-[36dvh]'
+                  : 'h-[50dvh]'
+          } lg:h-full lg:flex-1 min-w-0 shrink-0 flex flex-col items-center bg-[#EFECE3] border-b lg:border-b-0 lg:border-r border-[#DFD9CA] px-1 sm:px-4 py-1 lg:py-2 overflow-hidden order-1`}
         >
           {/* Fixed-Height Strip Above Canvas: Slides + Quick Layer Chips */}
           <div className="w-full max-w-[560px] shrink-0 flex flex-col gap-1">
@@ -4527,11 +4549,18 @@ const SocialStudio: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setMobileCanvasTall((v) => !v)}
-                  className="lg:hidden px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-[#F6F4EE] text-[#2E5A44] border border-[#DDD6C7] touch-manipulation cursor-pointer"
-                  title="Toggle larger photo preview vs taller editing dock"
+                  onClick={() => {
+                    setMobileDragCanvasVh(null);
+                    setMobileSheetMode((m) => (m === 'full-canvas' ? 'split' : 'full-canvas'));
+                  }}
+                  className={`lg:hidden px-2 py-0.5 rounded-lg text-[10px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                    mobileSheetMode === 'full-canvas'
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                      : 'bg-[#F6F4EE] text-[#2E5A44] border-[#DDD6C7]'
+                  }`}
+                  title="Enlarge graphic to full screen or show tools dock"
                 >
-                  {mobileCanvasTall ? '🔽 Smaller' : '🔍 Larger'}
+                  {mobileSheetMode === 'full-canvas' ? '🔼 Tools' : '⛶ Enlarge'}
                 </button>
               </div>
             </div>
@@ -6065,8 +6094,118 @@ const SocialStudio: React.FC = () => {
           </div>
         </main>
 
-        {/* RIGHT / BOTTOM: Locked-Height 6-Tab Inspector Dock (Photo Remains 100% Visible!) */}
-        <aside className="flex-1 lg:flex-none lg:w-[450px] xl:w-[490px] min-h-[160px] lg:h-full bg-white flex flex-col overflow-hidden order-2 shadow-lg lg:shadow-none">
+        {/* RIGHT / BOTTOM: Swipeable Bottom Sheet on Mobile, Full-Height Dock on MacBook */}
+        <aside
+          className={`${
+            mobileSheetMode === 'full-canvas' && mobileDragCanvasVh === null
+              ? 'shrink-0 h-auto'
+              : 'flex-1 min-h-[120px]'
+          } lg:flex-none lg:w-[450px] xl:w-[490px] lg:h-full bg-white flex flex-col overflow-hidden order-2 shadow-lg lg:shadow-none`}
+        >
+          {/* Mobile Swipe / Drag Handle Bar to Enlarge Graphic or Expand Tools */}
+          <div
+            onPointerDown={(e) => {
+              if (!e.isPrimary) return;
+              const startVh =
+                mobileDragCanvasVh ??
+                (mobileSheetMode === 'full-canvas'
+                  ? 80
+                  : mobileSheetMode === 'tall-tools'
+                    ? 36
+                    : 50);
+              sheetDragRef.current = {
+                active: true,
+                startY: e.clientY,
+                startVh,
+                moved: false
+              };
+              (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              if (!sheetDragRef.current.active) return;
+              const dy = e.clientY - sheetDragRef.current.startY;
+              if (Math.abs(dy) > 6) sheetDragRef.current.moved = true;
+              const nextVh = Math.max(
+                34,
+                Math.min(82, sheetDragRef.current.startVh + (dy / window.innerHeight) * 100)
+              );
+              setMobileDragCanvasVh(nextVh);
+            }}
+            onPointerUp={(e) => {
+              if (!sheetDragRef.current.active) return;
+              sheetDragRef.current.active = false;
+              const dy = e.clientY - sheetDragRef.current.startY;
+              const finalVh = Math.max(
+                34,
+                Math.min(82, sheetDragRef.current.startVh + (dy / window.innerHeight) * 100)
+              );
+              if (!sheetDragRef.current.moved) {
+                setMobileSheetMode((m) => (m === 'full-canvas' ? 'split' : 'full-canvas'));
+              } else if (dy > 28 || finalVh >= 64) {
+                setMobileSheetMode('full-canvas');
+              } else if ((dy < -28 && sheetDragRef.current.startVh <= 52) || finalVh <= 41) {
+                setMobileSheetMode('tall-tools');
+              } else {
+                setMobileSheetMode('split');
+              }
+              setMobileDragCanvasVh(null);
+            }}
+            onPointerCancel={() => {
+              sheetDragRef.current.active = false;
+              setMobileDragCanvasVh(null);
+            }}
+            className="lg:hidden shrink-0 flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#FAF8F4] border-b border-[#EAE5D9] touch-none select-none cursor-grab active:cursor-grabbing"
+          >
+            <span className="text-[10px] font-bold text-[#5C6B63] truncate">
+              {mobileSheetMode === 'full-canvas'
+                ? '👆 Swipe up or tap a tab for tools'
+                : '👇 Swipe down to enlarge graphic'}
+            </span>
+            <span className="w-10 h-1.5 rounded-full bg-[#C8C0B0] shrink-0" />
+            <div className="flex items-center gap-1 shrink-0">
+              {mobileSheetMode === 'full-canvas' ? (
+                <>
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShuffleBrandLook(false);
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-[#F4D37E] text-[#1C2621] text-[10px] font-extrabold touch-manipulation cursor-pointer"
+                  >
+                    🎲 Shuffle
+                  </button>
+                  <button
+                    type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMobileDragCanvasVh(null);
+                      setMobileSheetMode('split');
+                    }}
+                    className="px-2 py-0.5 rounded-full bg-[#2E5A44] text-white text-[10px] font-extrabold touch-manipulation cursor-pointer"
+                  >
+                    🔼 Show Tools
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMobileDragCanvasVh(null);
+                    setMobileSheetMode('full-canvas');
+                  }}
+                  className="px-2 py-0.5 rounded-full bg-[#E4EFE8] text-[#2E5A44] border border-[#2E5A44]/30 text-[10px] font-extrabold touch-manipulation cursor-pointer"
+                >
+                  ⛶ Full Canvas
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Pinned 6-Tab Navigation Strip */}
           <nav className="shrink-0 grid grid-cols-6 gap-0.5 bg-[#F6F4EE] border-b border-[#EAE5D9] p-1">
             {(
@@ -6086,7 +6225,21 @@ const SocialStudio: React.FC = () => {
                 <button
                   key={tabKey}
                   type="button"
-                  onClick={() => setInspectorTab(tabKey)}
+                  onClick={() => {
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      setMobileDragCanvasVh(null);
+                      if (mobileSheetMode === 'full-canvas') {
+                        setMobileSheetMode('split');
+                        setInspectorTab(tabKey);
+                        return;
+                      }
+                      if (isActive) {
+                        setMobileSheetMode('full-canvas');
+                        return;
+                      }
+                    }
+                    setInspectorTab(tabKey);
+                  }}
                   className={`relative flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-1.5 px-1 rounded-xl text-[10px] sm:text-xs font-extrabold touch-manipulation cursor-pointer transition ${
                     isActive
                       ? 'bg-[#2E5A44] text-white shadow-xs'
@@ -6111,7 +6264,11 @@ const SocialStudio: React.FC = () => {
           <div
             ref={inspectorScrollRef}
             style={{ overflowAnchor: 'none' }}
-            className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3"
+            className={`${
+              mobileSheetMode === 'full-canvas' && mobileDragCanvasVh === null
+                ? 'hidden lg:block'
+                : 'flex-1 min-h-0'
+            } overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3`}
           >
             {/* ==================== TAB 1: THEME, FRAME & COLORS ==================== */}
             {inspectorTab === 'theme' && (
