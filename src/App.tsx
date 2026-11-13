@@ -32,6 +32,67 @@ import Application from './pages/Application';
 import BuyerEducation from './pages/BuyerEducation';
 import SocialStudio from './pages/SocialStudio';
 
+const AppShell: React.FC = () => {
+  const location = useLocation();
+  const isStudioRoute =
+    location.pathname.startsWith('/social-studio') ||
+    location.pathname.startsWith('/admin/social-studio');
+
+  return (
+    <div
+      className={
+        isStudioRoute
+          ? 'h-[100dvh] overflow-hidden bg-[#EFECE3] text-[#1C2621] selection:bg-[#2E5A44] selection:text-white font-sans'
+          : 'min-h-screen bg-[#F6F4EE] text-[#1C2621] selection:bg-[#2E5A44] selection:text-white font-sans'
+      }
+    >
+      {!isStudioRoute && <Navbar />}
+      <main className={isStudioRoute ? 'h-full overflow-hidden' : 'min-h-screen'}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+
+          {/* 🍎 App Store Mandatory Pages (Orphan pages) */}
+          <Route path="/kennel-king-privacy" element={<KennelKingPrivacy />} />
+          <Route path="/kennel-king-support" element={<KennelKingSupport />} />
+          <Route path="/kennel-king-data-deletion" element={<KennelKingDataDeletion />} />
+
+          {/* 🎯 SEO Long-Tail Slugs - Keep these for Vercel/Google indexing */}
+          <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
+          <Route path="/mini-english-bulldog-puppies-for-sale" element={<Puppies initialBreed="Mini English Bulldog" />} />
+          <Route path="/mini-english-bulldogs" element={<Puppies initialBreed="Mini English Bulldog" />} />
+          <Route path="/english-bulldog-puppies" element={<Puppies initialBreed="Mini English Bulldog" />} />
+          <Route path="/french-bulldogs" element={<Puppies initialBreed="French Bulldog" />} />
+          <Route path="/frenchies" element={<Puppies initialBreed="French Bulldog" />} />
+          <Route path="/french-bulldog-stud-service" element={<Studs />} />
+          <Route path="/french-bulldog-breeding-blog" element={<Blog />} />
+          <Route path="/french-bulldog-coat-color-genetics" element={<Genetics />} />
+          <Route path="/french-bulldog-breeding-protocol" element={<Protocol />} />
+          <Route path="/buyer-education" element={<BuyerEducation />} />
+          <Route path="/application" element={<Application />} />
+          <Route path="/puppy-inquiry-form" element={<Inquiry />} />
+          <Route path="/social-studio" element={<SocialStudio />} />
+          <Route path="/admin/social-studio" element={<SocialStudio />} />
+
+          {/* 🔗 Legacy Redirects & Direct Dog Modal Links */}
+          <Route path="/puppies" element={<Puppies />} />
+          <Route path="/puppies-for-sale" element={<Puppies />} />
+          <Route path="/puppies/:dogSlug" element={<Puppies />} />
+          <Route path="/french-bulldog-puppies-for-sale/:dogSlug" element={<Puppies />} />
+          <Route path="/studs" element={<Studs />} />
+          <Route path="/studs/:dogSlug" element={<Studs />} />
+          <Route path="/french-bulldog-stud-service/:dogSlug" element={<Studs />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/journal" element={<Blog />} />
+          <Route path="/protocol" element={<Protocol />} />
+          <Route path="/genetics" element={<Genetics />} />
+          <Route path="/inquiry" element={<Inquiry />} />
+        </Routes>
+      </main>
+      {!isStudioRoute && <Footer />}
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -49,52 +110,7 @@ const App: React.FC = () => {
           .max-w-6xl::after { content: "Genetic Analysis provided by OKC Frenchies Analysis Pro. Theoretical estimates only."; display: block; text-align: center; font-size: 8pt; color: #94a3b8; margin-top: 20px; }
         }
       `}</style>
-
-      <div className="min-h-screen bg-[#F6F4EE] text-[#1C2621] selection:bg-[#2E5A44] selection:text-white font-sans">
-        <Navbar />
-        <main className="min-h-screen">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            
-            {/* 🍎 App Store Mandatory Pages (Orphan pages) */}
-            <Route path="/kennel-king-privacy" element={<KennelKingPrivacy />} />
-            <Route path="/kennel-king-support" element={<KennelKingSupport />} />
-            <Route path="/kennel-king-data-deletion" element={<KennelKingDataDeletion />} />
-            
-            {/* 🎯 SEO Long-Tail Slugs - Keep these for Vercel/Google indexing */}
-            <Route path="/french-bulldog-puppies-for-sale" element={<Puppies />} />
-            <Route path="/mini-english-bulldog-puppies-for-sale" element={<Puppies initialBreed="Mini English Bulldog" />} />
-            <Route path="/mini-english-bulldogs" element={<Puppies initialBreed="Mini English Bulldog" />} />
-            <Route path="/english-bulldog-puppies" element={<Puppies initialBreed="Mini English Bulldog" />} />
-            <Route path="/french-bulldogs" element={<Puppies initialBreed="French Bulldog" />} />
-            <Route path="/frenchies" element={<Puppies initialBreed="French Bulldog" />} />
-            <Route path="/french-bulldog-stud-service" element={<Studs />} />
-            <Route path="/french-bulldog-coat-color-genetics" element={<Genetics />} />
-            <Route path="/french-bulldog-breeding-blog" element={<Blog />} />
-            <Route path="/french-bulldog-breeding-protocol" element={<Protocol />} />
-            <Route path="/buyer-education" element={<BuyerEducation />} />
-            <Route path="/application" element={<Application />} />
-            <Route path="/puppy-inquiry-form" element={<Inquiry />} />
-            <Route path="/social-studio" element={<SocialStudio />} />
-            <Route path="/admin/social-studio" element={<SocialStudio />} />
-
-            {/* 🔗 Legacy Redirects & Direct Dog Modal Links */}
-            <Route path="/puppies" element={<Puppies />} />
-            <Route path="/puppies-for-sale" element={<Puppies />} />
-            <Route path="/puppies/:dogSlug" element={<Puppies />} />
-            <Route path="/french-bulldog-puppies-for-sale/:dogSlug" element={<Puppies />} />
-            <Route path="/studs" element={<Studs />} />
-            <Route path="/studs/:dogSlug" element={<Studs />} />
-            <Route path="/french-bulldog-stud-service/:dogSlug" element={<Studs />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/journal" element={<Blog />} />
-            <Route path="/protocol" element={<Protocol />} />
-            <Route path="/genetics" element={<Genetics />} />
-            <Route path="/inquiry" element={<Inquiry />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppShell />
     </BrowserRouter>
   );
 };

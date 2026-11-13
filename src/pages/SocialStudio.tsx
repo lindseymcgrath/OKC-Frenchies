@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GoogleGenAI } from '@google/genai';
 import puppiesData from '../data/puppies.json';
@@ -1613,14 +1614,16 @@ const SocialStudio: React.FC = () => {
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [snapVertical, setSnapVertical] = useState<boolean>(false);
   const [snapHorizontal, setSnapHorizontal] = useState<boolean>(false);
-  const [mobileTab, setMobileTab] = useState<
-    'source' | 'fields' | 'stamps' | 'style' | 'layouts' | 'caption' | null
-  >('source');
-  const toggleAccordion = (
-    sec: 'source' | 'fields' | 'stamps' | 'style' | 'layouts' | 'caption'
-  ) => {
-    setMobileTab((prev) => (prev === sec ? null : sec));
-  };
+  const [inspectorTab, setInspectorTab] = useState<
+    'theme' | 'pill' | 'source' | 'fields' | 'layouts' | 'caption'
+  >('theme');
+  const [mobileCanvasTall, setMobileCanvasTall] = useState<boolean>(false);
+  const stageHostRef = useRef<HTMLDivElement | null>(null);
+  const inspectorScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    inspectorScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [inspectorTab]);
 
   // Caption & Link State
   const [captionText, setCaptionText] = useState<string>(() =>
@@ -1657,21 +1660,30 @@ const SocialStudio: React.FC = () => {
     return activeTopicItem?.shareUrl || 'https://okcfrenchies.com';
   }, [contentMode, selectedDog, activeTopicItem]);
 
-  // Responsive Stage Sizing
-  const [stageWidth, setStageWidth] = useState<number>(480);
+  // Viewport-Fitted Stage Sizing (Zero Scroll / Zero Bounce on MacBook & Mobile App!)
+  const [stageWidth, setStageWidth] = useState<number>(360);
   useEffect(() => {
-    const updateWidth = () => {
-      const w = window.innerWidth;
-      if (w < 640) {
-        setStageWidth(Math.min(395, w - 24));
-      } else {
-        setStageWidth(ratio === 'story' ? 380 : ratio === 'square' ? 480 : 490);
-      }
+    const el = stageHostRef.current;
+    if (!el) return;
+    const computeSize = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      const padX = window.innerWidth < 640 ? 12 : 24;
+      const padY = window.innerWidth < 640 ? 8 : 16;
+      const maxWFromWidth = Math.max(175, rect.width - padX);
+      const maxWFromHeight = Math.max(175, ((rect.height - padY) / canvasH) * 1080);
+      const nextW = Math.floor(Math.min(560, maxWFromWidth, maxWFromHeight));
+      setStageWidth((prev) => (Math.abs(prev - nextW) >= 1 ? nextW : prev));
     };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, [ratio]);
+    computeSize();
+    const ro = new ResizeObserver(() => computeSize());
+    ro.observe(el);
+    window.addEventListener('resize', computeSize);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', computeSize);
+    };
+  }, [canvasH, mobileCanvasTall]);
 
   const stageScale = stageWidth / 1080;
   const stageHeight = canvasH * stageScale;
@@ -1870,7 +1882,7 @@ const SocialStudio: React.FC = () => {
   // Switch Mode Pill & Automatically Load That Mode's Signature Default Template onto Active Slide!
   const handleSelectContentMode = (nextMode: ContentMode) => {
     setContentMode(nextMode);
-    setMobileTab('source');
+    setInspectorTab('source');
     if (activeSlide.slideMode === nextMode) return;
     const built = buildDefaultSlideForMode(nextMode, ratio, activeSlide.id, false);
     pushHistory(slides);
@@ -3213,7 +3225,8 @@ const SocialStudio: React.FC = () => {
     };
     updateActiveSlide({ layers: [...activeSlide.layers, newLayer] }, true);
     setSelectedLayerId(id);
-    setEditingLayerId(id);
+    setEditingLayerId(null);
+    setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
   };
 
   const applyStampBadge = (stamp: { id: string; text: string; pill: PillStyle }) => {
@@ -3225,6 +3238,7 @@ const SocialStudio: React.FC = () => {
         true
       );
       setSelectedLayerId('stamp-badge');
+      setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
       return;
     }
     const stampLayer: TextLayer = {
@@ -3242,6 +3256,7 @@ const SocialStudio: React.FC = () => {
     };
     updateActiveSlide({ layers: [...activeSlide.layers, stampLayer] }, true);
     setSelectedLayerId('stamp-badge');
+    setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
   };
 
   // Save & Apply Custom User Layout Presets
@@ -3348,7 +3363,7 @@ const SocialStudio: React.FC = () => {
     [activeSlide.layers, selectedLayerId]
   );
 
-  // Unified Drag & 4-Way Handle State
+  // Unified Drag & 4-Way Handle + Offset Crosshair State
   const dragModeRef = useRef<{
     type:
       | 'none'
@@ -3367,6 +3382,9 @@ const SocialStudio: React.FC = () => {
     bPadY: number;
     moved: boolean;
     recordedUndo: boolean;
+    viaCrosshair?: boolean;
+    crossOffX?: number;
+    crossOffY?: number;
   }>({
     type: 'none',
     sx: 0,
@@ -3943,24 +3961,33 @@ const SocialStudio: React.FC = () => {
   const previewDrawY = (geom.photoH - previewDrawH) / 2 + activeSlide.panY;
 
   return (
-    <div className="min-h-screen bg-[#EFECE3] text-[#1C2621] pb-16">
+    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-[#EFECE3] text-[#1C2621] overscroll-none">
       <Helmet>
         <title>Instagram Card Studio | OKC Frenchies Admin</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* Top Sticky Action Bar */}
-      <div className="bg-white border-b border-[#EAE5D9] px-3 sm:px-6 py-2 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-serif text-base sm:text-xl font-bold text-[#2E5A44]">
-              🌿 Card Studio
+      {/* Compact App-Shell Top Header Bar (Zero Vertical Bloat!) */}
+      <header className="shrink-0 bg-white border-b border-[#EAE5D9] px-2 sm:px-4 py-1.5 z-30">
+        <div className="flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Link
+              to="/"
+              className="shrink-0 px-2 py-1 rounded-full bg-[#F6F4EE] border border-[#DDD6C7] text-[11px] font-extrabold text-[#3E4D45] hover:bg-[#EAE5D9] transition"
+              title="Back to OKC Frenchies website"
+            >
+              ← Site
+            </Link>
+            <span className="hidden sm:inline font-serif text-base font-bold text-[#2E5A44] shrink-0">
+              🌿 Studio
             </span>
-            <div className="flex bg-[#F6F4EE] rounded-full p-0.5 border border-[#E2DCCD] text-[11px] sm:text-xs font-bold">
+
+            {/* Ratio Switcher */}
+            <div className="flex bg-[#F6F4EE] rounded-full p-0.5 border border-[#E2DCCD] text-[10px] sm:text-xs font-bold shrink-0">
               {(
                 [
-                  ['feed', '4:5 Feed'],
-                  ['story', '9:16 Story'],
+                  ['feed', '4:5'],
+                  ['story', '9:16'],
                   ['square', '1:1']
                 ] as const
               ).map(([rKey, rLabel]) => (
@@ -3968,7 +3995,7 @@ const SocialStudio: React.FC = () => {
                   key={rKey}
                   type="button"
                   onClick={() => handleSwitchRatio(rKey)}
-                  className={`px-2.5 py-1 rounded-full transition ${
+                  className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full touch-manipulation cursor-pointer transition ${
                     ratio === rKey ? 'bg-[#2E5A44] text-white' : 'text-[#5C6B63]'
                   }`}
                 >
@@ -3976,555 +4003,367 @@ const SocialStudio: React.FC = () => {
                 </button>
               ))}
             </div>
+
+            {/* Desktop Quick Content Mode Pills */}
+            <div className="hidden xl:flex items-center gap-1 pl-1 border-l border-[#EAE5D9]">
+              {(
+                [
+                  ['puppies', '🐾 Puppies'],
+                  ['studs', '👑 Studs'],
+                  ['glossary', '🧬 DNA'],
+                  ['standards', '🏡 Blog'],
+                  ['didyouknow', '💡 AI & Facts']
+                ] as const
+              ).map(([modeKey, modeLabel]) => (
+                <button
+                  key={modeKey}
+                  type="button"
+                  onClick={() => handleSelectContentMode(modeKey)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                    contentMode === modeKey
+                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                      : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7] hover:bg-[#EAE5D9]'
+                  }`}
+                >
+                  {modeLabel}
+                </button>
+              ))}
+            </div>
+
             {draftSavedAt && (
-              <span className="hidden md:inline text-[11px] font-bold text-[#5C6B63]">
-                ✓ Auto-saved
+              <span className="hidden 2xl:inline text-[11px] font-bold text-[#5C6B63] shrink-0">
+                ✓ Saved
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               type="button"
               onClick={() => handleShuffleBrandLook(false)}
-              className="px-3 py-1.5 rounded-full text-xs font-extrabold border bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] border-[#2E5A44] text-[#F4D37E] shadow-xs hover:opacity-95 touch-manipulation cursor-pointer transition"
+              className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] border-[#2E5A44] text-[#F4D37E] shadow-xs hover:opacity-95 touch-manipulation cursor-pointer transition"
               title="Canva-style Brand Shuffle: auto-mixes frames, brand colors & pills around your photo"
             >
-              ✨ Shuffle Look
+              ✨ Shuffle
             </button>
             <button
               type="button"
               onClick={handleResetActiveSlideToModeDefault}
-              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] touch-manipulation cursor-pointer transition"
+              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] touch-manipulation cursor-pointer transition"
               title="Reset current slide to this section's default template & theme"
             >
-              🔄 Reset
+              🔄<span className="hidden sm:inline"> Reset</span>
             </button>
             <button
               type="button"
               disabled={history.length === 0}
               onClick={handleUndo}
-              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#1C2621] disabled:opacity-40"
+              className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#1C2621] disabled:opacity-40 touch-manipulation cursor-pointer"
               title="Undo last change"
             >
-              ↩ Undo
+              ↩<span className="hidden md:inline"> Undo</span>
             </button>
             {geom.hasPhoto && (
               <button
                 type="button"
                 onClick={() => setPhotoLocked((v) => !v)}
-                className={`px-2.5 py-1.5 rounded-full text-xs font-bold border transition ${
+                className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold border touch-manipulation cursor-pointer transition ${
                   photoLocked
                     ? 'bg-[#F4D37E] border-[#D9B451] text-[#1C2621]'
                     : 'bg-[#F6F4EE] border-[#D9D2C3] text-[#5C6B63]'
                 }`}
+                title={photoLocked ? 'Unlock photo panning' : 'Lock photo position'}
               >
-                {photoLocked ? '🔒 Locked' : '🔓 Lock Photo'}
+                {photoLocked ? '🔒' : '🔓'}
+                <span className="hidden md:inline">{photoLocked ? ' Locked' : ' Lock'}</span>
               </button>
             )}
             <button
               type="button"
               onClick={() => handleExportSlides(slides.length > 1, true)}
-              className="sm:hidden px-3 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+              className="sm:hidden px-2.5 py-1 rounded-full bg-[#2E5A44] text-white text-[11px] font-extrabold shadow-sm touch-manipulation cursor-pointer"
             >
               📲 Share{slides.length > 1 ? ` (${slides.length})` : ''}
             </button>
             <button
               type="button"
               onClick={() => handleExportSlides(false, false)}
-              className="px-3.5 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold hover:bg-[#234735] transition shadow-sm"
+              className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold hover:bg-[#234735] transition shadow-sm cursor-pointer"
             >
               ⬇ PNG
+            </button>
+            <button
+              type="button"
+              onClick={() => handleExportSlides(false, false)}
+              className="sm:hidden px-2 py-1 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-[11px] font-extrabold touch-manipulation cursor-pointer"
+              title="Download PNG"
+            >
+              ⬇
             </button>
             {slides.length > 1 && (
               <button
                 type="button"
                 onClick={() => handleExportSlides(true, false)}
-                className="px-3.5 py-1.5 rounded-full bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm"
+                className="hidden sm:inline-flex px-3 py-1.5 rounded-full bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm cursor-pointer"
               >
                 📚 All ({slides.length})
               </button>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Content Mode Switcher Strip (What are we posting today?) */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-3">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {(
-            [
-              ['puppies', '🐾 Puppies'],
-              ['studs', '👑 Studs'],
-              ['glossary', '🧬 Coat & DNA'],
-              ['standards', '🏡 Standards & Blog'],
-              ['didyouknow', '💡 Did You Know & AI']
-            ] as const
-          ).map(([modeKey, modeLabel]) => (
-            <button
-              key={modeKey}
-              type="button"
-              onClick={() => handleSelectContentMode(modeKey)}
-              className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition shadow-2xs ${
-                contentMode === modeKey
-                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
-                  : 'bg-white text-[#3E4D45] border-[#DDD6C7] hover:bg-[#F6F4EE]'
-              }`}
-            >
-              {modeLabel}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-2.5 grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-5 items-start">
-        {/* LEFT / TOP: Interactive Canva Stage */}
-        <main className="flex flex-col items-center gap-2 lg:sticky lg:top-16 order-1">
-          {/* Carousel Slide Strip */}
-          <div className="w-full max-w-[520px] flex items-center justify-between gap-1.5 bg-white/80 border border-[#EAE5D9] rounded-2xl px-2.5 py-1.5">
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-              {slides.map((s, idx) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveSlideIdx(idx);
-                    setSelectedLayerId(null);
-                    setEditingLayerId(null);
-                  }}
-                  className={`shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold transition ${
-                    idx === activeSlideIdx
-                      ? 'bg-[#2E5A44] text-white'
-                      : 'bg-[#F6F4EE] text-[#5C6B63] border border-[#E2DCCD]'
-                  }`}
-                >
-                  Slide {idx + 1}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={addNewDefaultSlide}
-                className="shrink-0 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-[#E4EFE8] text-[#2E5A44] border border-[#2E5A44]/30 touch-manipulation cursor-pointer"
-                title="Add a fresh slide using this section's default template"
-              >
-                + Slide
-              </button>
-              <button
-                type="button"
-                onClick={duplicateCurrentSlide}
-                className="shrink-0 px-2 py-1 rounded-xl text-xs font-bold bg-[#F6F4EE] text-[#5C6B63] border border-[#D4CEC0] touch-manipulation cursor-pointer"
-                title="Duplicate current slide"
-              >
-                ⧉ Copy
-              </button>
-              {slides.length > 1 && (
-                <button
-                  type="button"
-                  onClick={removeActiveSlide}
-                  className="shrink-0 px-2 py-1 rounded-xl text-xs font-extrabold bg-[#FEE2E2] text-[#991B1B]"
-                  title="Remove current slide"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleBuildAutoCarousel}
-              className="shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-extrabold bg-[#F4D37E] text-[#1C2621] border border-[#E2BE62]"
-            >
-              ✨ Auto 3-Slide
-            </button>
-          </div>
-
-          {/* Quick Thumb Layer Picker & 1-Tap Remove Bar */}
-          <div className="w-full max-w-[520px] flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedLayerId(null);
-                setEditingLayerId(null);
-              }}
-              className={`shrink-0 px-3 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                !selectedLayerId
-                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
-                  : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
-              }`}
-            >
-              {geom.hasPhoto ? '🖼️ Photo' : '🎨 Card Bg'}
-            </button>
-            {activeSlide.layers
-              .filter((l) => l.visible)
-              .map((l) => (
-                <div
-                  key={l.id}
-                  className={`shrink-0 inline-flex items-center rounded-full text-xs font-extrabold border transition ${
-                    selectedLayerId === l.id
-                      ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
-                      : 'bg-white text-[#1C2621] border-[#DDD6C7]'
-                  }`}
-                >
+      {/* Split-Screen Locked Workspace: MacBook Left-Stage / Right-Inspector, Mobile Top-Stage / Bottom-Inspector */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+        {/* LEFT / TOP: Always-Visible Fixed-Position Stage Pane (Zero Conditional Toolbars = Zero Bounce!) */}
+        <main
+          className={`${
+            mobileCanvasTall ? 'h-[55dvh]' : 'h-[43dvh]'
+          } lg:h-full lg:flex-1 min-w-0 shrink-0 flex flex-col items-center bg-[#EFECE3] border-b lg:border-b-0 lg:border-r border-[#DFD9CA] px-2 sm:px-4 py-1 lg:py-2 overflow-hidden order-1`}
+        >
+          {/* Fixed-Height Strip Above Canvas: Slides + Quick Layer Chips */}
+          <div className="w-full max-w-[560px] shrink-0 flex flex-col gap-1">
+            {/* Row 1: Slides + Mobile Stage Size Toggle */}
+            <div className="h-7 flex items-center justify-between gap-1 bg-white/85 border border-[#EAE5D9] rounded-xl px-1.5">
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {slides.map((s, idx) => (
                   <button
+                    key={s.id}
                     type="button"
                     onClick={() => {
-                      setSelectedLayerId(l.id);
+                      setActiveSlideIdx(idx);
+                      setSelectedLayerId(null);
                       setEditingLayerId(null);
                     }}
-                    className="pl-2.5 pr-1.5 py-1 touch-manipulation cursor-pointer"
+                    className={`shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-extrabold touch-manipulation cursor-pointer transition ${
+                      idx === activeSlideIdx
+                        ? 'bg-[#2E5A44] text-white'
+                        : 'bg-[#F6F4EE] text-[#5C6B63] border border-[#E2DCCD]'
+                    }`}
                   >
-                    {l.label}
+                    S{idx + 1}
                   </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={addNewDefaultSlide}
+                  className="shrink-0 px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-[#E4EFE8] text-[#2E5A44] border border-[#2E5A44]/30 touch-manipulation cursor-pointer"
+                  title="Add a fresh slide using this section's default template"
+                >
+                  + Slide
+                </button>
+                <button
+                  type="button"
+                  onClick={duplicateCurrentSlide}
+                  className="shrink-0 px-1.5 py-0.5 rounded-lg text-[11px] font-bold bg-[#F6F4EE] text-[#5C6B63] border border-[#D4CEC0] touch-manipulation cursor-pointer"
+                  title="Duplicate current slide"
+                >
+                  ⧉
+                </button>
+                {slides.length > 1 && (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      updateLayer(l.id, { visible: false }, true);
-                      if (selectedLayerId === l.id) {
-                        setSelectedLayerId(null);
-                        setEditingLayerId(null);
-                      }
-                    }}
-                    title={`Remove ${l.label} from card`}
-                    className={`pr-2.5 pl-1 py-1 font-black touch-manipulation cursor-pointer ${
-                      selectedLayerId === l.id ? 'text-white/90 hover:text-white' : 'text-[#991B1B]'
-                    }`}
+                    onClick={removeActiveSlide}
+                    className="shrink-0 px-1.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-[#FEE2E2] text-[#991B1B] touch-manipulation cursor-pointer"
+                    title="Remove current slide"
                   >
                     ✕
                   </button>
-                </div>
-              ))}
-            {activeSlide.layers
-              .filter((l) => !l.visible)
-              .map((l) => (
-                <button
-                  key={l.id}
-                  type="button"
-                  onClick={() => {
-                    updateLayer(l.id, { visible: true }, true);
-                    setSelectedLayerId(l.id);
-                    setEditingLayerId(null);
-                  }}
-                  title={`Add ${l.label} to card`}
-                  className="shrink-0 px-2.5 py-1 rounded-full text-xs font-bold border border-dashed border-[#BDB5A4] bg-[#F6F4EE]/80 text-[#5C6B63] touch-manipulation cursor-pointer"
-                >
-                  + {l.label}
-                </button>
-              ))}
-          </div>
-
-          {/* Floating Contextual Layer Toolbar (Right above canvas — zero scrolling needed!) */}
-          {selectedLayer ? (
-            <div className="w-full max-w-[520px] bg-white border border-[#DDD6C7] rounded-2xl p-2.5 shadow-md space-y-2 text-xs">
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={selectedLayer.text}
-                  onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })}
-                  placeholder="Edit pill text..."
-                  className="flex-1 rounded-lg border border-[#D46A4E] bg-[#FCFBF8] px-2.5 py-1.5 text-xs font-bold outline-none"
-                />
-                <select
-                  value={selectedLayer.pill}
-                  onChange={(e) =>
-                    updateLayer(selectedLayer.id, { pill: e.target.value as PillStyle }, true)
-                  }
-                  className="rounded-lg border border-[#DDD6C7] bg-[#FCFBF8] px-2 py-1.5 font-bold"
-                >
-                  {Object.entries(PILL_PALETTE).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v.label}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateLayer(
-                      selectedLayer.id,
-                      {
-                        font:
-                          selectedLayer.font === 'sans'
-                            ? 'serif'
-                            : selectedLayer.font === 'serif'
-                              ? 'serif-italic'
-                              : 'sans'
-                      },
-                      true
-                    )
-                  }
-                  className="px-2 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                >
-                  Aa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateLayer(selectedLayer.id, { x: 540 }, true)}
-                  className="px-2 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  title="Center horizontally"
-                >
-                  ┼
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateLayer(selectedLayer.id, { visible: false }, true);
-                    setSelectedLayerId(null);
-                    setEditingLayerId(null);
-                  }}
-                  className="px-2 py-1.5 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-extrabold"
-                  title="Hide pill"
-                >
-                  🗑️
-                </button>
+                )}
               </div>
 
-              {/* Pill Background Swatches — Wrapped Grid (Zero Horizontal Scrollbar Blocking Taps!) */}
-              <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1">
-                <div className="text-[11px] font-extrabold text-[#3E4D45]">Pill Color:</div>
-                <div className="flex flex-wrap gap-1">
-                  {(Object.entries(PILL_PALETTE) as [PillStyle, (typeof PILL_PALETTE)[PillStyle]][]).map(
-                    ([pKey, pMeta]) => {
-                      const isActive = selectedLayer.pill === pKey;
-                      return (
-                        <button
-                          key={pKey}
-                          type="button"
-                          onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
-                          title={`Pill Color: ${pMeta.label}`}
-                          className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
-                            isActive
-                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
-                          }`}
-                        >
-                          <span
-                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                            style={{
-                              background: pMeta.hasBg
-                                ? pMeta.swatch
-                                : pKey === 'none-dark'
-                                  ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
-                                  : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
-                            }}
-                          />
-                          <span>{pMeta.shortLabel}</span>
-                        </button>
-                      );
-                    }
-                  )}
-                </div>
-              </div>
-
-              {/* Text Color Swatches — Wrapped Grid (Works WITH or WITHOUT a Pill!) */}
-              <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1">
-                <div className="text-[11px] font-extrabold text-[#3E4D45]">Text Color:</div>
-                <div className="flex flex-wrap gap-1">
-                  {TEXT_COLOR_SWATCHES.map((sw) => {
-                    const isActive = (selectedLayer.textColor || '') === sw.value;
-                    return (
-                      <button
-                        key={sw.label}
-                        type="button"
-                        onClick={() =>
-                          updateLayer(
-                            selectedLayer.id,
-                            { textColor: sw.value || undefined },
-                            true
-                          )
-                        }
-                        title={`Text Color: ${sw.label}`}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
-                          isActive
-                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
-                        }`}
-                      >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                          style={{ background: sw.hex }}
-                        />
-                        <span>{sw.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1.5 border-t border-[#F0ECE1]">
-                <label className="block text-[11px] font-bold text-[#3E4D45]">
-                  <div className="flex justify-between">
-                    <span>Pill Opacity</span>
-                    <span className="text-[#D46A4E]">
-                      {PILL_PALETTE[selectedLayer.pill]?.hasBg
-                        ? `${Math.round((selectedLayer.pillOpacity ?? 1) * 100)}%`
-                        : 'No Pill'}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    disabled={!PILL_PALETTE[selectedLayer.pill]?.hasBg}
-                    value={selectedLayer.pillOpacity ?? 1}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, { pillOpacity: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#2E5A44] disabled:opacity-40"
-                  />
-                </label>
-                <label className="block text-[11px] font-bold text-[#3E4D45]">
-                  <div className="flex justify-between">
-                    <span>Text Size</span>
-                    <span className="text-[#D46A4E]">{selectedLayer.fontSize}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={15}
-                    max={110}
-                    value={selectedLayer.fontSize}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#2E5A44]"
-                  />
-                </label>
-                <label className="block text-[11px] font-bold text-[#3E4D45]">
-                  <div className="flex justify-between">
-                    <span>Pill Width</span>
-                    <span className="text-[#D46A4E]">{Math.round(selectedLayer.pillWidth)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={140}
-                    max={1020}
-                    value={selectedLayer.pillWidth}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, { pillWidth: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#2E5A44]"
-                  />
-                </label>
-                <label className="block text-[11px] font-bold text-[#3E4D45]">
-                  <div className="flex justify-between">
-                    <span>Pill Height</span>
-                    <span className="text-[#D46A4E]">{Math.round(selectedLayer.padY)}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={4}
-                    max={90}
-                    value={selectedLayer.padY}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, { padY: Number(e.target.value) })
-                    }
-                    className="w-full accent-[#2E5A44]"
-                  />
-                </label>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleBuildAutoCarousel}
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-[#F4D37E] text-[#1C2621] border border-[#E2BE62] touch-manipulation cursor-pointer"
+                >
+                  ✨ 3-Slide
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileCanvasTall((v) => !v)}
+                  className="lg:hidden px-2 py-0.5 rounded-lg text-[10px] font-extrabold bg-[#F6F4EE] text-[#2E5A44] border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                  title="Toggle larger photo preview vs taller editing dock"
+                >
+                  {mobileCanvasTall ? '🔽 Smaller' : '🔍 Larger'}
+                </button>
               </div>
             </div>
-          ) : (
-            <div className="text-[11px] sm:text-xs font-semibold text-[#5C6B63] bg-white px-3.5 py-1.5 rounded-full border border-[#EAE5D9] text-center">
-              👆 Tap any pill to select • Pinch to scale text • Drag ◀ ▶ ▲ ▼ handles to size pill
-            </div>
-          )}
 
-          {/* Interactive Stage */}
-          <div
-            onTouchStart={handleTouchStartStage}
-            onTouchMove={handleTouchMoveStage}
-            onTouchEnd={handleTouchEndStage}
-            onTouchCancel={handleTouchEndStage}
-            style={{
-              width: stageWidth,
-              height: stageHeight,
-              touchAction: photoLocked && !selectedLayerId ? 'pan-y' : 'none',
-              contain: 'layout paint',
-              isolation: 'isolate'
-            }}
-            className="relative overflow-hidden rounded-2xl shadow-2xl select-none shrink-0"
-          >
-            <div
-              onPointerMove={(e) => {
-                if (pinchRef.current.active) return;
-                const dm = dragModeRef.current;
-                if (dm.type === 'none') return;
-                const dx = (e.clientX - dm.sx) / stageScale;
-                const dy = (e.clientY - dm.sy) / stageScale;
-                if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
-                  if (!dm.recordedUndo) {
-                    pushHistory(slides);
-                    dm.recordedUndo = true;
-                  }
-                  dm.moved = true;
-                }
-
-                if (dm.type === 'photo') {
-                  if (!photoLocked && geom.hasPhoto) {
-                    updateActiveSlide({ panX: dm.bx + dx, panY: dm.by + dy });
-                  }
-                } else if (dm.type === 'layer' && dm.layerId) {
-                  let nextX = dm.bx + dx;
-                  let nextY = dm.by + dy;
-                  if (Math.abs(nextX - 540) < 18) {
-                    nextX = 540;
-                    setSnapVertical(true);
-                  } else {
-                    setSnapVertical(false);
-                  }
-                  if (Math.abs(nextY - canvasH / 2) < 18) {
-                    nextY = Math.round(canvasH / 2);
-                    setSnapHorizontal(true);
-                  } else {
-                    setSnapHorizontal(false);
-                  }
-                  updateLayer(dm.layerId, { x: nextX, y: nextY });
-                } else if (dm.type === 'handle-right' && dm.layerId) {
-                  const nextW = Math.max(140, Math.min(1040, dm.bWidth + dx * 2));
-                  updateLayer(dm.layerId, { pillWidth: nextW });
-                } else if (dm.type === 'handle-left' && dm.layerId) {
-                  const nextW = Math.max(140, Math.min(1040, dm.bWidth - dx * 2));
-                  updateLayer(dm.layerId, { pillWidth: nextW });
-                } else if (dm.type === 'handle-bottom' && dm.layerId) {
-                  const nextPadY = Math.max(4, Math.min(110, dm.bPadY + dy));
-                  updateLayer(dm.layerId, { padY: nextPadY });
-                } else if (dm.type === 'handle-top' && dm.layerId) {
-                  const nextPadY = Math.max(4, Math.min(110, dm.bPadY - dy));
-                  updateLayer(dm.layerId, { padY: nextPadY });
-                }
-              }}
-              onPointerUp={() => {
-                if (
-                  dragModeRef.current.type === 'photo' &&
-                  !dragModeRef.current.moved &&
-                  !pinchRef.current.active
-                ) {
+            {/* Row 2: Quick Layer Picker & 1-Tap Add/Remove (Fixed 28px Height!) */}
+            <div className="h-7 flex items-center gap-1 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => {
                   setSelectedLayerId(null);
                   setEditingLayerId(null);
-                }
-                dragModeRef.current.type = 'none';
-                setSnapVertical(false);
-                setSnapHorizontal(false);
+                }}
+                className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                  !selectedLayerId
+                    ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                    : 'bg-white text-[#5C6B63] border-[#DDD6C7]'
+                }`}
+              >
+                {geom.hasPhoto ? '🖼️ Photo' : '🎨 Bg'}
+              </button>
+              {activeSlide.layers
+                .filter((l) => l.visible)
+                .map((l) => (
+                  <div
+                    key={l.id}
+                    className={`shrink-0 inline-flex items-center rounded-full text-[11px] font-extrabold border transition ${
+                      selectedLayerId === l.id
+                        ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                        : 'bg-white text-[#1C2621] border-[#DDD6C7]'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLayerId(l.id);
+                        setEditingLayerId(null);
+                        setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                      }}
+                      className="pl-2 pr-1 py-0.5 touch-manipulation cursor-pointer"
+                    >
+                      {l.label}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateLayer(l.id, { visible: false }, true);
+                        if (selectedLayerId === l.id) {
+                          setSelectedLayerId(null);
+                          setEditingLayerId(null);
+                        }
+                      }}
+                      title={`Remove ${l.label} from card`}
+                      className={`pr-2 pl-0.5 py-0.5 font-black touch-manipulation cursor-pointer ${
+                        selectedLayerId === l.id ? 'text-white/90 hover:text-white' : 'text-[#991B1B]'
+                      }`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              {activeSlide.layers
+                .filter((l) => !l.visible)
+                .map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => {
+                      updateLayer(l.id, { visible: true }, true);
+                      setSelectedLayerId(l.id);
+                      setEditingLayerId(null);
+                      setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                    }}
+                    title={`Add ${l.label} to card`}
+                    className="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold border border-dashed border-[#BDB5A4] bg-white/70 text-[#5C6B63] touch-manipulation cursor-pointer"
+                  >
+                    + {l.label}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          {/* Viewport-Measured Stage Host — Centers Photo & Guarantees 100% Fit Without Scrolling! */}
+          <div
+            ref={stageHostRef}
+            className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
+          >
+            {/* Interactive Stage */}
+            <div
+              onTouchStart={handleTouchStartStage}
+              onTouchMove={handleTouchMoveStage}
+              onTouchEnd={handleTouchEndStage}
+              onTouchCancel={handleTouchEndStage}
+              style={{
+                width: stageWidth,
+                height: stageHeight,
+                touchAction: 'none',
+                contain: 'layout paint',
+                isolation: 'isolate'
               }}
-              onPointerCancel={() => {
-                dragModeRef.current.type = 'none';
-                setSnapVertical(false);
-                setSnapHorizontal(false);
-              }}
-              onPointerLeave={() => {
-                if (dragModeRef.current.type !== 'none') {
+              className="relative overflow-hidden rounded-2xl shadow-xl select-none shrink-0"
+            >
+              <div
+                onPointerMove={(e) => {
+                  if (pinchRef.current.active) return;
+                  const dm = dragModeRef.current;
+                  if (dm.type === 'none') return;
+                  const dx = (e.clientX - dm.sx) / stageScale;
+                  const dy = (e.clientY - dm.sy) / stageScale;
+                  if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+                    if (!dm.recordedUndo) {
+                      pushHistory(slides);
+                      dm.recordedUndo = true;
+                    }
+                    dm.moved = true;
+                  }
+
+                  if (dm.type === 'photo') {
+                    if (!photoLocked && geom.hasPhoto) {
+                      updateActiveSlide({ panX: dm.bx + dx, panY: dm.by + dy });
+                    }
+                  } else if (dm.type === 'layer' && dm.layerId) {
+                    let nextX = dm.bx + dx;
+                    let nextY = dm.by + dy;
+                    if (Math.abs(nextX - 540) < 18) {
+                      nextX = 540;
+                      setSnapVertical(true);
+                    } else {
+                      setSnapVertical(false);
+                    }
+                    if (Math.abs(nextY - canvasH / 2) < 18) {
+                      nextY = Math.round(canvasH / 2);
+                      setSnapHorizontal(true);
+                    } else {
+                      setSnapHorizontal(false);
+                    }
+                    updateLayer(dm.layerId, { x: nextX, y: nextY });
+                  } else if (dm.type === 'handle-right' && dm.layerId) {
+                    const nextW = Math.max(140, Math.min(1040, dm.bWidth + dx * 2));
+                    updateLayer(dm.layerId, { pillWidth: nextW });
+                  } else if (dm.type === 'handle-left' && dm.layerId) {
+                    const nextW = Math.max(140, Math.min(1040, dm.bWidth - dx * 2));
+                    updateLayer(dm.layerId, { pillWidth: nextW });
+                  } else if (dm.type === 'handle-bottom' && dm.layerId) {
+                    const nextPadY = Math.max(4, Math.min(110, dm.bPadY + dy));
+                    updateLayer(dm.layerId, { padY: nextPadY });
+                  } else if (dm.type === 'handle-top' && dm.layerId) {
+                    const nextPadY = Math.max(4, Math.min(110, dm.bPadY - dy));
+                    updateLayer(dm.layerId, { padY: nextPadY });
+                  }
+                }}
+                onPointerUp={() => {
+                  if (
+                    dragModeRef.current.type === 'photo' &&
+                    !dragModeRef.current.moved &&
+                    !pinchRef.current.active
+                  ) {
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }
                   dragModeRef.current.type = 'none';
+                  dragModeRef.current.viaCrosshair = false;
                   setSnapVertical(false);
                   setSnapHorizontal(false);
-                }
-              }}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: 1080,
-                height: canvasH,
+                }}
+                onPointerCancel={() => {
+                  dragModeRef.current.type = 'none';
+                  dragModeRef.current.viaCrosshair = false;
+                  setSnapVertical(false);
+                  setSnapHorizontal(false);
+                }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: 1080,
+                  height: canvasH,
                 transform: `scale(${stageScale})`,
                 transformOrigin: 'top left',
                 background: `linear-gradient(155deg, ${geom.outerBg1}, ${geom.outerBg2})`
@@ -4778,7 +4617,7 @@ const SocialStudio: React.FC = () => {
                 />
               )}
 
-              {/* Freeform Pills with Explicit Width/Padding & 4-Way Handles */}
+              {/* Freeform Pills with Explicit Width/Padding, 4-Way Handles & Offset Move Crosshair */}
               {activeSlide.layers.map((layer) => {
                 if (!layer.visible) return null;
                 const isSel = selectedLayerId === layer.id;
@@ -4786,6 +4625,55 @@ const SocialStudio: React.FC = () => {
                 const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
                 const fontSize = layer.fontSize;
                 const padX = pal.hasBg ? 26 : 8;
+
+                // Smart Offset Move Crosshair Position (keeps thumb off to the side/below so text is 100% uncovered!)
+                const halfW = layer.pillWidth / 2;
+                const estLines = Math.max(
+                  1,
+                  layer.text.split('\n').length,
+                  Math.ceil(
+                    (layer.text.length * fontSize * 0.54) / Math.max(160, layer.pillWidth - padX * 2)
+                  )
+                );
+                const halfH = (estLines * fontSize * 1.24) / 2 + layer.padY;
+                const belowY = layer.y + halfH + 84;
+                const placeBelow = belowY <= canvasH - 64;
+                const targetCrossY = placeBelow ? belowY : Math.max(64, layer.y - halfH - 84);
+                const targetCrossX = placeBelow
+                  ? layer.x > 740
+                    ? Math.max(68, layer.x - halfW - 58)
+                    : Math.min(1012, layer.x + halfW + 58)
+                  : Math.max(68, layer.x - halfW - 54);
+
+                const parkedOffX = targetCrossX - layer.x;
+                const parkedOffY = targetCrossY - layer.y;
+
+                const isCrosshairDragging =
+                  dragModeRef.current.type === 'layer' &&
+                  dragModeRef.current.layerId === layer.id &&
+                  Boolean(dragModeRef.current.viaCrosshair);
+
+                const activeOffX = isCrosshairDragging
+                  ? (dragModeRef.current.crossOffX ?? parkedOffX)
+                  : parkedOffX;
+                const activeOffY = isCrosshairDragging
+                  ? (dragModeRef.current.crossOffY ?? parkedOffY)
+                  : parkedOffY;
+
+                // Keep crosshair badge inside visible card bounds even near extreme edges
+                const renderOffX = Math.max(48 - layer.x, Math.min(1032 - layer.x, activeOffX));
+                const renderOffY = Math.max(
+                  48 - layer.y,
+                  Math.min(canvasH - 48 - layer.y, activeOffY)
+                );
+
+                const edgeRatio = Math.max(
+                  Math.abs(renderOffX) / Math.max(24, halfW + 6),
+                  Math.abs(renderOffY) / Math.max(20, halfH + 6)
+                );
+                const tetherStartScale = edgeRatio > 1 ? 1 / edgeRatio : 1;
+                const tetherStartX = renderOffX * tetherStartScale;
+                const tetherStartY = renderOffY * tetherStartScale;
 
                 const startHandle = (
                   handleType:
@@ -4796,6 +4684,7 @@ const SocialStudio: React.FC = () => {
                   e: React.PointerEvent
                 ) => {
                   e.stopPropagation();
+                  (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
                   dragModeRef.current = {
                     type: handleType,
                     layerId: layer.id,
@@ -4806,7 +4695,8 @@ const SocialStudio: React.FC = () => {
                     bWidth: layer.pillWidth,
                     bPadY: layer.padY,
                     moved: false,
-                    recordedUndo: false
+                    recordedUndo: false,
+                    viaCrosshair: false
                   };
                 };
 
@@ -4817,6 +4707,7 @@ const SocialStudio: React.FC = () => {
                       e.stopPropagation();
                       if (!e.isPrimary || pinchRef.current.active || isEditing) return;
                       setSelectedLayerId(layer.id);
+                      setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
                       dragModeRef.current = {
                         type: 'layer',
                         layerId: layer.id,
@@ -4827,7 +4718,8 @@ const SocialStudio: React.FC = () => {
                         bWidth: layer.pillWidth,
                         bPadY: layer.padY,
                         moved: false,
-                        recordedUndo: false
+                        recordedUndo: false,
+                        viaCrosshair: false
                       };
                     }}
                     onDoubleClick={(e) => {
@@ -5098,6 +4990,125 @@ const SocialStudio: React.FC = () => {
                               ✕
                             </span>
                           </div>
+
+                          {/* Offset Move Crosshair Handle (Drag from the side so your finger never covers the pill!) */}
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: '50%',
+                              top: '50%',
+                              width: 0,
+                              height: 0,
+                              zIndex: 45
+                            }}
+                          >
+                            <svg
+                              width={1400}
+                              height={1400}
+                              viewBox="-700 -700 1400 1400"
+                              style={{
+                                position: 'absolute',
+                                left: -700,
+                                top: -700,
+                                pointerEvents: 'none',
+                                overflow: 'visible'
+                              }}
+                            >
+                              <line
+                                x1={tetherStartX}
+                                y1={tetherStartY}
+                                x2={renderOffX}
+                                y2={renderOffY}
+                                stroke="#FFFFFF"
+                                strokeWidth={7}
+                                strokeLinecap="round"
+                                opacity={0.9}
+                              />
+                              <line
+                                x1={tetherStartX}
+                                y1={tetherStartY}
+                                x2={renderOffX}
+                                y2={renderOffY}
+                                stroke="#1C2621"
+                                strokeWidth={3.5}
+                                strokeDasharray="10 8"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+
+                            <div
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                if (!e.isPrimary || pinchRef.current.active) return;
+                                (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+                                setSelectedLayerId(layer.id);
+                                setEditingLayerId(null);
+                                setInspectorTab((prev) => (prev === 'fields' ? 'fields' : 'pill'));
+                                dragModeRef.current = {
+                                  type: 'layer',
+                                  layerId: layer.id,
+                                  sx: e.clientX,
+                                  sy: e.clientY,
+                                  bx: layer.x,
+                                  by: layer.y,
+                                  bWidth: layer.pillWidth,
+                                  bPadY: layer.padY,
+                                  moved: false,
+                                  recordedUndo: false,
+                                  viaCrosshair: true,
+                                  crossOffX: activeOffX,
+                                  crossOffY: activeOffY
+                                };
+                              }}
+                              title="Drag here to move selection without covering it with your finger"
+                              style={{
+                                position: 'absolute',
+                                left: renderOffX,
+                                top: renderOffY,
+                                transform: 'translate(-50%, -50%)',
+                                width: 128,
+                                height: 128,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'grab',
+                                touchAction: 'none'
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 72,
+                                  height: 72,
+                                  borderRadius: 999,
+                                  background: '#1C2621',
+                                  color: '#F4D37E',
+                                  border: '5px solid #FFFFFF',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                                }}
+                              >
+                                <svg
+                                  width={38}
+                                  height={38}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2.5}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="5 9 2 12 5 15" />
+                                  <polyline points="9 5 12 2 15 5" />
+                                  <polyline points="15 19 12 22 9 19" />
+                                  <polyline points="19 9 22 12 19 15" />
+                                  <line x1="2" y1="12" x2="22" y2="12" />
+                                  <line x1="12" y1="2" x2="12" y2="22" />
+                                </svg>
+                              </span>
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>
@@ -5106,659 +5117,1050 @@ const SocialStudio: React.FC = () => {
               })}
             </div>
           </div>
+          </div>
 
-          {/* Quick 1-Tap Frame & Theme Bar right below Canvas (Instant iPhone Taps!) */}
-          <div className="w-full max-w-[520px] bg-white border border-[#EAE5D9] rounded-2xl p-2.5 space-y-2 shadow-xs">
-            {/* Canva-Style 1-Tap Brand Shuffle Row */}
-            <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-[#F0ECE1]">
-              <button
-                type="button"
-                onClick={() => handleShuffleBrandLook(false)}
-                className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] text-[#F4D37E] text-xs font-extrabold shadow-xs touch-manipulation cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] transition"
-              >
-                <span>✨ Shuffle Brand Look</span>
-                <span className="text-[10px] font-bold text-white/85">
-                  ({BRAND_REMIX_RECIPES[remixIdx]?.name})
-                </span>
-              </button>
-              {(contentMode === 'puppies' || contentMode === 'studs') && galleryPhotos.length > 1 && (
+          {/* Fixed 20px Desktop Status Hint — Constant Height So Canvas Never Shifts! */}
+          <div className="hidden lg:flex items-center justify-center h-5 shrink-0 text-[11px] font-semibold text-[#5C6B63] truncate max-w-full">
+            {selectedLayer
+              ? `✥ Drag offset crosshair (or pill) to move "${selectedLayer.label}" • Double-click pill to type • Style in right panel`
+              : '👆 Tap any pill to style • Grab ✥ offset crosshair to move without covering text • Pinch to scale'}
+          </div>
+        </main>
+
+        {/* RIGHT / BOTTOM: Locked-Height 6-Tab Inspector Dock (Photo Remains 100% Visible!) */}
+        <aside className="flex-1 lg:flex-none lg:w-[450px] xl:w-[490px] min-h-[160px] lg:h-full bg-white flex flex-col overflow-hidden order-2 shadow-lg lg:shadow-none">
+          {/* Pinned 6-Tab Navigation Strip */}
+          <nav className="shrink-0 grid grid-cols-6 gap-0.5 bg-[#F6F4EE] border-b border-[#EAE5D9] p-1">
+            {(
+              [
+                ['theme', '🎨', 'Theme'],
+                ['pill', '✏️', 'Pill'],
+                ['source', '🐶', 'Source'],
+                ['fields', '✨', 'Text'],
+                ['layouts', '💾', 'Slides'],
+                ['caption', '🤖', 'Caption']
+              ] as const
+            ).map(([tabKey, icon, label]) => {
+              const isActive = inspectorTab === tabKey;
+              const showPillDot = tabKey === 'pill' && Boolean(selectedLayer);
+              return (
                 <button
+                  key={tabKey}
                   type="button"
-                  onClick={() => handleShuffleBrandLook(true)}
-                  className="shrink-0 py-2 px-3 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#1C2621] text-xs font-extrabold touch-manipulation cursor-pointer active:scale-[0.99] transition"
-                  title="Shuffle theme, colors AND cycle through this puppy's photos!"
+                  onClick={() => setInspectorTab(tabKey)}
+                  className={`relative flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 py-1.5 px-1 rounded-xl text-[10px] sm:text-xs font-extrabold touch-manipulation cursor-pointer transition ${
+                    isActive
+                      ? 'bg-[#2E5A44] text-white shadow-xs'
+                      : 'text-[#3E4D45] hover:bg-[#EAE5D9]/70'
+                  }`}
                 >
-                  🎲 + Swap Photo
+                  <span>{icon}</span>
+                  <span className="truncate">{label}</span>
+                  {showPillDot && (
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        isActive ? 'bg-[#F4D37E]' : 'bg-[#D46A4E]'
+                      } absolute top-1 right-1`}
+                    />
+                  )}
                 </button>
-              )}
-            </div>
+              );
+            })}
+          </nav>
 
-            {/* Frame Preset Picker — Wrapped Grid (Zero Scrollbar Blocking!) */}
-            <div className="space-y-1">
-              <div className="text-[11px] font-extrabold text-[#2E5A44] px-0.5">Frame:</div>
-              <div className="flex flex-wrap gap-1.5">
-                {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
+          {/* Independently Scrollable Tab Content (overflow-anchor: none prevents scroll jumps!) */}
+          <div
+            ref={inspectorScrollRef}
+            style={{ overflowAnchor: 'none' }}
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3"
+          >
+            {/* ==================== TAB 1: THEME, FRAME & COLORS ==================== */}
+            {inspectorTab === 'theme' && (
+              <div className="space-y-3">
+                {/* Canva-Style 1-Tap Brand Shuffle Row */}
+                <div className="flex items-center justify-between gap-2">
                   <button
-                    key={key}
                     type="button"
-                    onClick={() => handleSwitchPreset(key)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                      activeSlide.preset === key
-                        ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
-                        : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
-                    }`}
+                    onClick={() => handleShuffleBrandLook(false)}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] text-[#F4D37E] text-xs font-extrabold shadow-xs touch-manipulation cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.99] transition"
                   >
-                    {label}
+                    <span>✨ Shuffle Brand Look</span>
+                    <span className="text-[10px] font-bold text-white/85 truncate max-w-[130px]">
+                      ({BRAND_REMIX_RECIPES[remixIdx]?.name})
+                    </span>
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Text Card Theme Picker (Shown whenever Text Card is active — Blogs, Coat & DNA, Did You Know / AI!) */}
-            {activeSlide.preset === 'no-photo' && (
-              <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
-                <div className="text-[11px] font-extrabold text-[#D46A4E] px-0.5">
-                  Text Card Style:
+                  {(contentMode === 'puppies' || contentMode === 'studs') &&
+                    galleryPhotos.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleShuffleBrandLook(true)}
+                        className="shrink-0 py-2.5 px-3 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#1C2621] text-xs font-extrabold touch-manipulation cursor-pointer active:scale-[0.99] transition"
+                        title="Shuffle theme, colors AND cycle through this puppy's photos!"
+                      >
+                        🎲 + Photo
+                      </button>
+                    )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {TEXT_CARD_THEME_OPTIONS.map(({ key, label }) => {
-                    const activeTheme = activeSlide.textCardTheme || 'arch-crest';
-                    return (
+
+                {/* Frame Preset Picker — Wrapped Grid */}
+                <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    Frame &amp; Layout Template
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
                       <button
                         key={key}
                         type="button"
-                        onClick={() => handleSwitchTextCardTheme(key)}
-                        className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                          activeTheme === key
-                            ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                        onClick={() => handleSwitchPreset(key)}
+                        className={`px-2.5 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                          activeSlide.preset === key
+                            ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
                             : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
                         }`}
                       >
                         {label}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
+
+                {/* Text Card Theme Picker (Shown whenever Text Card is active!) */}
+                {activeSlide.preset === 'no-photo' && (
+                  <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
+                    <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D46A4E]">
+                      Text Card Style (Blogs, DNA &amp; AI)
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TEXT_CARD_THEME_OPTIONS.map(({ key, label }) => {
+                        const activeTheme = activeSlide.textCardTheme || 'arch-crest';
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => handleSwitchTextCardTheme(key)}
+                            className={`px-2.5 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                              activeTheme === key
+                                ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                                : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Outer Background Color Swatches */}
+                <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      Outer Background
+                    </span>
+                    {activeSlide.preset !== 'minimal' &&
+                      !(
+                        activeSlide.preset === 'no-photo' &&
+                        activeSlide.textCardTheme === 'minimal-luxe'
+                      ) && (
+                        <button
+                          type="button"
+                          onClick={handleSwapBgAndWindow}
+                          className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
+                          title="Swap Outer Background and Inner Window colors"
+                        >
+                          ⇄ Swap Outer &amp; Window
+                        </button>
+                      )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                      ([bgKey, bgMeta]) => (
+                        <button
+                          key={bgKey}
+                          type="button"
+                          onClick={() => handleSwitchBgTheme(bgKey)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                            activeSlide.bgStyle === bgKey
+                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                            style={{ background: bgMeta.swatch }}
+                          />
+                          <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Inner Window Color Swatches */}
+                {activeSlide.preset !== 'minimal' &&
+                  !(
+                    activeSlide.preset === 'no-photo' &&
+                    activeSlide.textCardTheme === 'minimal-luxe'
+                  ) && (
+                    <div className="space-y-1.5 pt-2 border-t border-[#F0ECE1]">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Inner Window / Card Color
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(
+                          Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]
+                        ).map(([winKey, winMeta]) => {
+                          const activeWin = activeSlide.windowStyle || 'pure-white';
+                          return (
+                            <button
+                              key={winKey}
+                              type="button"
+                              onClick={() => handleSwitchWindowTheme(winKey)}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                                activeWin === winKey
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                style={{ background: winMeta.swatch }}
+                              />
+                              <span>{winMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Photo Window Height, Zoom & Dim Sliders */}
+                {geom.hasPhoto && (
+                  <div className="space-y-2.5 pt-2 border-t border-[#F0ECE1]">
+                    <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      Photo Fit &amp; Lighting
+                    </div>
+                    {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
+                      <label className="block text-xs font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-1">
+                          <span>Photo Window Height</span>
+                          <span className="text-[#D46A4E]">{activeSlide.archHeight}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={480}
+                          max={ratio === 'story' ? 1480 : ratio === 'square' ? 720 : 1020}
+                          value={activeSlide.archHeight}
+                          onChange={(e) =>
+                            updateActiveSlide({ archHeight: Number(e.target.value) })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                    )}
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="block text-xs font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-1">
+                          <span>Photo Zoom</span>
+                          <span className="text-[#D46A4E]">{activeSlide.zoom.toFixed(2)}×</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.6}
+                          max={3.0}
+                          step={0.02}
+                          value={activeSlide.zoom}
+                          onChange={(e) => updateActiveSlide({ zoom: Number(e.target.value) })}
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-xs font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-1">
+                          <span>Photo Dim</span>
+                          <span className="text-[#D46A4E]">
+                            {Math.round(activeSlide.photoDim * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={0.7}
+                          step={0.02}
+                          value={activeSlide.photoDim}
+                          onChange={(e) => updateActiveSlide({ photoDim: Number(e.target.value) })}
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Outer Background Color Swatches — Wrapped Grid (Zero Scrollbar!) */}
-            <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
-              <div className="text-[11px] font-extrabold text-[#2E5A44] px-0.5">
-                Outer Background:
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                  ([bgKey, bgMeta]) => (
-                    <button
-                      key={bgKey}
-                      type="button"
-                      onClick={() => handleSwitchBgTheme(bgKey)}
-                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
-                        activeSlide.bgStyle === bgKey
-                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                        style={{ background: bgMeta.swatch }}
-                      />
-                      <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
-                    </button>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Inner Window Color Swatches — Wrapped Grid (Zero Scrollbar!) */}
-            {activeSlide.preset !== 'minimal' &&
-              !(
-                activeSlide.preset === 'no-photo' &&
-                activeSlide.textCardTheme === 'minimal-luxe'
-              ) && (
-                <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
-                  <div className="flex items-center justify-between px-0.5">
-                    <span className="text-[11px] font-extrabold text-[#2E5A44]">
-                      Inner Window:
+            {/* ==================== TAB 2: SELECTED PILL INSPECTOR ==================== */}
+            {inspectorTab === 'pill' && (
+              <div className="space-y-3">
+                {/* Quick Pill Selector Row Inside Panel */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      Select Pill to Style
                     </span>
                     <button
                       type="button"
-                      onClick={handleSwapBgAndWindow}
-                      className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
-                      title="Swap Outer Background and Inner Window colors"
+                      onClick={addCustomText}
+                      className="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] text-[#D46A4E] touch-manipulation cursor-pointer"
                     >
-                      ⇄ Swap Outer &amp; Window
+                      + Custom Pill
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                      ([winKey, winMeta]) => {
-                        const activeWin = activeSlide.windowStyle || 'pure-white';
-                        return (
-                          <button
-                            key={winKey}
-                            type="button"
-                            onClick={() => handleSwitchWindowTheme(winKey)}
-                            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
-                              activeWin === winKey
-                                ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                                : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
-                            }`}
-                          >
-                            <span
-                              className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                              style={{ background: winMeta.swatch }}
-                            />
-                            <span>{winMeta.label.replace(/^[^\s]+\s/, '')}</span>
-                          </button>
-                        );
-                      }
-                    )}
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeSlide.layers
+                      .filter((l) => l.visible)
+                      .map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedLayerId(l.id);
+                            setEditingLayerId(null);
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                            selectedLayerId === l.id
+                              ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                              : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                          }`}
+                        >
+                          {l.label}
+                        </button>
+                      ))}
                   </div>
                 </div>
-              )}
-          </div>
-        </main>
 
-        {/* RIGHT / BOTTOM: Compact Single-Open Accordion Panel (Zero Long Scrolling on Mobile!) */}
-        <aside className="bg-white border border-[#EAE5D9] rounded-3xl p-3 sm:p-4 shadow-sm lg:h-[calc(100vh-118px)] lg:overflow-y-auto order-2 space-y-2">
-          {/* ACCORDION 1: SOURCE CONTENT & PHOTO */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('source')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>
-                {contentMode === 'puppies'
-                  ? `🐶 Puppy & Photo (${selectedDog?.name || ''})`
-                  : contentMode === 'studs'
-                    ? `👑 Sire & Photo (${selectedDog?.name || ''})`
-                    : `📚 Topic & Background Photo`}
-              </span>
-              <span className="text-[#2E5A44]">{mobileTab === 'source' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'source' && (
-              <div className="p-3 space-y-3 bg-white">
-              {(contentMode === 'puppies' || contentMode === 'studs') && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      {contentMode === 'studs' ? 'Select Sire / Stud' : 'Select Puppy'}
-                    </span>
-                    {contentMode === 'puppies' && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFilterMode(filterMode === 'available' ? 'all' : 'available')
-                        }
-                        className="text-xs font-bold text-[#D46A4E] underline"
-                      >
-                        {filterMode === 'available' ? 'Show Past Litters Too' : 'Available Only'}
-                      </button>
-                    )}
-                  </div>
-
-                  <select
-                    value={selectedDog?.id || ''}
-                    onChange={(e) => {
-                      const found = visibleDogs.find((d) => d.id === e.target.value);
-                      setSelectedDogId(e.target.value);
-                      if (found) loadDogIntoCard(found);
-                    }}
-                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
-                  >
-                    {visibleDogs.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.status || d.category})
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => selectedDog && loadDogIntoCard(selectedDog, undefined, undefined, false)}
-                      className="flex-1 py-1.5 px-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold"
-                    >
-                      ✓ Apply {selectedDog?.name} to Slide {activeSlideIdx + 1} (Keep Layout)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetActiveSlideToModeDefault}
-                      className="py-1.5 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
-                      title="Reset slide to default template & theme"
-                    >
-                      🔄 Reset
-                    </button>
-                  </div>
-
-                  {galleryPhotos.length > 0 && (
-                    <div>
-                      <div className="text-xs font-bold text-[#3E4D45] mb-2">
-                        Tap Photo to Swap Only Photo (Slide {activeSlideIdx + 1})
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {galleryPhotos.map((url) => (
-                          <img
-                            key={url}
-                            src={url}
-                            alt={selectedDog?.name}
+                {selectedLayer ? (
+                  <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
+                    {/* Text Editor + Font / Center / Hide Actions */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-[11px] font-extrabold text-[#D46A4E]">
+                          ✏️ Editing: {selectedLayer.label}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
                             onClick={() =>
-                              updateActiveSlide(
+                              updateLayer(
+                                selectedLayer.id,
                                 {
-                                  preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
-                                  dogId: selectedDog?.id,
-                                  customPhotoDogId: undefined,
-                                  photoSrc: url,
-                                  panX: 0,
-                                  panY: 0
+                                  font:
+                                    selectedLayer.font === 'sans'
+                                      ? 'serif'
+                                      : selectedLayer.font === 'serif'
+                                        ? 'serif-italic'
+                                        : 'sans'
                                 },
                                 true
                               )
                             }
-                            className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
-                              activeSlide.photoSrc === url && geom.hasPhoto
-                                ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
-                                : 'border-[#DDD6C7]'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {contentMode === 'glossary' && (
-                <div className="space-y-2.5">
-                  <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    🧬 17 Coat &amp; DNA Glossary Terms (Slide {activeSlideIdx + 1})
-                  </div>
-                  <select
-                    value={selectedGlossaryId}
-                    onChange={(e) => {
-                      setSelectedGlossaryId(e.target.value);
-                      const item = GLOSSARY_ITEMS.find((g) => g.id === e.target.value);
-                      if (item) loadTopicIntoCard(item);
-                    }}
-                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
-                  >
-                    {GLOSSARY_ITEMS.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.title} ({g.badge.replace('🧬 ', '')})
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const item = GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) || GLOSSARY_ITEMS[0];
-                        if (item) loadTopicIntoCard(item);
-                      }}
-                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
-                    >
-                      ✓ Load Term onto Slide {activeSlideIdx + 1}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetActiveSlideToModeDefault}
-                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
-                      title="Reset slide to Coat & DNA default template"
-                    >
-                      🔄 Reset
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {contentMode === 'standards' && (
-                <div className="space-y-2.5">
-                  <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    🏡 OKC Standards, Care Rules &amp; Blog (Slide {activeSlideIdx + 1})
-                  </div>
-                  <select
-                    value={selectedStandardId}
-                    onChange={(e) => {
-                      setSelectedStandardId(e.target.value);
-                      const item = STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === e.target.value);
-                      if (item) loadTopicIntoCard(item);
-                    }}
-                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-sm font-bold"
-                  >
-                    {STANDARDS_AND_BLOG_ITEMS.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.title}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const item =
-                          STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
-                          STANDARDS_AND_BLOG_ITEMS[0];
-                        if (item) loadTopicIntoCard(item);
-                      }}
-                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
-                    >
-                      ✓ Load Guide onto Slide {activeSlideIdx + 1}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetActiveSlideToModeDefault}
-                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
-                      title="Reset slide to Standards & Blog default template"
-                    >
-                      🔄 Reset
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {contentMode === 'didyouknow' && (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      💡 Facts &amp; Polls (Slide {activeSlideIdx + 1})
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextIdx = (selectedDykIndex + 1) % DID_YOU_KNOW_ITEMS.length;
-                        setSelectedDykIndex(nextIdx);
-                        loadTopicIntoCard(DID_YOU_KNOW_ITEMS[nextIdx]);
-                      }}
-                      className="px-3 py-1 rounded-full bg-[#F4D37E] text-[#1C2621] text-xs font-extrabold"
-                    >
-                      🎲 Shuffle Idea
-                    </button>
-                  </div>
-
-                  <select
-                    value={selectedDykIndex}
-                    onChange={(e) => {
-                      const idx = Number(e.target.value);
-                      setSelectedDykIndex(idx);
-                      loadTopicIntoCard(DID_YOU_KNOW_ITEMS[idx]);
-                    }}
-                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-bold"
-                  >
-                    {DID_YOU_KNOW_ITEMS.map((item, i) => (
-                      <option key={item.id} value={i}>
-                        {item.badge} — {item.title}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length])}
-                      className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
-                    >
-                      ✓ Load Fact onto Slide {activeSlideIdx + 1}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetActiveSlideToModeDefault}
-                      className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
-                      title="Reset slide to Did You Know default template"
-                    >
-                      🔄 Reset
-                    </button>
-                  </div>
-
-                  <div className="border-t border-[#EAE5D9] pt-3 space-y-2">
-                    <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
-                      🤖 Generate Brand-New AI Card + Caption
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[
-                        ['did-you-know', '💡 Did You Know'],
-                        ['myth-vs-fact', '🧐 Myth vs Fact'],
-                        ['care-tip', '🩺 Care Tip'],
-                        ['comment-game', '💬 Comment Game'],
-                        ['this-or-that', '⚖️ This or That']
-                      ].map(([catKey, catLabel]) => (
-                        <button
-                          key={catKey}
-                          type="button"
-                          onClick={() => setAiCategory(catKey)}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-                            aiCategory === catKey
-                              ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
-                              : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7]'
-                          }`}
-                        >
-                          {catLabel}
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      type="text"
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      placeholder="Optional topic (e.g. 'potty training stubborn Frenchies', 'why raw food shines coats')..."
-                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
-                    />
-                    <button
-                      type="button"
-                      disabled={aiLoading}
-                      onClick={() => handleGenerateAiCardAndCaption()}
-                      className="w-full py-2.5 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
-                    >
-                      {aiLoading ? '✨ Creating Card & Caption...' : '✨ Generate New Card + Caption with AI'}
-                    </button>
-                    {aiError && (
-                      <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
-                        {aiError}
-                      </div>
-                    )}
-
-                    {savedAiCards.length > 0 && (
-                      <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
-                        <div className="text-[11px] font-extrabold text-[#2E5A44]">
-                          📌 Recent AI Cards (Tap to Reload Anytime)
+                            className="px-2.5 py-1 rounded-lg bg-[#F6F4EE] text-xs font-extrabold border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                            title="Cycle font (Sans / Serif / Italic Serif)"
+                          >
+                            Aa{' '}
+                            {selectedLayer.font === 'sans'
+                              ? 'Sans'
+                              : selectedLayer.font === 'serif'
+                                ? 'Serif'
+                                : 'Italic'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => updateLayer(selectedLayer.id, { x: 540 }, true)}
+                            className="px-2 py-1 rounded-lg bg-[#F6F4EE] text-xs font-extrabold border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                            title="Center horizontally"
+                          >
+                            ┼ Center
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateLayer(selectedLayer.id, { visible: false }, true);
+                              setSelectedLayerId(null);
+                              setEditingLayerId(null);
+                            }}
+                            className="px-2 py-1 rounded-lg bg-[#FEE2E2] text-[#991B1B] text-xs font-extrabold touch-manipulation cursor-pointer"
+                            title="Hide pill"
+                          >
+                            🗑️
+                          </button>
                         </div>
-                        <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                          {savedAiCards.map((entry) => (
+                      </div>
+
+                      <textarea
+                        rows={selectedLayer.text.includes('\n') ? 3 : 2}
+                        value={selectedLayer.text}
+                        onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })}
+                        placeholder="Edit pill text..."
+                        className="w-full rounded-xl border border-[#D46A4E] bg-[#FCFBF8] px-3 py-2 text-base sm:text-xs font-bold outline-none resize-y"
+                      />
+                    </div>
+
+                    {/* 4 Precision Sliders (Opacity, Text Size, Width, Height) */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#F0ECE1]">
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Pill Opacity</span>
+                          <span className="text-[#D46A4E]">
+                            {PILL_PALETTE[selectedLayer.pill]?.hasBg
+                              ? `${Math.round((selectedLayer.pillOpacity ?? 1) * 100)}%`
+                              : 'No Pill'}
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          disabled={!PILL_PALETTE[selectedLayer.pill]?.hasBg}
+                          value={selectedLayer.pillOpacity ?? 1}
+                          onChange={(e) =>
+                            updateLayer(selectedLayer.id, { pillOpacity: Number(e.target.value) })
+                          }
+                          className="w-full accent-[#2E5A44] disabled:opacity-40"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Text Size</span>
+                          <span className="text-[#D46A4E]">{selectedLayer.fontSize}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={15}
+                          max={110}
+                          value={selectedLayer.fontSize}
+                          onChange={(e) =>
+                            updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Pill Width</span>
+                          <span className="text-[#D46A4E]">{Math.round(selectedLayer.pillWidth)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={140}
+                          max={1020}
+                          value={selectedLayer.pillWidth}
+                          onChange={(e) =>
+                            updateLayer(selectedLayer.id, { pillWidth: Number(e.target.value) })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                      <label className="block text-[11px] font-bold text-[#3E4D45]">
+                        <div className="flex justify-between mb-0.5">
+                          <span>Pill Height</span>
+                          <span className="text-[#D46A4E]">{Math.round(selectedLayer.padY)}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={4}
+                          max={90}
+                          value={selectedLayer.padY}
+                          onChange={(e) =>
+                            updateLayer(selectedLayer.id, { padY: Number(e.target.value) })
+                          }
+                          className="w-full accent-[#2E5A44]"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Pill Color Swatches — Wrapped Grid */}
+                    <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Pill Background Color
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(
+                          Object.entries(PILL_PALETTE) as [
+                            PillStyle,
+                            (typeof PILL_PALETTE)[PillStyle]
+                          ][]
+                        ).map(([pKey, pMeta]) => {
+                          const isActive = selectedLayer.pill === pKey;
+                          return (
                             <button
-                              key={entry.item.id}
+                              key={pKey}
                               type="button"
-                              onClick={() => {
-                                loadTopicIntoCard(entry.item);
-                                if (entry.caption) setCaptionText(entry.caption);
-                              }}
-                              className="w-full text-left px-2.5 py-1.5 rounded-xl bg-[#F6F4EE] hover:bg-[#E4EFE8] border border-[#DDD6C7] text-xs font-bold text-[#1C2621] truncate touch-manipulation cursor-pointer transition"
+                              onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
+                              title={`Pill Color: ${pMeta.label}`}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                isActive
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                              }`}
                             >
-                              {entry.item.badge} — {entry.item.title}
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                style={{
+                                  background: pMeta.hasBg
+                                    ? pMeta.swatch
+                                    : pKey === 'none-dark'
+                                      ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
+                                      : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
+                                }}
+                              />
+                              <span>{pMeta.shortLabel}</span>
                             </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Text Color Swatches — Wrapped Grid */}
+                    <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        Text Color
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TEXT_COLOR_SWATCHES.map((sw) => {
+                          const isActive = (selectedLayer.textColor || '') === sw.value;
+                          return (
+                            <button
+                              key={sw.label}
+                              type="button"
+                              onClick={() =>
+                                updateLayer(
+                                  selectedLayer.id,
+                                  { textColor: sw.value || undefined },
+                                  true
+                                )
+                              }
+                              title={`Text Color: ${sw.label}`}
+                              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold touch-manipulation cursor-pointer transition ${
+                                isActive
+                                  ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                              }`}
+                            >
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                                style={{ background: sw.hex }}
+                              />
+                              <span>{sw.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl bg-[#F6F4EE] border border-[#E2DCCD] p-4 text-center space-y-2">
+                    <div className="text-xs font-extrabold text-[#1C2621]">
+                      👆 Tap any pill above or directly on the photo to customize it!
+                    </div>
+                    <p className="text-[11px] text-[#5C6B63]">
+                      Once selected, use the <strong>✥ offset crosshair</strong> off to the side of
+                      the pill to slide it around without covering the text with your finger.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ==================== TAB 3: SOURCE CONTENT & PHOTOS ==================== */}
+            {inspectorTab === 'source' && (
+              <div className="space-y-3">
+                {/* Content Mode Switcher */}
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    What Are We Posting Today?
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(
+                      [
+                        ['puppies', '🐾 Puppies'],
+                        ['studs', '👑 Studs'],
+                        ['glossary', '🧬 Coat & DNA'],
+                        ['standards', '🏡 Standards & Blog'],
+                        ['didyouknow', '💡 Did You Know & AI']
+                      ] as const
+                    ).map(([modeKey, modeLabel]) => (
+                      <button
+                        key={modeKey}
+                        type="button"
+                        onClick={() => handleSelectContentMode(modeKey)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                          contentMode === modeKey
+                            ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                            : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7] hover:bg-[#EFECE4]'
+                        }`}
+                      >
+                        {modeLabel}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(contentMode === 'puppies' || contentMode === 'studs') && (
+                  <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        {contentMode === 'studs' ? 'Select Sire / Stud' : 'Select Puppy'}
+                      </span>
+                      {contentMode === 'puppies' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFilterMode(filterMode === 'available' ? 'all' : 'available')
+                          }
+                          className="text-xs font-bold text-[#D46A4E] underline touch-manipulation cursor-pointer"
+                        >
+                          {filterMode === 'available' ? 'Show Past Litters Too' : 'Available Only'}
+                        </button>
+                      )}
+                    </div>
+
+                    <select
+                      value={selectedDog?.id || ''}
+                      onChange={(e) => {
+                        const found = visibleDogs.find((d) => d.id === e.target.value);
+                        setSelectedDogId(e.target.value);
+                        if (found) loadDogIntoCard(found);
+                      }}
+                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-base sm:text-sm font-bold"
+                    >
+                      {visibleDogs.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({d.status || d.category})
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          selectedDog && loadDogIntoCard(selectedDog, undefined, undefined, false)
+                        }
+                        className="flex-1 py-2 px-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold touch-manipulation cursor-pointer"
+                      >
+                        ✓ Apply {selectedDog?.name} to Slide {activeSlideIdx + 1}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetActiveSlideToModeDefault}
+                        className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                        title="Reset slide to default template & theme"
+                      >
+                        🔄 Reset
+                      </button>
+                    </div>
+
+                    {galleryPhotos.length > 0 && (
+                      <div>
+                        <div className="text-xs font-bold text-[#3E4D45] mb-2">
+                          Tap Photo to Swap Only Photo (Slide {activeSlideIdx + 1})
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {galleryPhotos.map((url) => (
+                            <img
+                              key={url}
+                              src={url}
+                              alt={selectedDog?.name}
+                              onClick={() =>
+                                updateActiveSlide(
+                                  {
+                                    preset:
+                                      activeSlide.preset === 'no-photo'
+                                        ? 'minimal'
+                                        : activeSlide.preset,
+                                    dogId: selectedDog?.id,
+                                    customPhotoDogId: undefined,
+                                    photoSrc: url,
+                                    panX: 0,
+                                    panY: 0
+                                  },
+                                  true
+                                )
+                              }
+                              className={`w-16 h-16 rounded-xl object-cover cursor-pointer border-2 transition ${
+                                activeSlide.photoSrc === url && geom.hasPhoto
+                                  ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                  : 'border-[#DDD6C7]'
+                              }`}
+                            />
                           ))}
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* 1-Tap Puppy / Sire Background Photo Overlay for Topic & AI Cards! */}
-              {contentMode !== 'puppies' && contentMode !== 'studs' && (
-                <div className="border-t border-[#F0ECE1] pt-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      🐾 Overlay Text Over a Dimmed Puppy / Sire Photo
-                    </span>
-                    {activeSlide.preset !== 'no-photo' && (
+                {contentMode === 'glossary' && (
+                  <div className="space-y-2.5 pt-2 border-t border-[#F0ECE1]">
+                    <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      🧬 17 Coat &amp; DNA Glossary Terms (Slide {activeSlideIdx + 1})
+                    </div>
+                    <select
+                      value={selectedGlossaryId}
+                      onChange={(e) => {
+                        setSelectedGlossaryId(e.target.value);
+                        const item = GLOSSARY_ITEMS.find((g) => g.id === e.target.value);
+                        if (item) loadTopicIntoCard(item);
+                      }}
+                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-base sm:text-sm font-bold"
+                    >
+                      {GLOSSARY_ITEMS.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.title} ({g.badge.replace('🧬 ', '')})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
-                        onClick={() => handleSwitchPreset('no-photo')}
-                        className="text-[11px] font-bold text-[#991B1B] underline touch-manipulation cursor-pointer"
+                        onClick={() => {
+                          const item =
+                            GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) ||
+                            GLOSSARY_ITEMS[0];
+                          if (item) loadTopicIntoCard(item);
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
                       >
-                        Back to Text Card
+                        ✓ Load Term onto Slide {activeSlideIdx + 1}
                       </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-                    {allDogs
-                      .filter((d) => Boolean(d.image))
-                      .slice(0, 12)
-                      .map((d) => (
-                        <button
-                          key={d.id}
-                          type="button"
-                          onClick={() => {
-                            const nextPreset: FramePreset =
-                              activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset;
-                            const adjustedLayers = activeSlide.layers.map((l) => {
-                              if (l.pill === 'none-dark') {
-                                return { ...l, pill: 'none-light' as PillStyle };
-                              }
-                              if (
-                                l.id === 'body' &&
-                                (l.pill === 'white' || l.pill === 'cream' || l.pill === 'oat')
-                              ) {
-                                return { ...l, pill: 'frosted' as PillStyle };
-                              }
-                              return l;
-                            });
-                            updateActiveSlide(
-                              {
-                                preset: nextPreset,
-                                photoSrc: d.image || '',
-                                photoDim: activeSlide.photoDim >= 0.2 ? activeSlide.photoDim : 0.48,
-                                panX: 0,
-                                panY: 0,
-                                layers: adjustedLayers
-                              },
-                              true
-                            );
-                          }}
-                          title={`Overlay card text on ${d.name}`}
-                          className={`shrink-0 flex flex-col items-center gap-0.5 touch-manipulation cursor-pointer ${
-                            activeSlide.photoSrc === d.image && activeSlide.preset !== 'no-photo'
-                              ? 'opacity-100'
-                              : 'opacity-85 hover:opacity-100'
-                          }`}
-                        >
-                          <img
-                            src={d.image}
-                            alt={d.name}
-                            className={`w-12 h-12 rounded-xl object-cover border-2 ${
-                              activeSlide.photoSrc === d.image && activeSlide.preset !== 'no-photo'
-                                ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
-                                : 'border-[#DDD6C7]'
-                            }`}
-                          />
-                          <span className="text-[10px] font-bold text-[#3E4D45] max-w-[54px] truncate">
-                            {d.name}
-                          </span>
-                        </button>
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Camera Roll Upload & Photo Controls (Available in ALL modes!) */}
-              <div className="border-t border-[#F0ECE1] pt-3 space-y-3">
-                <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold cursor-pointer hover:bg-[#EFECE3]">
-                  📷 Upload Custom Photo from Camera Roll
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      const reader = new FileReader();
-                      reader.onload = (ev) => {
-                        if (typeof ev.target?.result === 'string') {
-                          const isDogMode = contentMode === 'puppies' || contentMode === 'studs';
-                          updateActiveSlide(
-                            {
-                              preset: activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset,
-                              ...(isDogMode && selectedDog
-                                ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
-                                : {}),
-                              photoSrc: ev.target.result,
-                              panX: 0,
-                              panY: 0
-                            },
-                            true
-                          );
-                        }
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    className="hidden"
-                  />
-                </label>
-
-                {geom.hasPhoto && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <label className="block text-xs font-bold text-[#3E4D45]">
-                      <div className="flex justify-between mb-1">
-                        <span>Photo Zoom</span>
-                        <span className="text-[#D46A4E]">{activeSlide.zoom.toFixed(2)}×</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.6}
-                        max={3.0}
-                        step={0.02}
-                        value={activeSlide.zoom}
-                        onChange={(e) => updateActiveSlide({ zoom: Number(e.target.value) })}
-                        className="w-full accent-[#2E5A44]"
-                      />
-                    </label>
-                    <label className="block text-xs font-bold text-[#3E4D45]">
-                      <div className="flex justify-between mb-1">
-                        <span>Photo Dim</span>
-                        <span className="text-[#D46A4E]">{Math.round(activeSlide.photoDim * 100)}%</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={0.7}
-                        step={0.02}
-                        value={activeSlide.photoDim}
-                        onChange={(e) => updateActiveSlide({ photoDim: Number(e.target.value) })}
-                        className="w-full accent-[#2E5A44]"
-                      />
-                    </label>
+                      <button
+                        type="button"
+                        onClick={handleResetActiveSlideToModeDefault}
+                        className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                        title="Reset slide to Coat & DNA default template"
+                      >
+                        🔄 Reset
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(directShareUrl);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="w-full py-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold"
-                >
-                  {copiedLink ? '✓ Direct Preview Link Copied!' : '🔗 Copy Direct Website Link (For DMs / Stories)'}
-                </button>
-              </div>
+                {contentMode === 'standards' && (
+                  <div className="space-y-2.5 pt-2 border-t border-[#F0ECE1]">
+                    <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      🏡 OKC Standards, Care Rules &amp; Blog (Slide {activeSlideIdx + 1})
+                    </div>
+                    <select
+                      value={selectedStandardId}
+                      onChange={(e) => {
+                        setSelectedStandardId(e.target.value);
+                        const item = STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === e.target.value);
+                        if (item) loadTopicIntoCard(item);
+                      }}
+                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2.5 text-base sm:text-sm font-bold"
+                    >
+                      {STANDARDS_AND_BLOG_ITEMS.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.title}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const item =
+                            STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
+                            STANDARDS_AND_BLOG_ITEMS[0];
+                          if (item) loadTopicIntoCard(item);
+                        }}
+                        className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                      >
+                        ✓ Load Guide onto Slide {activeSlideIdx + 1}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetActiveSlideToModeDefault}
+                        className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                        title="Reset slide to Standards & Blog default template"
+                      >
+                        🔄 Reset
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {contentMode === 'didyouknow' && (
+                  <div className="space-y-2.5 pt-2 border-t border-[#F0ECE1]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        💡 Facts &amp; Polls (Slide {activeSlideIdx + 1})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextIdx = (selectedDykIndex + 1) % DID_YOU_KNOW_ITEMS.length;
+                          setSelectedDykIndex(nextIdx);
+                          loadTopicIntoCard(DID_YOU_KNOW_ITEMS[nextIdx]);
+                        }}
+                        className="px-3 py-1 rounded-full bg-[#F4D37E] text-[#1C2621] text-xs font-extrabold touch-manipulation cursor-pointer"
+                      >
+                        🎲 Shuffle Idea
+                      </button>
+                    </div>
+
+                    <select
+                      value={selectedDykIndex}
+                      onChange={(e) => {
+                        const idx = Number(e.target.value);
+                        setSelectedDykIndex(idx);
+                        loadTopicIntoCard(DID_YOU_KNOW_ITEMS[idx]);
+                      }}
+                      className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-base sm:text-xs font-bold"
+                    >
+                      {DID_YOU_KNOW_ITEMS.map((item, i) => (
+                        <option key={item.id} value={i}>
+                          {item.badge} — {item.title}
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          loadTopicIntoCard(
+                            DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length]
+                          )
+                        }
+                        className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                      >
+                        ✓ Load Fact onto Slide {activeSlideIdx + 1}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetActiveSlideToModeDefault}
+                        className="py-2 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                        title="Reset slide to Did You Know default template"
+                      >
+                        🔄 Reset
+                      </button>
+                    </div>
+
+                    <div className="border-t border-[#EAE5D9] pt-3 space-y-2">
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
+                        🤖 Generate Brand-New AI Card + Caption
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          ['did-you-know', '💡 Did You Know'],
+                          ['myth-vs-fact', '🧐 Myth vs Fact'],
+                          ['care-tip', '🩺 Care Tip'],
+                          ['comment-game', '💬 Comment Game'],
+                          ['this-or-that', '⚖️ This or That']
+                        ].map(([catKey, catLabel]) => (
+                          <button
+                            key={catKey}
+                            type="button"
+                            onClick={() => setAiCategory(catKey)}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-bold border touch-manipulation cursor-pointer ${
+                              aiCategory === catKey
+                                ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                                : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7]'
+                            }`}
+                          >
+                            {catLabel}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        placeholder="Optional topic (e.g. 'potty training stubborn Frenchies')..."
+                        className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-base sm:text-xs font-medium"
+                      />
+                      <button
+                        type="button"
+                        disabled={aiLoading}
+                        onClick={() => handleGenerateAiCardAndCaption()}
+                        className="w-full py-2.5 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
+                      >
+                        {aiLoading
+                          ? '✨ Creating Card & Caption...'
+                          : '✨ Generate New Card + Caption with AI'}
+                      </button>
+                      {aiError && (
+                        <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
+                          {aiError}
+                        </div>
+                      )}
+
+                      {savedAiCards.length > 0 && (
+                        <div className="pt-2 border-t border-[#F0ECE1] space-y-1.5">
+                          <div className="text-[11px] font-extrabold text-[#2E5A44]">
+                            📌 Recent AI Cards (Tap to Reload Anytime)
+                          </div>
+                          <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                            {savedAiCards.map((entry) => (
+                              <button
+                                key={entry.item.id}
+                                type="button"
+                                onClick={() => {
+                                  loadTopicIntoCard(entry.item);
+                                  if (entry.caption) setCaptionText(entry.caption);
+                                }}
+                                className="w-full text-left px-2.5 py-1.5 rounded-xl bg-[#F6F4EE] hover:bg-[#E4EFE8] border border-[#DDD6C7] text-xs font-bold text-[#1C2621] truncate touch-manipulation cursor-pointer transition"
+                              >
+                                {entry.item.badge} — {entry.item.title}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 1-Tap Puppy / Sire Background Photo Overlay for Topic & AI Cards! */}
+                {contentMode !== 'puppies' && contentMode !== 'studs' && (
+                  <div className="border-t border-[#F0ECE1] pt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                        🐾 Overlay Text Over a Dimmed Puppy / Sire Photo
+                      </span>
+                      {activeSlide.preset !== 'no-photo' && (
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchPreset('no-photo')}
+                          className="text-[11px] font-bold text-[#991B1B] underline touch-manipulation cursor-pointer"
+                        >
+                          Back to Text Card
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {allDogs
+                        .filter((d) => Boolean(d.image))
+                        .slice(0, 12)
+                        .map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => {
+                              const nextPreset: FramePreset =
+                                activeSlide.preset === 'no-photo' ? 'minimal' : activeSlide.preset;
+                              const adjustedLayers = activeSlide.layers.map((l) => {
+                                if (l.pill === 'none-dark') {
+                                  return { ...l, pill: 'none-light' as PillStyle };
+                                }
+                                if (
+                                  l.id === 'body' &&
+                                  (l.pill === 'white' || l.pill === 'cream' || l.pill === 'oat')
+                                ) {
+                                  return { ...l, pill: 'frosted' as PillStyle };
+                                }
+                                return l;
+                              });
+                              updateActiveSlide(
+                                {
+                                  preset: nextPreset,
+                                  photoSrc: d.image || '',
+                                  photoDim:
+                                    activeSlide.photoDim >= 0.2 ? activeSlide.photoDim : 0.48,
+                                  panX: 0,
+                                  panY: 0,
+                                  layers: adjustedLayers
+                                },
+                                true
+                              );
+                            }}
+                            title={`Overlay card text on ${d.name}`}
+                            className={`flex flex-col items-center gap-0.5 touch-manipulation cursor-pointer ${
+                              activeSlide.photoSrc === d.image && activeSlide.preset !== 'no-photo'
+                                ? 'opacity-100'
+                                : 'opacity-85 hover:opacity-100'
+                            }`}
+                          >
+                            <img
+                              src={d.image}
+                              alt={d.name}
+                              className={`w-12 h-12 rounded-xl object-cover border-2 ${
+                                activeSlide.photoSrc === d.image &&
+                                activeSlide.preset !== 'no-photo'
+                                  ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                  : 'border-[#DDD6C7]'
+                              }`}
+                            />
+                            <span className="text-[10px] font-bold text-[#3E4D45] max-w-[54px] truncate">
+                              {d.name}
+                            </span>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Camera Roll Upload & Direct Link */}
+                <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                  <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-2.5 rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3]">
+                    📷 Upload Custom Photo from Camera Roll
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (typeof ev.target?.result === 'string') {
+                            const isDogMode =
+                              contentMode === 'puppies' || contentMode === 'studs';
+                            updateActiveSlide(
+                              {
+                                preset:
+                                  activeSlide.preset === 'no-photo'
+                                    ? 'minimal'
+                                    : activeSlide.preset,
+                                ...(isDogMode && selectedDog
+                                  ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
+                                  : {}),
+                                photoSrc: ev.target.result,
+                                panX: 0,
+                                panY: 0
+                              },
+                              true
+                            );
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(directShareUrl);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold touch-manipulation cursor-pointer"
+                  >
+                    {copiedLink
+                      ? '✓ Direct Preview Link Copied!'
+                      : '🔗 Copy Direct Website Link (For DMs / Stories)'}
+                  </button>
+                </div>
               </div>
             )}
-          </div>
 
-          {/* ACCORDION 2: ADD / REMOVE PILLS & EDIT TEXT */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('fields')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>✨ Show / Hide Pills &amp; Edit Text</span>
-              <span className="text-[#2E5A44]">{mobileTab === 'fields' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'fields' && (
-              <div className="p-3 space-y-3 bg-white">
+            {/* ==================== TAB 4: SHOW/HIDE PILLS, BULK TEXT & STAMPS ==================== */}
+            {inspectorTab === 'fields' && (
+              <div className="space-y-3">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
@@ -5767,7 +6169,7 @@ const SocialStudio: React.FC = () => {
                     <button
                       type="button"
                       onClick={addCustomText}
-                      className="text-xs font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-1 rounded-full border border-[#E2DCCD]"
+                      className="text-xs font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-1 rounded-full border border-[#E2DCCD] touch-manipulation cursor-pointer"
                     >
                       + Custom Pill
                     </button>
@@ -5782,7 +6184,7 @@ const SocialStudio: React.FC = () => {
                           updateLayer(layer.id, { visible: nextVis }, true);
                           setSelectedLayerId(nextVis ? layer.id : null);
                         }}
-                        className={`px-2.5 py-1 rounded-full text-xs font-bold border transition ${
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold border touch-manipulation cursor-pointer transition ${
                           layer.visible
                             ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
                             : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#5C6B63] opacity-75'
@@ -5797,7 +6199,7 @@ const SocialStudio: React.FC = () => {
 
                 <div className="border-t border-[#F0ECE1] pt-2.5 space-y-1.5">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    Visible Text (Slide {activeSlideIdx + 1})
+                    Quick-Edit Visible Text (Slide {activeSlideIdx + 1})
                   </div>
                   {activeSlide.layers
                     .filter((l) => l.visible)
@@ -5808,7 +6210,7 @@ const SocialStudio: React.FC = () => {
                           value={layer.text}
                           onFocus={() => setSelectedLayerId(layer.id)}
                           onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
-                          className={`flex-1 rounded-xl border px-2.5 py-1.5 text-xs font-medium ${
+                          className={`flex-1 rounded-xl border px-2.5 py-1.5 text-base sm:text-xs font-medium ${
                             selectedLayerId === layer.id
                               ? 'border-[#D46A4E] bg-white ring-2 ring-[#D46A4E]/20'
                               : 'border-[#DDD6C7] bg-[#FCFBF8]'
@@ -5816,268 +6218,167 @@ const SocialStudio: React.FC = () => {
                         />
                         <button
                           type="button"
+                          onClick={() => {
+                            setSelectedLayerId(layer.id);
+                            setInspectorTab('pill');
+                          }}
+                          title="Style pill colors & size"
+                          className="px-2 py-1.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-xs font-bold text-[#2E5A44] touch-manipulation cursor-pointer"
+                        >
+                          🎨
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => updateLayer(layer.id, { visible: false }, true)}
-                          className="px-2 py-1.5 rounded-xl bg-[#F6F4EE] text-xs font-bold text-[#5C6B63] hover:text-[#991B1B]"
+                          className="px-2 py-1.5 rounded-xl bg-[#F6F4EE] text-xs font-bold text-[#5C6B63] hover:text-[#991B1B] touch-manipulation cursor-pointer"
                         >
                           ✕
                         </button>
                       </div>
                     ))}
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* ACCORDION 3: 1-TAP STATUS STAMPS & COMMENT STICKERS */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('stamps')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>🏷️ 1-Tap Status Stamps &amp; Stickers</span>
-              <span className="text-[#2E5A44]">{mobileTab === 'stamps' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'stamps' && (
-              <div className="p-3 bg-white">
-                <div className="flex flex-wrap gap-1.5">
-                  {STAMP_BADGES.map((st) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      onClick={() => applyStampBadge(st)}
-                      className="px-2.5 py-1.5 rounded-full text-xs font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] hover:bg-[#E4EFE8] transition"
-                    >
-                      {st.text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* ACCORDION 4: MIX & MATCH THEME COLORS & FRAME TEMPLATE */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('style')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>🖼️ Mix &amp; Match Colors &amp; Frame</span>
-              <span className="text-[#2E5A44]">{mobileTab === 'style' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'style' && (
-              <div className="p-3 space-y-3 bg-white">
-                {/* 1. Frame & Layout Template */}
-                <div>
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1.5">
-                    1. Frame &amp; Layout Template
+                {/* 1-Tap Status Stamps & Stickers Combined Right Here! */}
+                <div className="border-t border-[#F0ECE1] pt-2.5 space-y-2">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    🏷️ 1-Tap Status Stamps &amp; Stickers
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
+                  <div className="flex flex-wrap gap-1.5">
+                    {STAMP_BADGES.map((st) => (
                       <button
-                        key={key}
+                        key={st.id}
                         type="button"
-                        onClick={() => handleSwitchPreset(key)}
-                        className={`py-2 px-2.5 rounded-xl text-xs font-extrabold border text-left transition ${
-                          activeSlide.preset === key
-                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
-                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
-                        }`}
+                        onClick={() => applyStampBadge(st)}
+                        className="px-2.5 py-1.5 rounded-full text-xs font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] hover:bg-[#E4EFE8] touch-manipulation cursor-pointer transition"
                       >
-                        {label}
+                        {st.text}
                       </button>
                     ))}
                   </div>
-
-                  {activeSlide.preset === 'no-photo' && (
-                    <div className="pt-2.5">
-                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D46A4E] mb-1.5">
-                        Text Card Architecture (Blogs, DNA &amp; AI)
-                      </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {TEXT_CARD_THEME_OPTIONS.map(({ key, label }) => {
-                          const activeTheme = activeSlide.textCardTheme || 'arch-crest';
-                          return (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => handleSwitchTextCardTheme(key)}
-                              className={`py-2 px-2.5 rounded-xl text-xs font-extrabold border text-left transition ${
-                                activeTheme === key
-                                  ? 'bg-[#FDEEE9] border-[#D46A4E] text-[#99361E]'
-                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
-                              }`}
-                            >
-                              {label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
-                    <label className="block text-xs font-bold text-[#3E4D45] pt-2.5">
-                      <div className="flex justify-between mb-1">
-                        <span>Photo Window Height</span>
-                        <span className="text-[#D46A4E]">{activeSlide.archHeight}px</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={480}
-                        max={ratio === 'story' ? 1480 : ratio === 'square' ? 720 : 1020}
-                        value={activeSlide.archHeight}
-                        onChange={(e) => updateActiveSlide({ archHeight: Number(e.target.value) })}
-                        className="w-full accent-[#2E5A44]"
-                      />
-                    </label>
-                  )}
-                </div>
-
-                {/* 2. Outer Background Color */}
-                <div className="border-t border-[#F0ECE1] pt-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      2. Outer Background Color
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleSwapBgAndWindow}
-                      className="text-[11px] font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-0.5 rounded-full border border-[#E2DCCD]"
-                      title="Swap Outer Background and Inner Window colors"
-                    >
-                      🔄 Swap Outer &amp; Window
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                      ([bgKey, bgMeta]) => (
-                        <button
-                          key={bgKey}
-                          type="button"
-                          onClick={() => handleSwitchBgTheme(bgKey)}
-                          className={`py-1.5 px-2.5 rounded-xl text-xs font-extrabold border text-left transition flex items-center gap-2 ${
-                            activeSlide.bgStyle === bgKey
-                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
-                          }`}
-                        >
-                          <span
-                            className="w-4 h-4 rounded-full border border-black/15 shrink-0"
-                            style={{ background: bgMeta.swatch }}
-                          />
-                          <span className="truncate">{bgMeta.label}</span>
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Inner Window / Card Color */}
-                <div className="border-t border-[#F0ECE1] pt-2.5">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1.5">
-                    3. Inner Window / Card Color
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                      ([winKey, winMeta]) => {
-                        const activeWin = activeSlide.windowStyle || 'pure-white';
-                        return (
-                          <button
-                            key={winKey}
-                            type="button"
-                            onClick={() => handleSwitchWindowTheme(winKey)}
-                            className={`py-1.5 px-2.5 rounded-xl text-xs font-extrabold border text-left transition flex items-center gap-2 ${
-                              activeWin === winKey
-                                ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                                : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
-                            }`}
-                          >
-                            <span
-                              className="w-4 h-4 rounded-full border border-black/15 shrink-0"
-                              style={{ background: winMeta.swatch }}
-                            />
-                            <span className="truncate">{winMeta.label}</span>
-                          </button>
-                        );
-                      }
-                    )}
-                  </div>
                 </div>
               </div>
             )}
-          </div>
 
-          {/* ACCORDION 5: SAVED GO-TO LAYOUTS */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('layouts')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>💾 Saved Go-To Layouts ({savedLayouts.length})</span>
-              <span className="text-[#2E5A44]">{mobileTab === 'layouts' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'layouts' && (
-              <div className="p-3 space-y-2.5 bg-white">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newPresetName}
-                    onChange={(e) => setNewPresetName(e.target.value)}
-                    placeholder="e.g. Lindsey's Go-To Minimal"
-                    className="flex-1 rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSaveLayoutPreset}
-                    className="px-3.5 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
-                  >
-                    💾 Save
-                  </button>
-                </div>
-                {savedLayouts.length > 0 && (
-                  <div className="space-y-1.5">
-                    {savedLayouts.map((sl) => (
-                      <div
-                        key={sl.id}
-                        className="flex items-center justify-between bg-[#F6F4EE] border border-[#E2DCCD] rounded-xl px-3 py-2"
+            {/* ==================== TAB 5: SLIDES & SAVED LAYOUTS ==================== */}
+            {inspectorTab === 'layouts' && (
+              <div className="space-y-3">
+                {/* Multi-Slide Carousel Controls */}
+                <div className="space-y-2">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    Carousel Slides ({slides.length})
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {slides.map((s, idx) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveSlideIdx(idx);
+                          setSelectedLayerId(null);
+                          setEditingLayerId(null);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold touch-manipulation cursor-pointer transition ${
+                          idx === activeSlideIdx
+                            ? 'bg-[#2E5A44] text-white'
+                            : 'bg-[#F6F4EE] text-[#5C6B63] border border-[#DDD6C7]'
+                        }`}
                       >
-                        <button
-                          type="button"
-                          onClick={() => handleApplySavedLayout(sl)}
-                          className="text-xs font-extrabold text-[#1C2621] text-left flex-1 hover:text-[#2E5A44]"
-                        >
-                          ✨ {sl.name}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSavedLayout(sl.id)}
-                          className="text-xs font-bold text-[#991B1B] px-2"
-                        >
-                          ✕
-                        </button>
-                      </div>
+                        Slide {idx + 1}
+                      </button>
                     ))}
                   </div>
-                )}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={addNewDefaultSlide}
+                      className="py-2 px-3 rounded-xl text-xs font-extrabold bg-[#E4EFE8] text-[#2E5A44] border border-[#2E5A44]/30 touch-manipulation cursor-pointer"
+                    >
+                      + Add Fresh Slide
+                    </button>
+                    <button
+                      type="button"
+                      onClick={duplicateCurrentSlide}
+                      className="py-2 px-3 rounded-xl text-xs font-extrabold bg-[#F6F4EE] text-[#1C2621] border border-[#DDD6C7] touch-manipulation cursor-pointer"
+                    >
+                      ⧉ Duplicate Slide
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBuildAutoCarousel}
+                      className="py-2 px-3 rounded-xl text-xs font-extrabold bg-[#F4D37E] text-[#1C2621] border border-[#E2BE62] touch-manipulation cursor-pointer"
+                    >
+                      ✨ Auto 3-Slide Set
+                    </button>
+                    {slides.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleExportSlides(true, false)}
+                        className="py-2 px-3 rounded-xl text-xs font-extrabold bg-[#D46A4E] text-white touch-manipulation cursor-pointer"
+                      >
+                        📚 Export All ({slides.length})
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Saved Custom Go-To Layouts */}
+                <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    💾 Saved Go-To Layouts ({savedLayouts.length})
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newPresetName}
+                      onChange={(e) => setNewPresetName(e.target.value)}
+                      placeholder="e.g. Lindsey's Go-To Minimal"
+                      className="flex-1 rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-base sm:text-xs font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveLayoutPreset}
+                      className="px-3.5 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                    >
+                      💾 Save
+                    </button>
+                  </div>
+                  {savedLayouts.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {savedLayouts.map((sl) => (
+                        <div
+                          key={sl.id}
+                          className="flex items-center justify-between bg-[#F6F4EE] border border-[#E2DCCD] rounded-xl px-3 py-2"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleApplySavedLayout(sl)}
+                            className="text-xs font-extrabold text-[#1C2621] text-left flex-1 hover:text-[#2E5A44] touch-manipulation cursor-pointer"
+                          >
+                            ✨ {sl.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSavedLayout(sl.id)}
+                            className="text-xs font-bold text-[#991B1B] px-2 touch-manipulation cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[#5C6B63]">
+                      Save your favorite frame, color &amp; pill setups here to reuse on any puppy
+                      in 1 tap.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
-          </div>
 
-          {/* ACCORDION 6: AI CAPTION & DIRECT LINK */}
-          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
-            <button
-              type="button"
-              onClick={() => toggleAccordion('caption')}
-              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
-            >
-              <span>🤖 AI Caption &amp; Direct Link</span>
-              <span className="text-[#2E5A44]">{mobileTab === 'caption' ? '▲' : '▼'}</span>
-            </button>
-            {mobileTab === 'caption' && (
-              <div className="p-3 space-y-2.5 bg-white">
+            {/* ==================== TAB 6: AI CAPTION & DIRECT LINK ==================== */}
+            {inspectorTab === 'caption' && (
+              <div className="space-y-2.5">
                 <div className="space-y-2">
                   <input
                     type="text"
@@ -6085,7 +6386,7 @@ const SocialStudio: React.FC = () => {
                     onChange={(e) => setAiPrompt(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleGenerateAiCaption()}
                     placeholder="Tell AI what to say (e.g., 'ask followers to guess coat color')..."
-                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-base sm:text-xs font-medium"
                   />
 
                   <div className="flex flex-wrap gap-1.5">
@@ -6103,7 +6404,7 @@ const SocialStudio: React.FC = () => {
                           setAiPrompt(presetIdea);
                           handleGenerateAiCaption(presetIdea);
                         }}
-                        className="px-2.5 py-1 rounded-full bg-[#F6F4EE] border border-[#E2DCCD] text-[11px] font-bold text-[#3E4D45] hover:bg-[#E4EFE8]"
+                        className="px-2.5 py-1 rounded-full bg-[#F6F4EE] border border-[#E2DCCD] text-[11px] font-bold text-[#3E4D45] hover:bg-[#E4EFE8] touch-manipulation cursor-pointer"
                       >
                         {presetIdea}
                       </button>
@@ -6114,7 +6415,7 @@ const SocialStudio: React.FC = () => {
                     type="button"
                     disabled={aiLoading}
                     onClick={() => handleGenerateAiCaption()}
-                    className="w-full py-2 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
+                    className="w-full py-2 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60 touch-manipulation cursor-pointer"
                   >
                     {aiLoading ? '✨ Writing Caption...' : '✨ Generate New Caption with AI'}
                   </button>
@@ -6130,7 +6431,7 @@ const SocialStudio: React.FC = () => {
                   rows={6}
                   value={captionText}
                   onChange={(e) => setCaptionText(e.target.value)}
-                  className="w-full rounded-2xl border border-[#DDD6C7] bg-[#FCFBF8] p-2.5 text-xs font-medium leading-relaxed"
+                  className="w-full rounded-2xl border border-[#DDD6C7] bg-[#FCFBF8] p-2.5 text-base sm:text-xs font-medium leading-relaxed"
                 />
 
                 <div className="grid grid-cols-2 gap-2">
@@ -6141,7 +6442,7 @@ const SocialStudio: React.FC = () => {
                       setCopiedCaption(true);
                       setTimeout(() => setCopiedCaption(false), 2000);
                     }}
-                    className="py-2.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+                    className="py-2.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm touch-manipulation cursor-pointer"
                   >
                     {copiedCaption ? '✓ Copied!' : '📋 Copy Caption'}
                   </button>
@@ -6152,7 +6453,7 @@ const SocialStudio: React.FC = () => {
                       setCopiedLink(true);
                       setTimeout(() => setCopiedLink(false), 2000);
                     }}
-                    className="py-2.5 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-xs font-extrabold"
+                    className="py-2.5 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-xs font-extrabold touch-manipulation cursor-pointer"
                   >
                     {copiedLink ? '✓ Copied!' : '🔗 Copy Direct Link'}
                   </button>
