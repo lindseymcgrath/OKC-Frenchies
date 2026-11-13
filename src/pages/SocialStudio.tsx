@@ -47,7 +47,7 @@ const PILL_PALETTE: Record<
   { label: string; shortLabel: string; swatch: string; bg: string; text: string; border: string; hasBg: boolean; shadow?: boolean }
 > = {
   white: { label: 'Crisp White', shortLabel: 'White', swatch: '#FFFFFF', bg: '#FFFFFF', text: '#1C2621', border: '#EAE5D9', hasBg: true, shadow: true },
-  cream: { label: 'Botanical Cream', shortLabel: 'Cream', swatch: '#F6F4EE', bg: '#F6F4EE', text: '#1C2621', border: '#E2DCCD', hasBg: true, shadow: true },
+  cream: { label: 'Botanical Cream', shortLabel: 'Cream', swatch: '#E8DFCE', bg: '#E8DFCE', text: '#1C2621', border: '#CFC1A9', hasBg: true, shadow: true },
   oat: { label: 'Lilac Taupe', shortLabel: 'Lilac Taupe', swatch: '#B59E99', bg: '#B59E99', text: '#1C2621', border: '#967F7A', hasBg: true, shadow: true },
   champagne: { label: 'French Slate', shortLabel: 'Slate Blue', swatch: '#5A7385', bg: '#5A7385', text: '#FFFFFF', border: '#465C6C', hasBg: true, shadow: true },
   gold: { label: 'Warm Gold', shortLabel: 'Gold', swatch: '#F4D37E', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
@@ -75,7 +75,7 @@ const PILL_PALETTE: Record<
 const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
   { value: '', label: 'Auto', hex: 'linear-gradient(135deg,#1C2621 50%,#F4D37E 50%)' },
   { value: '#FFFFFF', label: 'White', hex: '#FFFFFF' },
-  { value: '#F6F4EE', label: 'Cream', hex: '#F6F4EE' },
+  { value: '#E8DFCE', label: 'Cream', hex: '#E8DFCE' },
   { value: '#F4D37E', label: 'Gold', hex: '#F4D37E' },
   { value: '#B59E99', label: 'Lilac Taupe', hex: '#B59E99' },
   { value: '#8B9D83', label: 'Olive Sage', hex: '#8B9D83' },
@@ -3875,7 +3875,11 @@ const SocialStudio: React.FC = () => {
       } else if (
         layer.pill === 'none-light' ||
         pillOpacity < 0.35 ||
-        (!pal.hasBg && (layer.textColor === '#FFFFFF' || layer.textColor === '#F4D37E' || layer.textColor === '#F6F4EE'))
+        (!pal.hasBg &&
+          (layer.textColor === '#FFFFFF' ||
+            layer.textColor === '#F4D37E' ||
+            layer.textColor === '#F6F4EE' ||
+            layer.textColor === '#E8DFCE'))
       ) {
         ctx.shadowColor = 'rgba(0,0,0,0.48)';
         ctx.shadowBlur = 16;
@@ -4037,15 +4041,7 @@ const SocialStudio: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleShuffleBrandLook(false)}
-              className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold border bg-gradient-to-r from-[#2E5A44] to-[#3B2B23] border-[#2E5A44] text-[#F4D37E] shadow-xs hover:opacity-95 touch-manipulation cursor-pointer transition"
-              title="Canva-style Brand Shuffle: auto-mixes frames, brand colors & pills around your photo"
-            >
-              ✨ Shuffle
-            </button>
+                          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleResetActiveSlideToModeDefault}
@@ -4111,12 +4107,44 @@ const SocialStudio: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Always-Visible Mobile & Tablet Content Mode Picker Row (Puppies / Studs / DNA / Blog / AI) */}
+        <div className="flex xl:hidden items-center gap-1 overflow-x-auto no-scrollbar pt-1.5 mt-1 border-t border-[#F0ECE1]">
+          {(
+            [
+              ['puppies', '🐾 Puppies'],
+              ['studs', '👑 Studs'],
+              ['glossary', '🧬 Coat & DNA'],
+              ['standards', '🏡 Blog'],
+              ['didyouknow', '💡 Did You Know & AI']
+            ] as const
+          ).map(([modeKey, modeLabel]) => (
+            <button
+              key={modeKey}
+              type="button"
+              onClick={() => handleSelectContentMode(modeKey)}
+              className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                contentMode === modeKey
+                  ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                  : 'bg-[#F6F4EE] text-[#3E4D45] border-[#DDD6C7] hover:bg-[#EAE5D9]'
+              }`}
+            >
+              {modeLabel}
+            </button>
+          ))}
+        </div>
       </header>
 
       {/* Split-Screen Locked Workspace: MacBook Left-Stage / Right-Inspector, Mobile Top-Stage / Bottom-Inspector */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
         {/* LEFT / TOP: Always-Visible Fixed-Position Stage Pane (Zero Conditional Toolbars = Zero Bounce!) */}
         <main
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedLayerId(null);
+              setEditingLayerId(null);
+            }
+          }}
           className={`${
             mobileCanvasTall ? 'h-[55dvh]' : 'h-[43dvh]'
           } lg:h-full lg:flex-1 min-w-0 shrink-0 flex flex-col items-center bg-[#EFECE3] border-b lg:border-b-0 lg:border-r border-[#DFD9CA] px-2 sm:px-4 py-1 lg:py-2 overflow-hidden order-1`}
@@ -4272,6 +4300,12 @@ const SocialStudio: React.FC = () => {
           {/* Viewport-Measured Stage Host — Centers Photo & Guarantees 100% Fit Without Scrolling! */}
           <div
             ref={stageHostRef}
+            onPointerDown={(e) => {
+              if (e.target === e.currentTarget) {
+                setSelectedLayerId(null);
+                setEditingLayerId(null);
+              }
+            }}
             className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden"
           >
             {/* Interactive Stage */}
@@ -4290,6 +4324,12 @@ const SocialStudio: React.FC = () => {
               className="relative overflow-hidden rounded-2xl shadow-xl select-none shrink-0"
             >
               <div
+                onPointerDown={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }
+                }}
                 onPointerMove={(e) => {
                   if (pinchRef.current.active) return;
                   const dm = dragModeRef.current;
@@ -4371,6 +4411,10 @@ const SocialStudio: React.FC = () => {
             >
               {geom.hasCard && (
                 <div
+                  onPointerDown={() => {
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
+                  }}
                   style={{
                     position: 'absolute',
                     left: geom.cardX,
@@ -4523,6 +4567,8 @@ const SocialStudio: React.FC = () => {
                 <div
                   onPointerDown={(e) => {
                     if (!e.isPrimary || pinchRef.current.active) return;
+                    setSelectedLayerId(null);
+                    setEditingLayerId(null);
                     dragModeRef.current = {
                       type: 'photo',
                       sx: e.clientX,
@@ -4769,7 +4815,8 @@ const SocialStudio: React.FC = () => {
                           (!pal.hasBg &&
                             (layer.textColor === '#FFFFFF' ||
                               layer.textColor === '#F4D37E' ||
-                              layer.textColor === '#F6F4EE'))
+                              layer.textColor === '#F6F4EE' ||
+                              layer.textColor === '#E8DFCE'))
                             ? '0 4px 16px rgba(0,0,0,0.5)'
                             : 'none',
                         fontFamily:

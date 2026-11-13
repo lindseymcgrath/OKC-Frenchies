@@ -141,12 +141,12 @@ export const BG_STYLES: Record<
   },
   'cream-editorial': {
     label: '🌿 Botanical Cream',
-    swatch: '#F3EFE6',
-    bg1: '#FBF9F4',
-    bg2: '#EFEAE0',
-    cardBg: '#FBF9F4',
-    matOuter: '#EAE3D5',
-    border: '#E2DCCD',
+    swatch: '#E8DFCE',
+    bg1: '#EDE4D3',
+    bg2: '#DFD3BE',
+    cardBg: '#EAE0CE',
+    matOuter: '#D8C9B0',
+    border: '#CBBBA0',
     accent: '#2E5A44',
     darkText: true
   },
