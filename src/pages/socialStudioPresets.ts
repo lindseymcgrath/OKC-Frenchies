@@ -2,18 +2,23 @@ import glossaryData from '../data/glossary.json';
 import blogData from '../data/blog.json';
 
 export type ContentMode = 'puppies' | 'studs' | 'glossary' | 'standards' | 'didyouknow';
-export type FramePreset = 'minimal' | 'arch' | 'editorial' | 'sage' | 'no-photo';
+export type FramePreset = 'minimal' | 'arch' | 'cameo' | 'editorial' | 'sage' | 'no-photo';
 export type CanvasRatio = 'feed' | 'story' | 'square';
 export type BgStyle =
+  | 'pure-white'
   | 'cream-editorial'
+  | 'oat-latte'
+  | 'espresso-mocha'
   | 'forest-luxe'
+  | 'sage-mist'
   | 'blush-botanical'
   | 'warm-sand'
-  | 'sage-mist';
+  | 'terracotta-clay';
 export type PillStyle =
   | 'none-dark'
   | 'none-light'
   | 'cream'
+  | 'mocha'
   | 'sage'
   | 'gold'
   | 'terracotta'
@@ -32,6 +37,7 @@ export interface TextLayer {
   pillWidth: number;
   padY: number;
   pill: PillStyle;
+  textColor?: string;
   font: FontKind;
 }
 
@@ -53,6 +59,10 @@ export interface SlideState {
   id: string;
   preset: FramePreset;
   bgStyle: BgStyle;
+  windowStyle?: BgStyle;
+  dogId?: string;
+  slideMode?: ContentMode;
+  topicId?: string;
   photoSrc: string;
   photoDim: number;
   panX: number;
@@ -67,6 +77,7 @@ export interface SavedLayoutPreset {
   name: string;
   preset: FramePreset;
   bgStyle: BgStyle;
+  windowStyle?: BgStyle;
   photoDim: number;
   archHeight: number;
   layers: (Omit<TextLayer, 'text'> & { sampleText?: string })[];
@@ -87,6 +98,7 @@ export const BG_STYLES: Record<
   BgStyle,
   {
     label: string;
+    swatch: string;
     bg1: string;
     bg2: string;
     cardBg: string;
@@ -96,31 +108,78 @@ export const BG_STYLES: Record<
     darkText: boolean;
   }
 > = {
+  'pure-white': {
+    label: '🤍 Crisp White',
+    swatch: '#FFFFFF',
+    bg1: '#FFFFFF',
+    bg2: '#F6F4EE',
+    cardBg: '#FFFFFF',
+    matOuter: '#FFFFFF',
+    border: '#EAE5D9',
+    accent: '#2E5A44',
+    darkText: true
+  },
   'cream-editorial': {
     label: '🌿 Botanical Cream',
+    swatch: '#F3EFE6',
     bg1: '#FBF9F4',
     bg2: '#EFEAE0',
-    cardBg: '#FFFFFF',
+    cardBg: '#FBF9F4',
     matOuter: '#EAE3D5',
     border: '#E2DCCD',
     accent: '#2E5A44',
     darkText: true
   },
+  'oat-latte': {
+    label: '🥛 Warm Oat Latte',
+    swatch: '#E8DEC8',
+    bg1: '#F5EFE2',
+    bg2: '#E6DBC6',
+    cardBg: '#FAF6EE',
+    matOuter: '#E0D3BA',
+    border: '#D5C7B0',
+    accent: '#3B2B23',
+    darkText: true
+  },
+  'espresso-mocha': {
+    label: '☕ Espresso Mocha',
+    swatch: '#3B2B23',
+    bg1: '#433128',
+    bg2: '#281C16',
+    cardBg: '#36261F',
+    matOuter: '#241914',
+    border: 'rgba(244,211,126,0.34)',
+    accent: '#F4D37E',
+    darkText: false
+  },
   'forest-luxe': {
     label: '🌲 Deep Forest',
+    swatch: '#244736',
     bg1: '#244736',
     bg2: '#172E23',
     cardBg: '#1E3B2D',
     matOuter: '#14291E',
-    border: 'rgba(244,211,126,0.32)',
+    border: 'rgba(244,211,126,0.34)',
     accent: '#F4D37E',
     darkText: false
   },
+  'sage-mist': {
+    label: '🍃 Sage Mist',
+    swatch: '#CFE0D6',
+    bg1: '#E2EFE8',
+    bg2: '#CBE0D4',
+    cardBg: '#ECF5F0',
+    matOuter: '#CBE0D4',
+    border: '#B8D2C3',
+    accent: '#2E5A44',
+    darkText: true
+  },
   'blush-botanical': {
     label: '🌸 Soft Rose',
+    swatch: '#F5DFDC',
     bg1: '#FDF3F2',
     bg2: '#F5DFDC',
-    cardBg: '#FFF9F8',
+    cardBg: '#FDF3F2',
     matOuter: '#EED0CC',
     border: '#EBC6C2',
     accent: '#8C2F2B',
@@ -128,23 +187,25 @@ export const BG_STYLES: Record<
   },
   'warm-sand': {
     label: '☀️ Sunlit Champagne',
+    swatch: '#EFE2C6',
     bg1: '#FAF3E3',
     bg2: '#EFE2C6',
-    cardBg: '#FFFDF7',
+    cardBg: '#FAF3E3',
     matOuter: '#E5D3AE',
     border: '#E2CFA8',
     accent: '#D46A4E',
     darkText: true
   },
-  'sage-mist': {
-    label: '🍃 Sage Mist',
-    bg1: '#EAF2ED',
-    bg2: '#D5E5DC',
-    cardBg: '#F6FAF7',
-    matOuter: '#2E5A44',
-    border: '#C6DBD0',
-    accent: '#2E5A44',
-    darkText: true
+  'terracotta-clay': {
+    label: '🏺 Warm Terracotta',
+    swatch: '#D46A4E',
+    bg1: '#D46A4E',
+    bg2: '#B8543A',
+    cardBg: '#C85E43',
+    matOuter: '#B8543A',
+    border: 'rgba(255,255,255,0.28)',
+    accent: '#F4D37E',
+    darkText: false
   }
 };
 

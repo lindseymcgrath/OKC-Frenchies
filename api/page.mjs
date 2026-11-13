@@ -6,7 +6,7 @@ import {
   SEO_DATA
 } from './_htmlTemplate.mjs';
 
-const OG_VER = 'v=3';
+const OG_VER = 'v=4';
 
 const slugify = (s) =>
   String(s || '')
@@ -108,13 +108,22 @@ export default function handler(req, res) {
   try {
     const rawUrl = req.url || '/';
     const parsed = new URL(rawUrl, 'https://okcfrenchies.com');
-    const pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+    const rewrittenPath =
+      parsed.searchParams.get('__path') ||
+      req.headers?.['x-matched-path'] ||
+      req.headers?.['x-invoke-path'] ||
+      parsed.pathname;
+    const pathname = String(rewrittenPath || '/').replace(/\/+$/, '') || '/';
+
+    const cleanSearchParams = new URLSearchParams(parsed.searchParams);
+    cleanSearchParams.delete('__path');
+    const cleanSearch = cleanSearchParams.toString() ? `?${cleanSearchParams.toString()}` : '';
 
     const meta = ROUTE_META[pathname] || ROUTE_META['/'];
     let title = meta.title;
     let description = meta.description;
     let image = meta.image;
-    const pageUrl = `https://okcfrenchies.com${pathname}${parsed.search}`;
+    const pageUrl = `https://okcfrenchies.com${pathname}${cleanSearch}`;
 
     // Support both /puppies/:slug, /studs/:slug AND ?dog=Name
     const pathDogMatch = pathname.match(/^\/(?:puppies|studs|french-bulldog-puppies-for-sale|french-bulldog-stud-service)\/([^/]+)$/i);
@@ -163,7 +172,6 @@ export default function handler(req, res) {
     html = html.replace(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${escapeHtml(description)}">`);
     html = html.replace(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${escapeHtml(image)}">`);
-    html = html.replace(/<meta property="og:image:secure_url" content="[^"]*">/, `<meta property="og:image:secure_url" content="${escapeHtml(image)}">`);
     html = html.replace(/<meta property="twitter:title" content="[^"]*">/, `<meta property="twitter:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta property="twitter:description" content="[^"]*">/, `<meta property="twitter:description" content="${escapeHtml(description)}">`);
     html = html.replace(/<meta property="twitter:image" content="[^"]*">/, `<meta property="twitter:image" content="${escapeHtml(image)}">`);

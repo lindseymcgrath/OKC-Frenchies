@@ -29,7 +29,7 @@
     },
     {
       "source": "/([^.]+)",
-      "destination": "/api/page"
+      "destination": "/api/page?__path=/$1"
     }
   ]
 }

@@ -43,6 +43,7 @@ const PILL_PALETTE: Record<
   { label: string; bg: string; text: string; border: string; hasBg: boolean; shadow?: boolean }
 > = {
   cream: { label: 'Cream Pill', bg: '#F6F4EE', text: '#1C2621', border: '#E2DCCD', hasBg: true, shadow: true },
+  mocha: { label: 'Mocha Pill', bg: '#3B2B23', text: '#F4D37E', border: '#5A4337', hasBg: true, shadow: true },
   sage: { label: 'Forest Pill', bg: '#2E5A44', text: '#FFFFFF', border: '#2E5A44', hasBg: true, shadow: true },
   gold: { label: 'Gold Pill', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
   terracotta: { label: 'Terracotta', bg: '#D46A4E', text: '#FFFFFF', border: '#D46A4E', hasBg: true, shadow: true },
@@ -55,9 +56,22 @@ const PILL_PALETTE: Record<
     hasBg: true,
     shadow: true
   },
-  'none-dark': { label: 'Dark Text (No Pill)', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
-  'none-light': { label: 'White Text (No Pill)', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
+  'none-dark': { label: 'No Pill (Dark Text)', bg: 'transparent', text: '#1C2621', border: 'transparent', hasBg: false },
+  'none-light': { label: 'No Pill (Light Text)', bg: 'transparent', text: '#FFFFFF', border: 'transparent', hasBg: false }
 };
+
+const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
+  { value: '', label: 'Auto', hex: 'linear-gradient(135deg,#1C2621 50%,#F4D37E 50%)' },
+  { value: '#1C2621', label: 'Charcoal', hex: '#1C2621' },
+  { value: '#FFFFFF', label: 'White', hex: '#FFFFFF' },
+  { value: '#2E5A44', label: 'Forest', hex: '#2E5A44' },
+  { value: '#3B2B23', label: 'Mocha', hex: '#3B2B23' },
+  { value: '#F4D37E', label: 'Gold', hex: '#F4D37E' },
+  { value: '#D46A4E', label: 'Terracotta', hex: '#D46A4E' },
+  { value: '#8C2F2B', label: 'Berry', hex: '#8C2F2B' },
+  { value: '#F6F4EE', label: 'Cream', hex: '#F6F4EE' },
+  { value: '#F9E4E2', label: 'Blush', hex: '#F9E4E2' }
+];
 
 const SAVED_PRESETS_KEY = 'okcfrenchies_studio_saved_layouts_v1';
 const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v2';
@@ -145,22 +159,24 @@ const getFrameGeometry = (
   preset: FramePreset,
   canvasH: number,
   archH: number,
-  bgStyle: BgStyle = 'cream-editorial'
+  bgStyle: BgStyle = 'cream-editorial',
+  windowStyle: BgStyle = 'pure-white'
 ) => {
-  const theme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
+  const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
+  const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
 
   if (preset === 'no-photo') {
     return {
-      outerBg1: theme.bg1,
-      outerBg2: theme.bg2,
+      outerBg1: outerTheme.bg1,
+      outerBg2: outerTheme.bg2,
       hasCard: false,
       hasPhoto: false,
       cardX: 0,
       cardY: 0,
       cardW: 1080,
       cardH: canvasH,
-      cardBg: theme.cardBg,
-      cardBorder: theme.border,
+      cardBg: outerTheme.cardBg,
+      cardBorder: outerTheme.border,
       cardTopR: 0,
       photoX: 0,
       photoY: 0,
@@ -173,8 +189,8 @@ const getFrameGeometry = (
 
   if (preset === 'minimal') {
     return {
-      outerBg1: theme.bg1,
-      outerBg2: theme.bg2,
+      outerBg1: outerTheme.bg1,
+      outerBg2: outerTheme.bg2,
       hasCard: false,
       hasPhoto: true,
       cardX: 0,
@@ -193,31 +209,31 @@ const getFrameGeometry = (
     };
   }
 
-  const pad = preset === 'sage' ? 38 : 26;
+  const pad = preset === 'sage' ? 38 : preset === 'cameo' ? 34 : 26;
   const cardW = 1080 - pad * 2;
   const cardH = canvasH - pad * 2;
-  const photoX = pad + 26;
-  const photoY = preset === 'sage' ? pad + 86 : pad + 24;
-  const photoW = cardW - 52;
+  const photoW = preset === 'cameo' ? 760 : cardW - 52;
+  const photoX = preset === 'cameo' ? Math.round((1080 - photoW) / 2) : pad + 26;
+  const photoY = preset === 'sage' ? pad + 86 : preset === 'cameo' ? pad + 56 : pad + 24;
   const clampedArch = Math.min(archH, canvasH - 360);
   return {
-    outerBg1: preset === 'sage' ? theme.matOuter : theme.bg1,
-    outerBg2: preset === 'sage' ? theme.matOuter : theme.bg2,
+    outerBg1: outerTheme.bg1,
+    outerBg2: outerTheme.bg2,
     hasCard: true,
     hasPhoto: true,
     cardX: pad,
     cardY: pad,
     cardW,
     cardH,
-    cardBg: preset === 'sage' ? theme.bg1 : theme.cardBg,
-    cardBorder: theme.border,
-    cardTopR: preset === 'arch' ? 230 : 38,
+    cardBg: winTheme.cardBg,
+    cardBorder: winTheme.border,
+    cardTopR: preset === 'arch' ? 230 : 42,
     photoX,
     photoY,
     photoW,
     photoH: clampedArch,
-    photoTopR: preset === 'arch' ? 210 : 28,
-    photoBottomR: 26
+    photoTopR: preset === 'arch' ? 210 : preset === 'cameo' ? 999 : 28,
+    photoBottomR: preset === 'cameo' ? 999 : 26
   };
 };
 
@@ -226,10 +242,13 @@ const buildLayersForDog = (
   preset: FramePreset,
   canvasH: number,
   archH: number,
-  bgStyle: BgStyle = 'cream-editorial'
+  bgStyle: BgStyle = 'cream-editorial',
+  windowStyle: BgStyle = 'pure-white'
 ): TextLayer[] => {
-  const theme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
-  const baseTextPill: PillStyle = theme.darkText ? 'none-dark' : 'none-light';
+  const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
+  const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
+  const surfaceTheme = preset === 'no-photo' ? outerTheme : winTheme;
+  const baseTextPill: PillStyle = surfaceTheme.darkText ? 'none-dark' : 'none-light';
   const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const age = extractAge(dog);
   const isStud = dog.category === 'Stud';
@@ -380,7 +399,7 @@ const buildLayersForDog = (
     ];
   }
 
-  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle);
+  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle, windowStyle);
   const photoBottom = geom.photoY + geom.photoH;
 
   return [
@@ -559,14 +578,41 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
     id: 'slide-1',
     preset: 'minimal',
     bgStyle: 'cream-editorial',
+    windowStyle: 'pure-white',
+    dogId: dog.id,
+    slideMode: dog.category === 'Stud' ? 'studs' : 'puppies',
     photoSrc: dog.image || '',
     photoDim: 0,
     panX: 0,
     panY: 0,
     zoom: 1,
     archHeight: archH,
-    layers: buildLayersForDog(dog, 'minimal', ch, archH, 'cream-editorial')
+    layers: buildLayersForDog(dog, 'minimal', ch, archH, 'cream-editorial', 'pure-white')
   };
+};
+
+const inferDogFromSlide = (slide: SlideState | undefined, allDogs: DogRecord[]): DogRecord | undefined => {
+  if (!slide) return undefined;
+  if (slide.dogId) {
+    const byId = allDogs.find((d) => d.id === slide.dogId);
+    if (byId) return byId;
+  }
+  if (slide.photoSrc) {
+    const byPhoto = allDogs.find(
+      (d) =>
+        d.image === slide.photoSrc ||
+        (d.media || []).some((m) => m.url === slide.photoSrc)
+    );
+    if (byPhoto) return byPhoto;
+  }
+  for (const d of allDogs) {
+    const escaped = d.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const nameRe = new RegExp(`\\b${escaped}\\b`, 'i');
+    if (slide.layers.some((l) => nameRe.test(l.text))) {
+      return d;
+    }
+  }
+  return undefined;
 };
 
 const SocialStudio: React.FC = () => {
@@ -579,10 +625,17 @@ const SocialStudio: React.FC = () => {
     []
   );
 
+  const allDogs: DogRecord[] = useMemo(
+    () => [...allPuppies, ...allStuds],
+    [allPuppies, allStuds]
+  );
+
   // Content Mode
   const [contentMode, setContentMode] = useState<ContentMode>('puppies');
   const [filterMode, setFilterMode] = useState<'available' | 'all'>('available');
-  const [selectedDogId, setSelectedDogId] = useState<string>('puppies-8'); // Biscotti or first available
+  const [selectedDogId, setSelectedDogId] = useState<string>(
+    () => allPuppies.find((d) => d.status === 'Available')?.id || allPuppies[0]?.id || ''
+  );
   const [selectedGlossaryId, setSelectedGlossaryId] = useState<string>(GLOSSARY_ITEMS[0]?.id || '');
   const [selectedStandardId, setSelectedStandardId] = useState<string>(
     STANDARDS_AND_BLOG_ITEMS[0]?.id || ''
@@ -596,8 +649,11 @@ const SocialStudio: React.FC = () => {
   }, [contentMode, filterMode, allPuppies, allStuds]);
 
   const selectedDog = useMemo(
-    () => visibleDogs.find((d) => d.id === selectedDogId) || visibleDogs[0] || allPuppies[0],
-    [visibleDogs, selectedDogId, allPuppies]
+    () =>
+      allDogs.find((d) => d.id === selectedDogId) ||
+      visibleDogs[0] ||
+      allPuppies[0],
+    [allDogs, visibleDogs, selectedDogId, allPuppies]
   );
 
   const activeTopicItem: TopicCardItem | null = useMemo(() => {
@@ -670,7 +726,14 @@ const SocialStudio: React.FC = () => {
   const [editingLayerId, setEditingLayerId] = useState<string | null>(null);
   const [snapVertical, setSnapVertical] = useState<boolean>(false);
   const [snapHorizontal, setSnapHorizontal] = useState<boolean>(false);
-  const [mobileTab, setMobileTab] = useState<'source' | 'fields' | 'style' | 'caption'>('source');
+  const [mobileTab, setMobileTab] = useState<
+    'source' | 'fields' | 'stamps' | 'style' | 'layouts' | 'caption' | null
+  >('source');
+  const toggleAccordion = (
+    sec: 'source' | 'fields' | 'stamps' | 'style' | 'layouts' | 'caption'
+  ) => {
+    setMobileTab((prev) => (prev === sec ? null : sec));
+  };
 
   // Caption & Link State
   const [captionText, setCaptionText] = useState<string>(() =>
@@ -745,8 +808,17 @@ const SocialStudio: React.FC = () => {
         if (Array.isArray(parsed.slides) && parsed.slides.length > 0) {
           setSlides(parsed.slides);
           if (parsed.ratio) setRatio(parsed.ratio);
-          if (parsed.contentMode) setContentMode(parsed.contentMode);
           if (parsed.captionText) setCaptionText(parsed.captionText);
+          const firstSlide: SlideState = parsed.slides[0];
+          const inferredDog = inferDogFromSlide(firstSlide, allDogs);
+          if (inferredDog) {
+            setSelectedDogId(inferredDog.id);
+            setContentMode(inferredDog.category === 'Stud' ? 'studs' : 'puppies');
+          } else if (firstSlide.slideMode) {
+            setContentMode(firstSlide.slideMode);
+          } else if (parsed.contentMode) {
+            setContentMode(parsed.contentMode);
+          }
         }
       }
     } catch {
@@ -755,7 +827,36 @@ const SocialStudio: React.FC = () => {
     setTimeout(() => {
       didMountRef.current = true;
     }, 100);
-  }, []);
+  }, [allDogs]);
+
+  // Keep sidebar dog/mode synced with whichever slide the user selects!
+  useEffect(() => {
+    if (!activeSlide) return;
+    if (activeSlide.slideMode && activeSlide.slideMode !== 'puppies' && activeSlide.slideMode !== 'studs') {
+      setContentMode(activeSlide.slideMode);
+      if (activeSlide.topicId) {
+        if (activeSlide.slideMode === 'glossary') setSelectedGlossaryId(activeSlide.topicId);
+        if (activeSlide.slideMode === 'standards') setSelectedStandardId(activeSlide.topicId);
+        if (activeSlide.slideMode === 'didyouknow') {
+          const idx = DID_YOU_KNOW_ITEMS.findIndex((i) => i.id === activeSlide.topicId);
+          if (idx >= 0) setSelectedDykIndex(idx);
+        }
+      }
+      return;
+    }
+    const inferred = inferDogFromSlide(activeSlide, allDogs);
+    if (inferred) {
+      setSelectedDogId(inferred.id);
+      if (inferred.category === 'Stud') {
+        setContentMode('studs');
+      } else {
+        setContentMode('puppies');
+        if (inferred.status !== 'Available' && inferred.status !== 'Pending') {
+          setFilterMode('all');
+        }
+      }
+    }
+  }, [activeSlideIdx, allDogs]);
 
   // Auto-save working draft
   useEffect(() => {
@@ -774,8 +875,13 @@ const SocialStudio: React.FC = () => {
     return () => clearTimeout(t);
   }, [slides, ratio, contentMode, captionText]);
 
-  // Apply content selection when user picks a Dog, Glossary Term, Standard/Blog, or Did-You-Know
-  const loadDogIntoCard = (dog: DogRecord, targetPreset?: FramePreset, targetRatio?: CanvasRatio) => {
+  // Apply content selection to ONLY the active slide (preserving existing slide design/layout when switching dogs!)
+  const loadDogIntoCard = (
+    dog: DogRecord,
+    targetPreset?: FramePreset,
+    targetRatio?: CanvasRatio,
+    resetLayout = false
+  ) => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
     const pr =
@@ -786,48 +892,75 @@ const SocialStudio: React.FC = () => {
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
         : 'cream-editorial';
-    const defaultArch = r === 'story' ? 1180 : r === 'square' ? 580 : pr === 'sage' ? 740 : 800;
-    pushHistory(slides);
-    setSlides([
+    const currentWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'pure-white';
+    const currentArch =
+      activeSlide.archHeight ||
+      (r === 'story' ? 1180 : r === 'square' ? 580 : pr === 'sage' ? 740 : 800);
+
+    const freshDogLayers = buildLayersForDog(dog, pr, ch, currentArch, currentBg, currentWin);
+    const hasExistingDogLayers = activeSlide.layers.some(
+      (l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex'
+    );
+
+    // If active slide already has a puppy layout and resetLayout is false, preserve 100% of positions, sizes, colors & visibility!
+    const nextLayers: TextLayer[] =
+      hasExistingDogLayers && !resetLayout
+        ? activeSlide.layers.map((existingLayer) => {
+            const freshMatch = freshDogLayers.find((fl) => fl.id === existingLayer.id);
+            if (!freshMatch) return existingLayer; // Keep custom stickers/pills untouched!
+            return {
+              ...existingLayer,
+              text: freshMatch.text,
+              pill: existingLayer.id === 'sex' ? freshMatch.pill : existingLayer.pill
+            };
+          })
+        : freshDogLayers;
+
+    updateActiveSlide(
       {
-        id: 'slide-1',
         preset: pr,
         bgStyle: currentBg,
+        windowStyle: currentWin,
+        dogId: dog.id,
+        slideMode: dog.category === 'Stud' ? 'studs' : 'puppies',
+        topicId: undefined,
         photoSrc: dog.image || '',
-        photoDim: 0,
         panX: 0,
         panY: 0,
-        zoom: 1,
-        archHeight: defaultArch,
-        layers: buildLayersForDog(dog, pr, ch, defaultArch, currentBg)
-      }
-    ]);
-    setActiveSlideIdx(0);
+        archHeight: currentArch,
+        layers: nextLayers
+      },
+      true
+    );
     setCaptionText(buildDefaultDogCaption(dog));
     setSelectedLayerId(null);
     setEditingLayerId(null);
   };
 
+  // Load a Topic (Coat & DNA, Standards/Blog, Did You Know) into ONLY the active slide without touching other slides!
   const loadTopicIntoCard = (item: TopicCardItem, targetRatio?: CanvasRatio) => {
     const r = targetRatio || ratio;
     const ch = getCanvasHeight(r);
     const hasImg = Boolean(item.image);
-    pushHistory(slides);
-    setSlides([
+    updateActiveSlide(
       {
-        id: 'slide-1',
         preset: hasImg ? 'minimal' : 'no-photo',
         bgStyle: item.bgStyle,
-        photoSrc: item.image || selectedDog?.image || '',
+        slideMode: contentMode,
+        topicId: item.id,
+        photoSrc: item.image || activeSlide.photoSrc || selectedDog?.image || '',
         photoDim: hasImg ? 0.5 : 0,
         panX: 0,
         panY: 0,
         zoom: 1,
         archHeight: 800,
         layers: buildTopicLayers(item, ch)
-      }
-    ]);
-    setActiveSlideIdx(0);
+      },
+      true
+    );
     setCaptionText(buildTopicCaption(item));
     setSelectedLayerId(null);
     setEditingLayerId(null);
@@ -854,7 +987,7 @@ const SocialStudio: React.FC = () => {
     );
   };
 
-  // Handle Template Preset Switch on Active Slide (Works over ANY Color Theme!)
+  // Handle Template Preset Switch on Active Slide (Preserves custom text, colors & visibility!)
   const handleSwitchPreset = (nextPreset: FramePreset) => {
     const defaultArch =
       ratio === 'story' ? 1180 : ratio === 'square' ? 580 : nextPreset === 'sage' ? 740 : 800;
@@ -862,14 +995,48 @@ const SocialStudio: React.FC = () => {
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
         : 'cream-editorial';
-    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog) {
+    const currentWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'pure-white';
+    const hasDogLayers = activeSlide.layers.some(
+      (l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex'
+    );
+    if ((contentMode === 'puppies' || contentMode === 'studs') && selectedDog && hasDogLayers) {
+      const templateLayers = buildLayersForDog(
+        selectedDog,
+        nextPreset,
+        canvasH,
+        defaultArch,
+        currentBg,
+        currentWin
+      );
+      const customLayers = activeSlide.layers.filter(
+        (el) => !templateLayers.some((tl) => tl.id === el.id)
+      );
+      const mergedLayers = [
+        ...templateLayers.map((tl) => {
+          const prev = activeSlide.layers.find((el) => el.id === tl.id);
+          if (!prev) return tl;
+          return {
+            ...tl,
+            text: prev.text,
+            visible: prev.visible,
+            font: prev.font,
+            textColor: prev.textColor,
+            pill: prev.pill === 'none-dark' || prev.pill === 'none-light' ? tl.pill : prev.pill
+          };
+        }),
+        ...customLayers
+      ];
       updateActiveSlide(
         {
           preset: nextPreset,
           bgStyle: currentBg,
+          windowStyle: currentWin,
           photoSrc: activeSlide.photoSrc || selectedDog.image || '',
           archHeight: defaultArch,
-          layers: buildLayersForDog(selectedDog, nextPreset, canvasH, defaultArch, currentBg)
+          layers: mergedLayers
         },
         true
       );
@@ -877,6 +1044,7 @@ const SocialStudio: React.FC = () => {
       updateActiveSlide(
         {
           preset: nextPreset,
+          windowStyle: currentWin,
           photoSrc: activeSlide.photoSrc || selectedDog?.image || '',
           archHeight: defaultArch
         },
@@ -885,15 +1053,104 @@ const SocialStudio: React.FC = () => {
     }
   };
 
+  // Change ONLY the Outer Background Color (keeps Inner Window / Card color untouched!)
   const handleSwitchBgTheme = (nextBg: BgStyle) => {
+    const currentWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'pure-white';
+    const nextPreset: FramePreset =
+      activeSlide.preset === 'minimal' ? 'arch' : activeSlide.preset;
     const dark = BG_STYLES[nextBg].darkText;
     const updatedLayers = activeSlide.layers.map((l) => {
-      if (activeSlide.preset === 'minimal') return l;
+      if (nextPreset !== 'no-photo') return l;
       if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
       if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
       return l;
     });
-    updateActiveSlide({ bgStyle: nextBg, layers: updatedLayers }, true);
+    if (
+      activeSlide.preset === 'minimal' &&
+      (contentMode === 'puppies' || contentMode === 'studs') &&
+      selectedDog
+    ) {
+      const defaultArch = ratio === 'story' ? 1180 : ratio === 'square' ? 580 : 800;
+      updateActiveSlide(
+        {
+          preset: 'arch',
+          bgStyle: nextBg,
+          windowStyle: currentWin,
+          archHeight: defaultArch,
+          layers: buildLayersForDog(selectedDog, 'arch', canvasH, defaultArch, nextBg, currentWin)
+        },
+        true
+      );
+      return;
+    }
+    updateActiveSlide(
+      { preset: nextPreset, bgStyle: nextBg, windowStyle: currentWin, layers: updatedLayers },
+      true
+    );
+  };
+
+  // Change ONLY the Inner Window / Card Color (keeps Outer Background untouched!)
+  const handleSwitchWindowTheme = (nextWin: BgStyle) => {
+    const currentBg: BgStyle =
+      activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+        ? activeSlide.bgStyle
+        : 'cream-editorial';
+    const nextPreset: FramePreset =
+      activeSlide.preset === 'minimal' || activeSlide.preset === 'no-photo'
+        ? 'arch'
+        : activeSlide.preset;
+    const dark = BG_STYLES[nextWin].darkText;
+    if (
+      (activeSlide.preset === 'minimal' || activeSlide.preset === 'no-photo') &&
+      (contentMode === 'puppies' || contentMode === 'studs') &&
+      selectedDog
+    ) {
+      const defaultArch = ratio === 'story' ? 1180 : ratio === 'square' ? 580 : 800;
+      updateActiveSlide(
+        {
+          preset: 'arch',
+          bgStyle: currentBg,
+          windowStyle: nextWin,
+          archHeight: defaultArch,
+          layers: buildLayersForDog(selectedDog, 'arch', canvasH, defaultArch, currentBg, nextWin)
+        },
+        true
+      );
+      return;
+    }
+    const updatedLayers = activeSlide.layers.map((l) => {
+      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      return l;
+    });
+    updateActiveSlide(
+      { preset: nextPreset, windowStyle: nextWin, layers: updatedLayers },
+      true
+    );
+  };
+
+  // 1-Tap Swap Outer Background & Inner Window Colors
+  const handleSwapBgAndWindow = () => {
+    const currentBg: BgStyle =
+      activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+        ? activeSlide.bgStyle
+        : 'cream-editorial';
+    const currentWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'pure-white';
+    const nextWin = currentBg;
+    const nextBg = currentWin;
+    const dark = BG_STYLES[nextWin].darkText;
+    const updatedLayers = activeSlide.layers.map((l) => {
+      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      return l;
+    });
+    updateActiveSlide({ bgStyle: nextBg, windowStyle: nextWin, layers: updatedLayers }, true);
   };
 
   // Multi-Slide Carousel Builder
@@ -1298,6 +1555,7 @@ const SocialStudio: React.FC = () => {
       name,
       preset: activeSlide.preset,
       bgStyle: activeSlide.bgStyle,
+      windowStyle: activeSlide.windowStyle || 'pure-white',
       photoDim: activeSlide.photoDim,
       archHeight: activeSlide.archHeight,
       layers: activeSlide.layers.map(({ text, ...rest }) => ({
@@ -1315,7 +1573,14 @@ const SocialStudio: React.FC = () => {
     // Keep current dog's fresh text for matching standard layer IDs (breedAge, sex, name, coat, dna, quote, status)!
     const freshDogLayers =
       selectedDog && (contentMode === 'puppies' || contentMode === 'studs')
-        ? buildLayersForDog(selectedDog, saved.preset, canvasH, saved.archHeight)
+        ? buildLayersForDog(
+            selectedDog,
+            saved.preset,
+            canvasH,
+            saved.archHeight,
+            saved.bgStyle,
+            saved.windowStyle || 'pure-white'
+          )
         : [];
     const freshTextMap = new Map(freshDogLayers.map((l) => [l.id, l.text]));
 
@@ -1335,6 +1600,7 @@ const SocialStudio: React.FC = () => {
             : 'sage'
           : sl.pill,
       font: sl.font,
+      textColor: sl.textColor,
       text: freshTextMap.get(sl.id) || sl.sampleText || sl.label
     }));
 
@@ -1342,6 +1608,7 @@ const SocialStudio: React.FC = () => {
       {
         preset: saved.preset,
         bgStyle: saved.bgStyle,
+        windowStyle: saved.windowStyle || 'pure-white',
         photoDim: saved.photoDim,
         archHeight: saved.archHeight,
         layers: mergedLayers
@@ -1582,12 +1849,12 @@ const SocialStudio: React.FC = () => {
         shareUrl: 'https://okcfrenchies.com'
       };
 
-      pushHistory(slides);
-      setSlides([
+      updateActiveSlide(
         {
-          id: 'slide-1',
           preset: 'no-photo',
           bgStyle: chosenBg,
+          slideMode: 'didyouknow',
+          topicId: generatedItem.id,
           photoSrc: activeSlide.photoSrc,
           photoDim: 0,
           panX: 0,
@@ -1595,9 +1862,9 @@ const SocialStudio: React.FC = () => {
           zoom: 1,
           archHeight: 800,
           layers: buildTopicLayers(generatedItem, canvasH)
-        }
-      ]);
-      setActiveSlideIdx(0);
+        },
+        true
+      );
       if (cardData.caption) setCaptionText(cardData.caption);
     } catch (err: any) {
       setAiError(err?.message || 'Could not generate AI card.');
@@ -1617,7 +1884,13 @@ const SocialStudio: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    const geom = getFrameGeometry(slide.preset, canvasH, slide.archHeight, slide.bgStyle);
+    const geom = getFrameGeometry(
+      slide.preset,
+      canvasH,
+      slide.archHeight,
+      slide.bgStyle,
+      slide.windowStyle || 'pure-white'
+    );
     const outerGrad = ctx.createLinearGradient(0, 0, 1080, canvasH);
     outerGrad.addColorStop(0, geom.outerBg1);
     outerGrad.addColorStop(1, geom.outerBg2);
@@ -1670,17 +1943,31 @@ const SocialStudio: React.FC = () => {
       ctx.restore();
     } else {
       ctx.save();
-      roundRectPath(
-        ctx,
-        geom.photoX,
-        geom.photoY,
-        geom.photoW,
-        geom.photoH,
-        geom.photoTopR,
-        geom.photoTopR,
-        geom.photoBottomR,
-        geom.photoBottomR
-      );
+      if (slide.preset === 'cameo') {
+        ctx.beginPath();
+        ctx.ellipse(
+          geom.photoX + geom.photoW / 2,
+          geom.photoY + geom.photoH / 2,
+          geom.photoW / 2,
+          geom.photoH / 2,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.closePath();
+      } else {
+        roundRectPath(
+          ctx,
+          geom.photoX,
+          geom.photoY,
+          geom.photoW,
+          geom.photoH,
+          geom.photoTopR,
+          geom.photoTopR,
+          geom.photoBottomR,
+          geom.photoBottomR
+        );
+      }
       ctx.clip();
       ctx.fillStyle = '#EFECE4';
       ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
@@ -1700,6 +1987,25 @@ const SocialStudio: React.FC = () => {
         ctx.fillRect(geom.photoX, geom.photoY, geom.photoW, geom.photoH);
       }
       ctx.restore();
+
+      if (slide.preset === 'cameo') {
+        const winTheme = BG_STYLES[slide.windowStyle || 'pure-white'] || BG_STYLES['pure-white'];
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(
+          geom.photoX + geom.photoW / 2,
+          geom.photoY + geom.photoH / 2,
+          geom.photoW / 2 + 12,
+          geom.photoH / 2 + 12,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.strokeStyle = winTheme.accent;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     for (const layer of slide.layers) {
@@ -1740,13 +2046,16 @@ const SocialStudio: React.FC = () => {
         ctx.strokeStyle = pal.border;
         ctx.lineWidth = 2;
         ctx.stroke();
-      } else if (layer.pill === 'none-light') {
+      } else if (
+        layer.pill === 'none-light' ||
+        (!pal.hasBg && (layer.textColor === '#FFFFFF' || layer.textColor === '#F4D37E' || layer.textColor === '#F6F4EE'))
+      ) {
         ctx.shadowColor = 'rgba(0,0,0,0.48)';
         ctx.shadowBlur = 16;
         ctx.shadowOffsetY = 4;
       }
 
-      ctx.fillStyle = pal.text;
+      ctx.fillStyle = layer.textColor || pal.text;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const totalH = (textLines.length - 1) * lineH;
@@ -1811,7 +2120,8 @@ const SocialStudio: React.FC = () => {
     activeSlide.preset,
     canvasH,
     activeSlide.archHeight,
-    activeSlide.bgStyle
+    activeSlide.bgStyle,
+    activeSlide.windowStyle || 'pure-white'
   );
   const previewScale =
     geom.hasPhoto && imgNat.w > 0 && imgNat.h > 0
@@ -1931,25 +2241,6 @@ const SocialStudio: React.FC = () => {
               onClick={() => {
                 setContentMode(modeKey);
                 setMobileTab('source');
-                if (modeKey === 'puppies') {
-                  const first = allPuppies.find((d) => d.status === 'Available') || allPuppies[0];
-                  if (first) {
-                    setSelectedDogId(first.id);
-                    loadDogIntoCard(first);
-                  }
-                } else if (modeKey === 'studs') {
-                  const firstStud = allStuds[0];
-                  if (firstStud) {
-                    setSelectedDogId(firstStud.id);
-                    loadDogIntoCard(firstStud);
-                  }
-                } else if (modeKey === 'glossary') {
-                  loadTopicIntoCard(GLOSSARY_ITEMS[0]);
-                } else if (modeKey === 'standards') {
-                  loadTopicIntoCard(STANDARDS_AND_BLOG_ITEMS[0]);
-                } else if (modeKey === 'didyouknow') {
-                  loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length]);
-                }
               }}
               className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-extrabold border transition shadow-2xs ${
                 contentMode === modeKey
@@ -2053,59 +2344,58 @@ const SocialStudio: React.FC = () => {
               ))}
           </div>
 
-          {/* Floating Contextual Layer Toolbar */}
+          {/* Floating Contextual Layer Toolbar (Right above canvas — zero scrolling needed!) */}
           {selectedLayer ? (
             <div className="w-full max-w-[520px] bg-white border border-[#DDD6C7] rounded-2xl p-2.5 shadow-md space-y-2 text-xs">
-              <div className="flex items-center justify-between gap-1.5 flex-wrap">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setEditingLayerId(selectedLayer.id)}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  >
-                    ✏️ Type
-                  </button>
-                  <select
-                    value={selectedLayer.pill}
-                    onChange={(e) =>
-                      updateLayer(selectedLayer.id, { pill: e.target.value as PillStyle }, true)
-                    }
-                    className="rounded-lg border border-[#DDD6C7] bg-[#FCFBF8] px-2 py-1.5 font-bold"
-                  >
-                    {Object.entries(PILL_PALETTE).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v.label}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      updateLayer(
-                        selectedLayer.id,
-                        {
-                          font:
-                            selectedLayer.font === 'sans'
-                              ? 'serif'
-                              : selectedLayer.font === 'serif'
-                                ? 'serif-italic'
-                                : 'sans'
-                        },
-                        true
-                      )
-                    }
-                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  >
-                    Aa Font
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateLayer(selectedLayer.id, { x: 540 }, true)}
-                    className="px-2.5 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
-                  >
-                    ┼ Center
-                  </button>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={selectedLayer.text}
+                  onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })}
+                  placeholder="Edit pill text..."
+                  className="flex-1 rounded-lg border border-[#D46A4E] bg-[#FCFBF8] px-2.5 py-1.5 text-xs font-bold outline-none"
+                />
+                <select
+                  value={selectedLayer.pill}
+                  onChange={(e) =>
+                    updateLayer(selectedLayer.id, { pill: e.target.value as PillStyle }, true)
+                  }
+                  className="rounded-lg border border-[#DDD6C7] bg-[#FCFBF8] px-2 py-1.5 font-bold"
+                >
+                  {Object.entries(PILL_PALETTE).map(([k, v]) => (
+                    <option key={k} value={k}>
+                      {v.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateLayer(
+                      selectedLayer.id,
+                      {
+                        font:
+                          selectedLayer.font === 'sans'
+                            ? 'serif'
+                            : selectedLayer.font === 'serif'
+                              ? 'serif-italic'
+                              : 'sans'
+                      },
+                      true
+                    )
+                  }
+                  className="px-2 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
+                >
+                  Aa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateLayer(selectedLayer.id, { x: 540 }, true)}
+                  className="px-2 py-1.5 rounded-lg bg-[#F6F4EE] font-bold border border-[#DDD6C7]"
+                  title="Center horizontally"
+                >
+                  ┼
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -2113,10 +2403,46 @@ const SocialStudio: React.FC = () => {
                     setSelectedLayerId(null);
                     setEditingLayerId(null);
                   }}
-                  className="px-2.5 py-1.5 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-extrabold"
+                  className="px-2 py-1.5 rounded-lg bg-[#FEE2E2] text-[#991B1B] font-extrabold"
+                  title="Hide pill"
                 >
-                  🗑️ Hide
+                  🗑️
                 </button>
+              </div>
+
+              {/* Text Color Swatches (Works WITH or WITHOUT a Pill!) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
+                <span className="text-[11px] font-extrabold text-[#3E4D45] shrink-0">
+                  Text Color:
+                </span>
+                {TEXT_COLOR_SWATCHES.map((sw) => {
+                  const isActive = (selectedLayer.textColor || '') === sw.value;
+                  return (
+                    <button
+                      key={sw.label}
+                      type="button"
+                      onClick={() =>
+                        updateLayer(
+                          selectedLayer.id,
+                          { textColor: sw.value || undefined },
+                          true
+                        )
+                      }
+                      title={`Text Color: ${sw.label}`}
+                      className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold transition ${
+                        isActive
+                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45]'
+                      }`}
+                    >
+                      <span
+                        className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                        style={{ background: sw.hex }}
+                      />
+                      <span>{sw.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#F0ECE1]">
@@ -2319,7 +2645,14 @@ const SocialStudio: React.FC = () => {
                     top: geom.photoY,
                     width: geom.photoW,
                     height: geom.photoH,
-                    borderRadius: `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
+                    borderRadius:
+                      activeSlide.preset === 'cameo'
+                        ? '50%'
+                        : `${geom.photoTopR}px ${geom.photoTopR}px ${geom.photoBottomR}px ${geom.photoBottomR}px`,
+                    boxShadow:
+                      activeSlide.preset === 'cameo'
+                        ? `0 0 0 10px ${geom.cardBg}, 0 0 0 14px ${(BG_STYLES[activeSlide.windowStyle || 'pure-white'] || BG_STYLES['pure-white']).accent}`
+                        : undefined,
                     overflow: 'hidden',
                     background: '#EFECE4',
                     cursor: photoLocked ? 'default' : 'grab'
@@ -2466,13 +2799,19 @@ const SocialStudio: React.FC = () => {
                         paddingLeft: padX,
                         paddingRight: padX,
                         background: pal.bg,
-                        color: pal.text,
+                        color: layer.textColor || pal.text,
                         border: pal.hasBg ? `2px solid ${pal.border}` : 'none',
                         borderRadius:
                           layer.padY > 28 || layer.text.includes('\n') ? 32 : 999,
                         boxShadow: pal.shadow ? '0 10px 26px rgba(0,0,0,0.18)' : 'none',
                         textShadow:
-                          layer.pill === 'none-light' ? '0 4px 16px rgba(0,0,0,0.5)' : 'none',
+                          layer.pill === 'none-light' ||
+                          (!pal.hasBg &&
+                            (layer.textColor === '#FFFFFF' ||
+                              layer.textColor === '#F4D37E' ||
+                              layer.textColor === '#F6F4EE'))
+                            ? '0 4px 16px rgba(0,0,0,0.5)'
+                            : 'none',
                         fontFamily:
                           layer.font === 'sans'
                             ? "'DM Sans', sans-serif"
@@ -2660,35 +2999,26 @@ const SocialStudio: React.FC = () => {
           </div>
         </main>
 
-        {/* RIGHT / BOTTOM: Compact Tabbed Control Panel */}
-        <aside className="bg-white border border-[#EAE5D9] rounded-3xl p-4 sm:p-5 shadow-sm lg:h-[calc(100vh-118px)] lg:overflow-y-auto order-2 space-y-4">
-          <div className="grid grid-cols-4 gap-1 bg-[#F6F4EE] p-1 rounded-2xl border border-[#EAE5D9]">
-            {(
-              [
-                ['source', contentMode === 'puppies' ? '🐶 Dog' : contentMode === 'studs' ? '👑 Sire' : '📚 Topic'],
-                ['fields', '✨ Pills'],
-                ['style', '🖼️ Theme'],
-                ['caption', '🤖 Caption']
-              ] as const
-            ).map(([tab, label]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setMobileTab(tab)}
-                className={`py-2 rounded-xl text-xs font-extrabold transition ${
-                  mobileTab === tab
-                    ? 'bg-[#2E5A44] text-white shadow-sm'
-                    : 'text-[#3E4D45] hover:bg-[#EAE5D9]/60'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* TAB 1: SOURCE CONTENT (PUPPIES / STUDS / GLOSSARY / STANDARDS / AI DID-YOU-KNOW) */}
-          {mobileTab === 'source' && (
-            <div className="space-y-4">
+        {/* RIGHT / BOTTOM: Compact Single-Open Accordion Panel (Zero Long Scrolling on Mobile!) */}
+        <aside className="bg-white border border-[#EAE5D9] rounded-3xl p-3 sm:p-4 shadow-sm lg:h-[calc(100vh-118px)] lg:overflow-y-auto order-2 space-y-2">
+          {/* ACCORDION 1: SOURCE CONTENT & PHOTO */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('source')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>
+                {contentMode === 'puppies'
+                  ? `🐶 Puppy & Photo (${selectedDog?.name || ''})`
+                  : contentMode === 'studs'
+                    ? `👑 Sire & Photo (${selectedDog?.name || ''})`
+                    : `📚 Topic & Background Photo`}
+              </span>
+              <span className="text-[#2E5A44]">{mobileTab === 'source' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'source' && (
+              <div className="p-3 space-y-3 bg-white">
               {(contentMode === 'puppies' || contentMode === 'studs') && (
                 <>
                   <div className="flex items-center justify-between">
@@ -2724,10 +3054,28 @@ const SocialStudio: React.FC = () => {
                     ))}
                   </select>
 
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => selectedDog && loadDogIntoCard(selectedDog, undefined, undefined, false)}
+                      className="flex-1 py-1.5 px-2.5 rounded-xl bg-[#E4EFE8] border border-[#2E5A44]/30 text-[#2E5A44] text-xs font-extrabold"
+                    >
+                      ✓ Apply {selectedDog?.name} to Slide {activeSlideIdx + 1} (Keep Layout)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => selectedDog && loadDogIntoCard(selectedDog, undefined, undefined, true)}
+                      className="py-1.5 px-2.5 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#5C6B63] text-xs font-bold"
+                      title="Reset pill positions on this slide to default"
+                    >
+                      🔄 Reset
+                    </button>
+                  </div>
+
                   {galleryPhotos.length > 0 && (
                     <div>
                       <div className="text-xs font-bold text-[#3E4D45] mb-2">
-                        Tap Photo to Swap (Slide {activeSlideIdx + 1})
+                        Tap Photo to Swap Only Photo (Slide {activeSlideIdx + 1})
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {galleryPhotos.map((url) => (
@@ -2760,9 +3108,9 @@ const SocialStudio: React.FC = () => {
               )}
 
               {contentMode === 'glossary' && (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    🧬 17 Coat &amp; DNA Glossary Terms (From Your Website)
+                    🧬 17 Coat &amp; DNA Glossary Terms (Slide {activeSlideIdx + 1})
                   </div>
                   <select
                     value={selectedGlossaryId}
@@ -2779,13 +3127,23 @@ const SocialStudio: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item = GLOSSARY_ITEMS.find((g) => g.id === selectedGlossaryId) || GLOSSARY_ITEMS[0];
+                      if (item) loadTopicIntoCard(item);
+                    }}
+                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
+                  >
+                    ✓ Load Term onto Slide {activeSlideIdx + 1}
+                  </button>
                 </div>
               )}
 
               {contentMode === 'standards' && (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    🏡 OKC Standards, Care Rules &amp; Blog Guides
+                    🏡 OKC Standards, Care Rules &amp; Blog (Slide {activeSlideIdx + 1})
                   </div>
                   <select
                     value={selectedStandardId}
@@ -2802,14 +3160,26 @@ const SocialStudio: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const item =
+                        STANDARDS_AND_BLOG_ITEMS.find((s) => s.id === selectedStandardId) ||
+                        STANDARDS_AND_BLOG_ITEMS[0];
+                      if (item) loadTopicIntoCard(item);
+                    }}
+                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
+                  >
+                    ✓ Load Guide onto Slide {activeSlideIdx + 1}
+                  </button>
                 </div>
               )}
 
               {contentMode === 'didyouknow' && (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                      💡 Ready-to-Post Facts &amp; Polls
+                      💡 Facts &amp; Polls (Slide {activeSlideIdx + 1})
                     </span>
                     <button
                       type="button"
@@ -2839,6 +3209,14 @@ const SocialStudio: React.FC = () => {
                       </option>
                     ))}
                   </select>
+
+                  <button
+                    type="button"
+                    onClick={() => loadTopicIntoCard(DID_YOU_KNOW_ITEMS[selectedDykIndex % DID_YOU_KNOW_ITEMS.length])}
+                    className="w-full py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold"
+                  >
+                    ✓ Load Fact onto Slide {activeSlideIdx + 1}
+                  </button>
 
                   <div className="border-t border-[#EAE5D9] pt-3 space-y-2">
                     <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
@@ -2967,183 +3345,266 @@ const SocialStudio: React.FC = () => {
                   {copiedLink ? '✓ Direct Preview Link Copied!' : '🔗 Copy Direct Website Link (For DMs / Stories)'}
                 </button>
               </div>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
-          {/* TAB 2: PILLS & 1-TAP STATUS STAMPS */}
-          {mobileTab === 'fields' && (
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E] mb-2">
-                  🏷️ 1-Tap Status Stamps &amp; Comment Stickers
+          {/* ACCORDION 2: ADD / REMOVE PILLS & EDIT TEXT */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('fields')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>✨ Show / Hide Pills &amp; Edit Text</span>
+              <span className="text-[#2E5A44]">{mobileTab === 'fields' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'fields' && (
+              <div className="p-3 space-y-3 bg-white">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      Tap to Toggle Pills
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addCustomText}
+                      className="text-xs font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-1 rounded-full border border-[#E2DCCD]"
+                    >
+                      + Custom Pill
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeSlide.layers.map((layer) => (
+                      <button
+                        key={layer.id}
+                        type="button"
+                        onClick={() => {
+                          const nextVis = !layer.visible;
+                          updateLayer(layer.id, { visible: nextVis }, true);
+                          setSelectedLayerId(nextVis ? layer.id : null);
+                        }}
+                        className={`px-2.5 py-1 rounded-full text-xs font-bold border transition ${
+                          layer.visible
+                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
+                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#5C6B63] opacity-75'
+                        }`}
+                      >
+                        {layer.visible ? '✓ ' : '+ '}
+                        {layer.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                <div className="border-t border-[#F0ECE1] pt-2.5 space-y-1.5">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                    Visible Text (Slide {activeSlideIdx + 1})
+                  </div>
+                  {activeSlide.layers
+                    .filter((l) => l.visible)
+                    .map((layer) => (
+                      <div key={layer.id} className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={layer.text}
+                          onFocus={() => setSelectedLayerId(layer.id)}
+                          onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
+                          className={`flex-1 rounded-xl border px-2.5 py-1.5 text-xs font-medium ${
+                            selectedLayerId === layer.id
+                              ? 'border-[#D46A4E] bg-white ring-2 ring-[#D46A4E]/20'
+                              : 'border-[#DDD6C7] bg-[#FCFBF8]'
+                          }`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateLayer(layer.id, { visible: false }, true)}
+                          className="px-2 py-1.5 rounded-xl bg-[#F6F4EE] text-xs font-bold text-[#5C6B63] hover:text-[#991B1B]"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ACCORDION 3: 1-TAP STATUS STAMPS & COMMENT STICKERS */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('stamps')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>🏷️ 1-Tap Status Stamps &amp; Stickers</span>
+              <span className="text-[#2E5A44]">{mobileTab === 'stamps' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'stamps' && (
+              <div className="p-3 bg-white">
                 <div className="flex flex-wrap gap-1.5">
                   {STAMP_BADGES.map((st) => (
                     <button
                       key={st.id}
                       type="button"
                       onClick={() => applyStampBadge(st)}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] hover:bg-[#E4EFE8] transition"
+                      className="px-2.5 py-1.5 rounded-full text-xs font-extrabold bg-[#F6F4EE] border border-[#DDD6C7] hover:bg-[#E4EFE8] transition"
                     >
                       {st.text}
                     </button>
                   ))}
                 </div>
               </div>
+            )}
+          </div>
 
-              <div className="border-t border-[#F0ECE1] pt-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                    Show / Hide Card Pills
-                  </span>
-                  <button
-                    type="button"
-                    onClick={addCustomText}
-                    className="text-xs font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-1 rounded-full border border-[#E2DCCD]"
-                  >
-                    + Custom Pill
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {activeSlide.layers.map((layer) => (
-                    <button
-                      key={layer.id}
-                      type="button"
-                      onClick={() => {
-                        const nextVis = !layer.visible;
-                        updateLayer(layer.id, { visible: nextVis }, true);
-                        setSelectedLayerId(nextVis ? layer.id : null);
-                      }}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
-                        layer.visible
-                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
-                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#5C6B63] opacity-75'
-                      }`}
-                    >
-                      {layer.visible ? '✓ ' : '+ '}
-                      {layer.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="border-t border-[#F0ECE1] pt-3 space-y-2">
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                  Edit Visible Text (Slide {activeSlideIdx + 1})
-                </div>
-                {activeSlide.layers
-                  .filter((l) => l.visible)
-                  .map((layer) => (
-                    <div key={layer.id} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={layer.text}
-                        onFocus={() => setSelectedLayerId(layer.id)}
-                        onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
-                        className={`flex-1 rounded-xl border px-3 py-2 text-xs sm:text-sm font-medium ${
-                          selectedLayerId === layer.id
-                            ? 'border-[#D46A4E] bg-white ring-2 ring-[#D46A4E]/20'
-                            : 'border-[#DDD6C7] bg-[#FCFBF8]'
-                        }`}
-                      />
+          {/* ACCORDION 4: MIX & MATCH THEME COLORS & FRAME TEMPLATE */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('style')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>🖼️ Mix &amp; Match Colors &amp; Frame</span>
+              <span className="text-[#2E5A44]">{mobileTab === 'style' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'style' && (
+              <div className="p-3 space-y-3 bg-white">
+                {/* 1. Frame & Layout Template */}
+                <div>
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1.5">
+                    1. Frame &amp; Layout Template
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(
+                      [
+                        ['minimal', '✨ Full Bleed Photo'],
+                        ['arch', '🌿 Botanical Arch'],
+                        ['cameo', '🪞 Oval Cameo'],
+                        ['editorial', '🖼️ Editorial Card'],
+                        ['sage', '🌲 Classic Mat Frame'],
+                        ['no-photo', '📝 No-Photo Graphic Card']
+                      ] as const
+                    ).map(([key, label]) => (
                       <button
+                        key={key}
                         type="button"
-                        onClick={() => updateLayer(layer.id, { visible: false }, true)}
-                        className="px-2.5 py-2 rounded-xl bg-[#F6F4EE] text-xs font-bold text-[#5C6B63] hover:text-[#991B1B]"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: THEME, GRAPHIC BACKGROUNDS & SAVED LAYOUTS */}
-          {mobileTab === 'style' && (
-            <div className="space-y-4">
-              <div>
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1">
-                  Whole-Card Color Theme
-                </div>
-                <p className="text-[11px] text-[#5C6B63] mb-2">
-                  Colors the background &amp; frame across all templates below:
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                    ([bgKey, bgMeta]) => (
-                      <button
-                        key={bgKey}
-                        type="button"
-                        onClick={() => handleSwitchBgTheme(bgKey)}
-                        className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
-                          activeSlide.bgStyle === bgKey
+                        onClick={() => handleSwitchPreset(key)}
+                        className={`py-2 px-2.5 rounded-xl text-xs font-extrabold border text-left transition ${
+                          activeSlide.preset === key
                             ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
                             : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
                         }`}
                       >
-                        {bgMeta.label}
+                        {label}
                       </button>
-                    )
+                    ))}
+                  </div>
+
+                  {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
+                    <label className="block text-xs font-bold text-[#3E4D45] pt-2.5">
+                      <div className="flex justify-between mb-1">
+                        <span>Photo Window Height</span>
+                        <span className="text-[#D46A4E]">{activeSlide.archHeight}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={480}
+                        max={ratio === 'story' ? 1480 : ratio === 'square' ? 720 : 1020}
+                        value={activeSlide.archHeight}
+                        onChange={(e) => updateActiveSlide({ archHeight: Number(e.target.value) })}
+                        className="w-full accent-[#2E5A44]"
+                      />
+                    </label>
                   )}
                 </div>
-              </div>
 
-              <div className="border-t border-[#F0ECE1] pt-3">
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44] mb-2">
-                  Frame &amp; Layout Template
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {(
-                    [
-                      ['minimal', '✨ Full Bleed Photo'],
-                      ['arch', '🌿 Botanical Arch'],
-                      ['editorial', '🖼️ Editorial Card'],
-                      ['sage', '🌲 Classic Mat Frame'],
-                      ['no-photo', '📝 No-Photo Graphic Card']
-                    ] as const
-                  ).map(([key, label]) => (
+                {/* 2. Outer Background Color */}
+                <div className="border-t border-[#F0ECE1] pt-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      2. Outer Background Color
+                    </span>
                     <button
-                      key={key}
                       type="button"
-                      onClick={() => handleSwitchPreset(key)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-extrabold border text-left transition ${
-                        activeSlide.preset === key
-                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44]'
-                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
-                      }`}
+                      onClick={handleSwapBgAndWindow}
+                      className="text-[11px] font-extrabold text-[#D46A4E] bg-[#F6F4EE] px-2.5 py-0.5 rounded-full border border-[#E2DCCD]"
+                      title="Swap Outer Background and Inner Window colors"
                     >
-                      {label}
+                      🔄 Swap Outer &amp; Window
                     </button>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                      ([bgKey, bgMeta]) => (
+                        <button
+                          key={bgKey}
+                          type="button"
+                          onClick={() => handleSwitchBgTheme(bgKey)}
+                          className={`py-1.5 px-2.5 rounded-xl text-xs font-extrabold border text-left transition flex items-center gap-2 ${
+                            activeSlide.bgStyle === bgKey
+                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                          }`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border border-black/15 shrink-0"
+                            style={{ background: bgMeta.swatch }}
+                          />
+                          <span className="truncate">{bgMeta.label}</span>
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
 
-                {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
-                  <label className="block text-xs font-bold text-[#3E4D45] pt-3">
-                    <div className="flex justify-between mb-1">
-                      <span>Window Height</span>
-                      <span className="text-[#D46A4E]">{activeSlide.archHeight}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={480}
-                      max={ratio === 'story' ? 1480 : ratio === 'square' ? 720 : 1020}
-                      value={activeSlide.archHeight}
-                      onChange={(e) => updateActiveSlide({ archHeight: Number(e.target.value) })}
-                      className="w-full accent-[#2E5A44]"
-                    />
-                  </label>
-                )}
+                {/* 3. Inner Window / Card Color */}
+                <div className="border-t border-[#F0ECE1] pt-2.5">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44] mb-1.5">
+                    3. Inner Window / Card Color
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                      ([winKey, winMeta]) => {
+                        const activeWin = activeSlide.windowStyle || 'pure-white';
+                        return (
+                          <button
+                            key={winKey}
+                            type="button"
+                            onClick={() => handleSwitchWindowTheme(winKey)}
+                            className={`py-1.5 px-2.5 rounded-xl text-xs font-extrabold border text-left transition flex items-center gap-2 ${
+                              activeWin === winKey
+                                ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                            }`}
+                          >
+                            <span
+                              className="w-4 h-4 rounded-full border border-black/15 shrink-0"
+                              style={{ background: winMeta.swatch }}
+                            />
+                            <span className="truncate">{winMeta.label}</span>
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
               </div>
+            )}
+          </div>
 
-              {/* Save My Custom Layout Presets */}
-              <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
-                <div className="text-xs font-extrabold uppercase tracking-wider text-[#D46A4E]">
-                  💾 Save My Go-To Layout
-                </div>
-                <p className="text-[11px] text-[#5C6B63]">
-                  Save your exact pill positions, sizes &amp; colors so you can apply them to any future puppy in 1 tap!
-                </p>
+          {/* ACCORDION 5: SAVED GO-TO LAYOUTS */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('layouts')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>💾 Saved Go-To Layouts ({savedLayouts.length})</span>
+              <span className="text-[#2E5A44]">{mobileTab === 'layouts' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'layouts' && (
+              <div className="p-3 space-y-2.5 bg-white">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -3160,9 +3621,8 @@ const SocialStudio: React.FC = () => {
                     💾 Save
                   </button>
                 </div>
-
                 {savedLayouts.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
+                  <div className="space-y-1.5">
                     {savedLayouts.map((sl) => (
                       <div
                         key={sl.id}
@@ -3187,97 +3647,103 @@ const SocialStudio: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {/* TAB 4: AI CAPTION & DIRECT LINK */}
-          {mobileTab === 'caption' && (
-            <div className="space-y-3">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
-                ✨ AI Caption Generator
-              </div>
+          {/* ACCORDION 6: AI CAPTION & DIRECT LINK */}
+          <div className="border border-[#EAE5D9] rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleAccordion('caption')}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 bg-[#F6F4EE] text-xs font-extrabold text-[#1C2621]"
+            >
+              <span>🤖 AI Caption &amp; Direct Link</span>
+              <span className="text-[#2E5A44]">{mobileTab === 'caption' ? '▲' : '▼'}</span>
+            </button>
+            {mobileTab === 'caption' && (
+              <div className="p-3 space-y-2.5 bg-white">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleGenerateAiCaption()}
+                    placeholder="Tell AI what to say (e.g., 'ask followers to guess coat color')..."
+                    className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
+                  />
 
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateAiCaption()}
-                  placeholder="Tell AI what to say (e.g., 'ask followers to guess coat color', 'cozy weekend vibe')..."
-                  className="w-full rounded-xl border border-[#DDD6C7] bg-[#FCFBF8] px-3 py-2 text-xs font-medium"
-                />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Ask a fun question for comments',
+                      'Sweet & cuddly personality',
+                      'Spotlight rare DNA & structure',
+                      'Mention Flight Nanny & FaceTime',
+                      'Short 2-line punchy hook'
+                    ].map((presetIdea) => (
+                      <button
+                        key={presetIdea}
+                        type="button"
+                        onClick={() => {
+                          setAiPrompt(presetIdea);
+                          handleGenerateAiCaption(presetIdea);
+                        }}
+                        className="px-2.5 py-1 rounded-full bg-[#F6F4EE] border border-[#E2DCCD] text-[11px] font-bold text-[#3E4D45] hover:bg-[#E4EFE8]"
+                      >
+                        {presetIdea}
+                      </button>
+                    ))}
+                  </div>
 
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    'Ask a fun question for comments',
-                    'Sweet & cuddly personality',
-                    'Spotlight rare DNA & structure',
-                    'Mention Flight Nanny & FaceTime',
-                    'Short 2-line punchy hook'
-                  ].map((presetIdea) => (
-                    <button
-                      key={presetIdea}
-                      type="button"
-                      onClick={() => {
-                        setAiPrompt(presetIdea);
-                        handleGenerateAiCaption(presetIdea);
-                      }}
-                      className="px-2.5 py-1 rounded-full bg-[#F6F4EE] border border-[#E2DCCD] text-[11px] font-bold text-[#3E4D45] hover:bg-[#E4EFE8]"
-                    >
-                      {presetIdea}
-                    </button>
-                  ))}
+                  <button
+                    type="button"
+                    disabled={aiLoading}
+                    onClick={() => handleGenerateAiCaption()}
+                    className="w-full py-2 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
+                  >
+                    {aiLoading ? '✨ Writing Caption...' : '✨ Generate New Caption with AI'}
+                  </button>
+
+                  {aiError && (
+                    <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
+                      {aiError}
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  disabled={aiLoading}
-                  onClick={() => handleGenerateAiCaption()}
-                  className="w-full py-2.5 rounded-xl bg-[#D46A4E] text-white text-xs font-extrabold shadow-sm disabled:opacity-60"
-                >
-                  {aiLoading ? '✨ Writing Caption...' : '✨ Generate New Caption with AI'}
-                </button>
+                <textarea
+                  rows={6}
+                  value={captionText}
+                  onChange={(e) => setCaptionText(e.target.value)}
+                  className="w-full rounded-2xl border border-[#DDD6C7] bg-[#FCFBF8] p-2.5 text-xs font-medium leading-relaxed"
+                />
 
-                {aiError && (
-                  <div className="text-[11px] text-[#991B1B] bg-[#FEE2E2] px-3 py-2 rounded-xl font-medium">
-                    {aiError}
-                  </div>
-                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(captionText);
+                      setCopiedCaption(true);
+                      setTimeout(() => setCopiedCaption(false), 2000);
+                    }}
+                    className="py-2.5 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
+                  >
+                    {copiedCaption ? '✓ Copied!' : '📋 Copy Caption'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(directShareUrl);
+                      setCopiedLink(true);
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="py-2.5 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-xs font-extrabold"
+                  >
+                    {copiedLink ? '✓ Copied!' : '🔗 Copy Direct Link'}
+                  </button>
+                </div>
               </div>
-
-              <textarea
-                rows={8}
-                value={captionText}
-                onChange={(e) => setCaptionText(e.target.value)}
-                className="w-full rounded-2xl border border-[#DDD6C7] bg-[#FCFBF8] p-3 text-xs font-medium leading-relaxed"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(captionText);
-                    setCopiedCaption(true);
-                    setTimeout(() => setCopiedCaption(false), 2000);
-                  }}
-                  className="py-3 rounded-full bg-[#2E5A44] text-white text-xs font-extrabold shadow-sm"
-                >
-                  {copiedCaption ? '✓ Copied Caption!' : '📋 Copy Caption'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(directShareUrl);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="py-3 rounded-full bg-[#F6F4EE] border border-[#2E5A44] text-[#2E5A44] text-xs font-extrabold"
-                >
-                  {copiedLink ? '✓ Copied Link!' : '🔗 Copy Direct Link'}
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </aside>
       </div>
     </div>
