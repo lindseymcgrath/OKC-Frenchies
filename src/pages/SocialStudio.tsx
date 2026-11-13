@@ -392,6 +392,19 @@ const buildLayersForDog = (
         font: 'serif-italic'
       },
       {
+        id: 'nutrition',
+        label: 'Raw & Plasma Pill',
+        visible: false,
+        text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
+        x: 540,
+        y: canvasH - 95,
+        fontSize: 20,
+        pillWidth: 660,
+        padY: 11,
+        pill: 'mocha',
+        font: 'sans'
+      },
+      {
         id: 'contact',
         label: 'Contact Info',
         visible: false,
@@ -538,7 +551,7 @@ const buildLayersForDog = (
       fontSize: 21,
       pillWidth: 650,
       padY: 12,
-      pill: theme.darkText ? 'sage' : 'gold',
+      pill: surfaceTheme.darkText ? 'sage' : 'gold',
       font: 'sans'
     }
   ];

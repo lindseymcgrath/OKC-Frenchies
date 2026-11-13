@@ -85,6 +85,7 @@ const Hero: React.FC = () => {
   const [selectedDog, setSelectedDog] = useState<DogItem | null>(null);
   const [modalMediaIndex, setModalMediaIndex] = useState<number>(0);
   const [copiedDogLink, setCopiedDogLink] = useState<boolean>(false);
+  const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; caption: string } | null>(null);
 
   // Filter active puppies directly from src/data/puppies.json
   const activePuppies = useMemo(() => {
@@ -262,40 +263,49 @@ const Hero: React.FC = () => {
         {activeBreed === 'Mini English Bulldog' && (
           <div className="mb-8 bg-white rounded-3xl p-4 sm:p-6 border border-[#EAE5D9] shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
             <div className="lg:col-span-6 grid grid-cols-3 gap-2.5 sm:gap-3">
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
-                <img
-                  src="/images/puppies/poppi.webp"
-                  alt="Poppi - Mini English Bulldog Dam at OKC Frenchies"
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#1C2621]/85 text-[#F6F4EE] font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
-                  Dam: Poppi
-                </span>
-              </div>
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
-                <img
-                  src="/images/puppies/cafecito.webp"
-                  alt="Sire Cafecito by @bulldogcartelsd - Mini English Bulldog Sire"
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#3B2B23]/90 text-[#F4D37E] font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
-                  Sire: Cafecito
-                </span>
-              </div>
-              <div className="relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9]">
-                <img
-                  src="/images/puppies/poppi-litter.webp"
-                  alt="Poppi x Cafecito Mini English Bulldog Litter at OKC Frenchies"
-                  className="w-full h-full object-cover"
-                />
-                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#2E5A44]/90 text-white font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full">
-                  Full Litter
-                </span>
-              </div>
+              {[
+                {
+                  url: '/images/puppies/poppi.webp',
+                  label: 'Dam: Poppi',
+                  caption: 'Momma Poppi — Mini English Bulldog Dam at OKC Frenchies',
+                  badgeClass: 'bg-[#1C2621]/85 text-[#F6F4EE]'
+                },
+                {
+                  url: '/images/puppies/cafecito.webp',
+                  label: 'Sire: Cafecito',
+                  caption: 'Sire Cafecito by @bulldogcartelsd — Mini English Bulldog Sire',
+                  badgeClass: 'bg-[#3B2B23]/90 text-[#F4D37E]'
+                },
+                {
+                  url: '/images/puppies/poppi-litter.webp',
+                  label: 'Full Litter',
+                  caption: 'Poppi × Cafecito Mini English Bulldog Litter at OKC Frenchies',
+                  badgeClass: 'bg-[#2E5A44]/90 text-white'
+                }
+              ].map((item) => (
+                <button
+                  key={item.url}
+                  type="button"
+                  onClick={() => setLightboxPhoto({ url: item.url, caption: item.caption })}
+                  title="Tap to view larger photo"
+                  className="group relative rounded-2xl overflow-hidden aspect-[4/4.3] bg-[#EFECE4] border border-[#EAE5D9] block cursor-pointer"
+                >
+                  <img
+                    src={item.url}
+                    alt={item.caption}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <span
+                    className={`absolute bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap font-sans font-bold text-[10px] px-2.5 py-0.5 rounded-full ${item.badgeClass}`}
+                  >
+                    {item.label} 🔍
+                  </span>
+                </button>
+              ))}
             </div>
             <div className="lg:col-span-6">
               <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3 py-1 rounded-full mb-2">
-                🐾 Meet the Parents &amp; Full Litter
+                🐾 Meet the Parents &amp; Full Litter (Tap Photos to Enlarge)
               </span>
               <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C2621]">
                 Poppi × Cafecito Mini English Bulldog Litter
@@ -338,6 +348,21 @@ const Hero: React.FC = () => {
                     alt={dog.altText || `${dog.name} - ${dog.dna} ${dog.breed}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
+                  {currentSrc.includes('cafecito') && (
+                    <span className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#3B2B23]/90 text-[#F4D37E] font-sans font-extrabold text-[11px] px-3 py-1 rounded-full shadow-md pointer-events-none">
+                      Sire: Cafecito (@bulldogcartelsd)
+                    </span>
+                  )}
+                  {currentSrc.includes('poppi.webp') && (
+                    <span className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#1C2621]/85 text-[#F6F4EE] font-sans font-extrabold text-[11px] px-3 py-1 rounded-full shadow-md pointer-events-none">
+                      Dam: Momma Poppi
+                    </span>
+                  )}
+                  {currentSrc.includes('poppi-litter') && (
+                    <span className="absolute top-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#2E5A44]/90 text-white font-sans font-extrabold text-[11px] px-3 py-1 rounded-full shadow-md pointer-events-none">
+                      Full Mini English Litter
+                    </span>
+                  )}
 
                   {/* Multi-Photo Numbered Dots */}
                   {photos.length > 1 && (
@@ -590,11 +615,31 @@ const Hero: React.FC = () => {
                           className="max-h-[65vh] w-auto rounded-2xl"
                         />
                       ) : (
-                        <img
-                          src={currentMedia.url}
-                          alt={selectedDog.altText || selectedDog.name}
-                          className="max-h-[65vh] w-auto object-contain rounded-2xl shadow-sm"
-                        />
+                        <div className="relative inline-block">
+                          <img
+                            src={currentMedia.url}
+                            alt={selectedDog.altText || selectedDog.name}
+                            onClick={() =>
+                              setLightboxPhoto({
+                                url: currentMedia.url,
+                                caption: currentMedia.url.includes('cafecito')
+                                  ? 'Sire Cafecito by @bulldogcartelsd — Mini English Bulldog Sire'
+                                  : currentMedia.url.includes('poppi.webp')
+                                  ? 'Momma Poppi — Mini English Bulldog Dam'
+                                  : currentMedia.url.includes('poppi-litter')
+                                  ? 'Poppi × Cafecito Mini English Bulldog Litter'
+                                  : `${selectedDog.name} — ${selectedDog.dna} ${selectedDog.breed}`
+                              })
+                            }
+                            title="Tap to enlarge photo"
+                            className="max-h-[65vh] w-auto object-contain rounded-2xl shadow-sm cursor-zoom-in"
+                          />
+                          {currentMedia.url.includes('cafecito') && (
+                            <span className="absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#3B2B23]/95 text-[#F4D37E] font-sans font-extrabold text-xs px-4 py-1.5 rounded-full shadow-lg pointer-events-none">
+                              Sire: Cafecito (Stud by @bulldogcartelsd)
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {mediaList.length > 1 && (
@@ -762,6 +807,35 @@ const Hero: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full-Screen Photo Lightbox (For Parents, Litter & Any Enlarged Photo) */}
+      {lightboxPhoto && (
+        <div
+          className="fixed inset-0 z-[150] flex flex-col items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+          onClick={() => setLightboxPhoto(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxPhoto(null)}
+            className="absolute top-5 right-5 p-3 bg-white/90 hover:bg-white text-[#1C2621] rounded-full shadow-lg cursor-pointer"
+            aria-label="Close enlarged photo"
+          >
+            <X size={22} />
+          </button>
+          <img
+            src={lightboxPhoto.url}
+            alt={lightboxPhoto.caption}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[82vh] max-w-[94vw] object-contain rounded-2xl shadow-2xl"
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="mt-4 bg-[#1C2621]/90 text-[#F6F4EE] border border-white/15 px-5 py-2 rounded-full text-xs sm:text-sm font-bold text-center"
+          >
+            {lightboxPhoto.caption}
           </div>
         </div>
       )}
