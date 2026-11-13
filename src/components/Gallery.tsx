@@ -68,10 +68,28 @@ interface GalleryProps {
   sheetName: string;
 }
 
+const isActiveDogStatus = (status?: string): boolean => {
+  if (!status) return true;
+  const s = status.toLowerCase();
+  return (
+    s === 'available' ||
+    s === 'stud' ||
+    s === 'pending' ||
+    s.includes('keeper') ||
+    s.includes('retained') ||
+    s.includes('co-own')
+  );
+};
+
 const getGardenPill = (dog: DogData): string => {
   if (dog.type === 'Stud') return '🧬 Proven Producer';
-  if (dog.status && dog.status.toLowerCase() === 'pending') return '⏳ Pending / Reserved';
+  const statusLower = (dog.status || '').toLowerCase();
+  if (statusLower.includes('keeper')) return '👑 Keeper • Retained';
+  if (statusLower.includes('retained') || statusLower.includes('co-own')) return '🤝 Retained / Co-Own';
+  if (statusLower === 'pending') return '⏳ Pending / Reserved';
   const nameLower = dog.name.toLowerCase();
+  if (nameLower === 'phatty patty') return '👑 Keeper • Chocolate Tri Merle';
+  if (nameLower === 'jellyroll') return '🤝 Retained / Co-Own';
   if (nameLower === 'alice') return '✨ Super Tiny Pocket Princess';
   if (nameLower === 'arya') return '✨ Compact Wrinkle Queen';
   if (nameLower === 'brew') return '✨ Sleepy Sweetheart • Merle';
@@ -268,9 +286,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
       ? selectedDog.media[activeMediaIndex]
       : null;
 
-  const activeCount = dogs.filter(
-    (d) => !d.status || ['available', 'stud', 'pending'].includes(d.status.toLowerCase())
-  ).length;
+  const activeCount = dogs.filter((d) => isActiveDogStatus(d.status)).length;
 
   return (
     <section className="py-14 bg-[#F6F4EE] text-[#1C2621] relative min-h-screen">
@@ -337,9 +353,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
               .filter((breed) => activeBreedFilter === 'All' || activeBreedFilter === breed)
               .map((breed) => {
                 const availableForBreed = dogs.filter(
-                  (d) =>
-                    (d.breed || 'French Bulldog') === breed &&
-                    (!d.status || ['available', 'stud', 'pending'].includes(d.status.toLowerCase()))
+                  (d) => (d.breed || 'French Bulldog') === breed && isActiveDogStatus(d.status)
                 );
 
                 if (availableForBreed.length === 0) return null;
@@ -348,10 +362,42 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                   <div key={breed}>
                     <h2 className="font-display font-bold text-2xl sm:text-3xl text-[#1C2621] mb-7 flex items-center gap-4">
                       <span>
-                        {filterType === 'Stud' ? `${breed} Studs` : `Available ${breed}s`}
+                        {filterType === 'Stud' ? `${breed} Studs` : `${breed} Litter & Available Puppies`}
                       </span>
                       <div className="h-px bg-[#E2DDD2] flex-grow"></div>
                     </h2>
+
+                    {breed === 'Mini English Bulldog' && filterType === 'Puppy' && (
+                      <div className="mb-8 bg-white rounded-3xl p-4 sm:p-6 border border-[#EAE5D9] shadow-xs grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                        <div className="md:col-span-5 grid grid-cols-2 gap-3">
+                          <div className="rounded-2xl overflow-hidden aspect-[4/4] bg-[#EFECE4] border border-[#EAE5D9]">
+                            <img
+                              src="/images/puppies/poppi.webp"
+                              alt="Poppi - Mini English Bulldog Dam at OKC Frenchies"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="rounded-2xl overflow-hidden aspect-[4/4] bg-[#EFECE4] border border-[#EAE5D9]">
+                            <img
+                              src="/images/puppies/poppi-litter.webp"
+                              alt="Momma Poppi's Mini English Bulldog Litter at OKC Frenchies"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        </div>
+                        <div className="md:col-span-7">
+                          <span className="inline-block bg-[#E3EFE8] text-[#2E5A44] font-sans font-bold text-xs px-3 py-1 rounded-full mb-2">
+                            🐾 Meet Momma Poppi &amp; The Full Litter
+                          </span>
+                          <h3 className="font-display font-bold text-2xl sm:text-3xl text-[#1C2621]">
+                            Poppi’s Chocolate &amp; Lilac Tri Mini English Bulldog Litter
+                          </h3>
+                          <p className="font-sans text-sm text-[#5C6B63] mt-2 leading-relaxed">
+                            Meet sweet Momma <strong>Poppi</strong> (left) and her entire Mini English Bulldog litter (right) — featuring our keeper female <strong>Phatty Patty</strong>, retained/co-own boy <strong>Jellyroll</strong>, and littermates <strong>Brew</strong>, <strong>Bean</strong>, <strong>Biscotti</strong>, and <strong>Brulee</strong>.
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                       {availableForBreed.map((dog) => {
@@ -480,7 +526,7 @@ const Gallery: React.FC<GalleryProps> = ({ filterType, title, subtitle, sheetNam
                 (d) =>
                   (activeBreedFilter === 'All' || (d.breed || 'French Bulldog') === activeBreedFilter) &&
                   d.status &&
-                  !['available', 'stud', 'pending'].includes(d.status.toLowerCase())
+                  !isActiveDogStatus(d.status)
               );
 
               if (soldDogs.length === 0) return null;

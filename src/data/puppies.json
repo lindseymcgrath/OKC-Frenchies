@@ -118,6 +118,82 @@
     ]
   },
   {
+    "id": "puppies-14",
+    "name": "Phatty Patty",
+    "status": "Keeper",
+    "dna": "Chocolate Tri Merle",
+    "dna_technical": "",
+    "price": "Keeper • Retained",
+    "description": "Chocolate Tri Merle female from Momma Poppi's Mini English Bulldog litter — our keeper staying right here at OKC Frenchies.",
+    "altText": "Phatty Patty - Keeper female Chocolate Tri Merle Mini English Bulldog puppy",
+    "videoUrl": "",
+    "breed": "Mini English Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Female",
+    "image": "/images/puppies/phatty-patty.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/puppies/phatty-patty.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/phatty-patty-2.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/phatty-patty-3.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
+      }
+    ]
+  },
+  {
+    "id": "puppies-15",
+    "name": "Jellyroll",
+    "status": "Retained / Co-Own",
+    "dna": "Chocolate Tri Merle",
+    "dna_technical": "",
+    "price": "Retained / Co-Own",
+    "description": "Chocolate Tri Merle male from Momma Poppi's Mini English Bulldog litter — retained by OKC Frenchies / select co-own opportunity.",
+    "altText": "Jellyroll - Retained / Co-Own male Chocolate Tri Merle Mini English Bulldog puppy",
+    "videoUrl": "",
+    "breed": "Mini English Bulldog",
+    "pedigreeLink": "",
+    "type": "Puppy",
+    "gender": "Male",
+    "image": "/images/puppies/jellyroll.webp",
+    "media": [
+      {
+        "type": "image",
+        "url": "/images/puppies/jellyroll.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/jellyroll-1.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/jellyroll-3.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
+      }
+    ]
+  },
+  {
     "id": "puppies-6",
     "name": "Brew",
     "status": "Available",
@@ -144,6 +220,14 @@
       {
         "type": "image",
         "url": "/images/puppies/brew-3.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
       }
     ]
   },
@@ -174,6 +258,14 @@
       {
         "type": "image",
         "url": "/images/puppies/bean-3.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
       }
     ]
   },
@@ -204,6 +296,14 @@
       {
         "type": "image",
         "url": "/images/puppies/biscotti.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
       }
     ]
   },
@@ -234,6 +334,14 @@
       {
         "type": "image",
         "url": "/images/puppies/brulee.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi-litter.webp"
+      },
+      {
+        "type": "image",
+        "url": "/images/puppies/poppi.webp"
       }
     ]
   },

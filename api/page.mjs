@@ -6,7 +6,7 @@ import {
   SEO_DATA
 } from './_htmlTemplate.mjs';
 
-const OG_VER = 'v=5';
+const OG_VER = 'v=6';
 
 const slugify = (s) =>
   String(s || '')
@@ -123,6 +123,20 @@ const ROUTE_META = {
     description: SEO_DATA.Application.description,
     image: `https://okcfrenchies.com/og/application.jpg?${OG_VER}`,
     canonical: 'https://okcfrenchies.com/application'
+  },
+  '/admin/social-studio': {
+    title: 'OKC Frenchies Card Studio | Social Media Creator',
+    description:
+      'Create custom Instagram feed posts, stories, and carousels with Botanical Arch, Oval Cameo & Polaroid templates for OKC Frenchies.',
+    image: `https://okcfrenchies.com/og/studio.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/admin/social-studio'
+  },
+  '/social-studio': {
+    title: 'OKC Frenchies Card Studio | Social Media Creator',
+    description:
+      'Create custom Instagram feed posts, stories, and carousels with Botanical Arch, Oval Cameo & Polaroid templates for OKC Frenchies.',
+    image: `https://okcfrenchies.com/og/studio.jpg?${OG_VER}`,
+    canonical: 'https://okcfrenchies.com/admin/social-studio'
   }
 };
 

@@ -29,10 +29,19 @@ interface DogItem {
 
 // Helper to give each puppy a warm badge without altering src/data/puppies.json
 const getGardenBadge = (dog: DogItem): string => {
-  if (dog.status && dog.status.toLowerCase() === 'pending') {
+  const statusLower = (dog.status || '').toLowerCase();
+  if (statusLower.includes('keeper')) {
+    return '👑 Keeper • Retained';
+  }
+  if (statusLower.includes('retained') || statusLower.includes('co-own')) {
+    return '🤝 Retained / Co-Own';
+  }
+  if (statusLower === 'pending') {
     return '⏳ Pending / Reserved';
   }
   const nameLower = dog.name.toLowerCase();
+  if (nameLower === 'phatty patty') return '👑 Keeper • Chocolate Tri Merle';
+  if (nameLower === 'jellyroll') return '🤝 Retained / Co-Own';
   if (nameLower === 'alice') return '✨ Super Tiny Pocket Princess';
   if (nameLower === 'arya') return '✨ Compact Wrinkle Queen';
   if (nameLower === 'brew') return '✨ Sleepy Sweetheart • Merle';
@@ -49,7 +58,18 @@ const getGardenBadge = (dog: DogItem): string => {
   return `✨ Available ${dog.gender || 'Puppy'}`;
 };
 
-const FEATURED_ORDER = ['alice', 'arya', 'brew', 'bean', 'biscotti', 'alex', 'shuffin', 'brulee'];
+const FEATURED_ORDER = [
+  'alice',
+  'arya',
+  'brew',
+  'bean',
+  'biscotti',
+  'alex',
+  'shuffin',
+  'brulee',
+  'jellyroll',
+  'phatty patty'
+];
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
@@ -64,7 +84,13 @@ const Hero: React.FC = () => {
   const activePuppies = useMemo(() => {
     const available = (puppiesData as DogItem[]).filter((d) => {
       const s = (d.status || 'available').toLowerCase();
-      return s === 'available' || s === 'pending';
+      return (
+        s === 'available' ||
+        s === 'pending' ||
+        s.includes('keeper') ||
+        s.includes('retained') ||
+        s.includes('co-own')
+      );
     });
 
     return [...available].sort((a, b) => {

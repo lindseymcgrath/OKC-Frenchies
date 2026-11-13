@@ -24,6 +24,8 @@ import {
 } from './socialStudioPresets';
 
 const DEFAULT_QUOTES: Record<string, string> = {
+  'phatty-patty': '"Our sweet Chocolate Tri Merle keeper—chunky, wrinkly, and staying right here at OKC Frenchies."',
+  jellyroll: '"Chocolate Tri Merle showstopper—thick bone, dreamy eyes, and elite Mini English structure."',
   shuffin: '"Fluffy, joyful, and always ready to steal your heart with one big smile."',
   alex: '"All ears, happy paws, and the sweetest little shadow you could ever ask for."',
   alice: '"Super tiny pocket princess with a gentle soul and endless cuddles to give."',
@@ -261,12 +263,18 @@ const buildLayersForDog = (
       : '♀ Female';
   const sexPillStyle: PillStyle = isStud ? 'gold' : isFemale ? 'blush' : 'sage';
 
-  const statusStr =
-    dog.status === 'Pending'
-      ? '✨ Pending • Deposit Placed'
-      : isStud
-        ? '👑 Stud Service • Shipped Nationwide'
-        : '✨ Available Now';
+  const statusLower = (dog.status || '').toLowerCase();
+  const statusStr = statusLower.includes('keeper')
+    ? '👑 Keeper • Staying at OKC Frenchies'
+    : statusLower.includes('retained') || statusLower.includes('co-own')
+      ? '🤝 Retained / Co-Own Opportunity'
+      : dog.status === 'Pending'
+        ? '✨ Pending • Deposit Placed'
+        : dog.status === 'SOLD'
+          ? '🏡 Placed in Forever Home'
+          : isStud
+            ? '👑 Stud Service • Shipped Nationwide'
+            : '✨ Available Now';
   const breedAgeStr = isStud
     ? `${dog.name} • ${breed}`
     : [breed, age].filter(Boolean).join(' • ');
@@ -576,9 +584,9 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
   const archH = ratio === 'story' ? 1180 : ratio === 'square' ? 600 : 800;
   return {
     id: 'slide-1',
-    preset: 'minimal',
-    bgStyle: 'cream-editorial',
-    windowStyle: 'pure-white',
+    preset: 'arch',
+    bgStyle: 'sage-mist',
+    windowStyle: 'cream-editorial',
     dogId: dog.id,
     slideMode: dog.category === 'Stud' ? 'studs' : 'puppies',
     photoSrc: dog.image || '',
@@ -587,7 +595,7 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
     panY: 0,
     zoom: 1,
     archHeight: archH,
-    layers: buildLayersForDog(dog, 'minimal', ch, archH, 'cream-editorial', 'pure-white')
+    layers: buildLayersForDog(dog, 'arch', ch, archH, 'sage-mist', 'cream-editorial')
   };
 };
 
@@ -596,6 +604,16 @@ const inferDogFromSlide = (slide: SlideState | undefined, allDogs: DogRecord[]):
   if (slide.dogId) {
     const byId = allDogs.find((d) => d.id === slide.dogId);
     if (byId) return byId;
+  }
+  const nameLayer = slide.layers.find((l) => l.id === 'name');
+  if (nameLayer) {
+    for (const d of allDogs) {
+      const escaped = d.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const nameRe = new RegExp(`\\b${escaped}\\b`, 'i');
+      if (nameRe.test(nameLayer.text)) {
+        return d;
+      }
+    }
   }
   if (slide.photoSrc) {
     const byPhoto = allDogs.find(
@@ -630,11 +648,19 @@ const SocialStudio: React.FC = () => {
     [allPuppies, allStuds]
   );
 
+  const defaultStudioDog: DogRecord = useMemo(
+    () =>
+      allPuppies.find((d) => d.name.toLowerCase() === 'phatty patty') ||
+      allPuppies.find((d) => d.status === 'Available') ||
+      allPuppies[0],
+    [allPuppies]
+  );
+
   // Content Mode
   const [contentMode, setContentMode] = useState<ContentMode>('puppies');
   const [filterMode, setFilterMode] = useState<'available' | 'all'>('available');
   const [selectedDogId, setSelectedDogId] = useState<string>(
-    () => allPuppies.find((d) => d.status === 'Available')?.id || allPuppies[0]?.id || ''
+    () => defaultStudioDog?.id || ''
   );
   const [selectedGlossaryId, setSelectedGlossaryId] = useState<string>(GLOSSARY_ITEMS[0]?.id || '');
   const [selectedStandardId, setSelectedStandardId] = useState<string>(
@@ -645,15 +671,25 @@ const SocialStudio: React.FC = () => {
   const visibleDogs = useMemo(() => {
     if (contentMode === 'studs') return allStuds;
     if (filterMode === 'all') return allPuppies;
-    return allPuppies.filter((d) => d.status === 'Available' || d.status === 'Pending');
+    return allPuppies.filter((d) => {
+      const s = (d.status || '').toLowerCase();
+      return (
+        s === 'available' ||
+        s === 'pending' ||
+        s.includes('keeper') ||
+        s.includes('retained') ||
+        s.includes('co-own')
+      );
+    });
   }, [contentMode, filterMode, allPuppies, allStuds]);
 
   const selectedDog = useMemo(
     () =>
       allDogs.find((d) => d.id === selectedDogId) ||
+      defaultStudioDog ||
       visibleDogs[0] ||
       allPuppies[0],
-    [allDogs, visibleDogs, selectedDogId, allPuppies]
+    [allDogs, visibleDogs, selectedDogId, allPuppies, defaultStudioDog]
   );
 
   const activeTopicItem: TopicCardItem | null = useMemo(() => {
@@ -688,7 +724,7 @@ const SocialStudio: React.FC = () => {
   const canvasH = getCanvasHeight(ratio);
 
   const [slides, setSlides] = useState<SlideState[]>(() => [
-    makeInitialSlide(allPuppies[0], 'feed')
+    makeInitialSlide(defaultStudioDog, 'feed')
   ]);
   const [activeSlideIdx, setActiveSlideIdx] = useState<number>(0);
   const activeSlide = slides[activeSlideIdx] || slides[0];
@@ -737,7 +773,7 @@ const SocialStudio: React.FC = () => {
 
   // Caption & Link State
   const [captionText, setCaptionText] = useState<string>(() =>
-    buildDefaultDogCaption(allPuppies[0])
+    buildDefaultDogCaption(defaultStudioDog)
   );
   const [aiPrompt, setAiPrompt] = useState<string>('');
   const [aiCategory, setAiCategory] = useState<string>('did-you-know');
@@ -798,6 +834,24 @@ const SocialStudio: React.FC = () => {
     });
   };
 
+  // Reset Studio back to the fresh default Phatty Patty Botanical Arch theme
+  const handleResetStudioDefault = () => {
+    const defaultDog = defaultStudioDog;
+    if (!defaultDog) return;
+    pushHistory(slides);
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    setRatio('feed');
+    setContentMode('puppies');
+    setFilterMode('available');
+    setSelectedDogId(defaultDog.id);
+    setSlides([makeInitialSlide(defaultDog, 'feed')]);
+    setActiveSlideIdx(0);
+    setCaptionText(buildDefaultDogCaption(defaultDog));
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
+    setDraftSavedAt('Default Restored');
+  };
+
   // Load draft once on mount if present
   const didMountRef = useRef(false);
   useEffect(() => {
@@ -806,14 +860,43 @@ const SocialStudio: React.FC = () => {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed.slides) && parsed.slides.length > 0) {
-          setSlides(parsed.slides);
+          // Repair any slide where a saved layout updated text/dogId to one dog (e.g. Shuffin) but left another dog's catalog photo
+          const repairedSlides: SlideState[] = parsed.slides.map((s: SlideState) => {
+            const dog = inferDogFromSlide(s, allDogs);
+            if (!dog) return s;
+            const belongsToDog =
+              s.photoSrc === dog.image ||
+              (dog.media || []).some((m) => m.url === s.photoSrc);
+            const belongsToOtherDog =
+              !belongsToDog &&
+              Boolean(s.photoSrc) &&
+              allDogs.some(
+                (other) =>
+                  other.id !== dog.id &&
+                  (other.image === s.photoSrc ||
+                    (other.media || []).some((m) => m.url === s.photoSrc))
+              );
+            return {
+              ...s,
+              dogId: dog.id,
+              photoSrc: belongsToOtherDog || !s.photoSrc ? dog.image || s.photoSrc : s.photoSrc
+            };
+          });
+          setSlides(repairedSlides);
           if (parsed.ratio) setRatio(parsed.ratio);
           if (parsed.captionText) setCaptionText(parsed.captionText);
-          const firstSlide: SlideState = parsed.slides[0];
+          const firstSlide: SlideState = repairedSlides[0];
           const inferredDog = inferDogFromSlide(firstSlide, allDogs);
           if (inferredDog) {
             setSelectedDogId(inferredDog.id);
             setContentMode(inferredDog.category === 'Stud' ? 'studs' : 'puppies');
+            if (
+              inferredDog.category !== 'Stud' &&
+              inferredDog.status !== 'Available' &&
+              inferredDog.status !== 'Pending'
+            ) {
+              setFilterMode('all');
+            }
           } else if (firstSlide.slideMode) {
             setContentMode(firstSlide.slideMode);
           } else if (parsed.contentMode) {
@@ -1604,6 +1687,13 @@ const SocialStudio: React.FC = () => {
       text: freshTextMap.get(sl.id) || sl.sampleText || sl.label
     }));
 
+    const isDogMode = Boolean(selectedDog && (contentMode === 'puppies' || contentMode === 'studs'));
+    const currentPhotoBelongsToSelectedDog =
+      isDogMode &&
+      selectedDog &&
+      (activeSlide.photoSrc === selectedDog.image ||
+        (selectedDog.media || []).some((m) => m.url === activeSlide.photoSrc));
+
     updateActiveSlide(
       {
         preset: saved.preset,
@@ -1611,6 +1701,14 @@ const SocialStudio: React.FC = () => {
         windowStyle: saved.windowStyle || 'pure-white',
         photoDim: saved.photoDim,
         archHeight: saved.archHeight,
+        ...(isDogMode && selectedDog
+          ? {
+              dogId: selectedDog.id,
+              photoSrc: currentPhotoBelongsToSelectedDog
+                ? activeSlide.photoSrc
+                : selectedDog.image || activeSlide.photoSrc
+            }
+          : {}),
         layers: mergedLayers
       },
       true
@@ -2174,6 +2272,14 @@ const SocialStudio: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={handleResetStudioDefault}
+              className="px-2.5 py-1.5 rounded-full text-xs font-extrabold border bg-[#F6F4EE] border-[#D9D2C3] text-[#2E5A44] hover:bg-[#EAE5D9] transition"
+              title="Reset Studio to default Phatty Patty Botanical Arch theme"
+            >
+              🔄 Default (Phatty Patty)
+            </button>
             <button
               type="button"
               disabled={history.length === 0}
