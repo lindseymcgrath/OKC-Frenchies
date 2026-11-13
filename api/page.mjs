@@ -249,6 +249,25 @@ export default function handler(req, res) {
     html = html.replace(/<meta name="twitter:title" content="[^"]*">/, `<meta name="twitter:title" content="${escapeHtml(title)}">`);
     html = html.replace(/<meta name="twitter:description" content="[^"]*">/, `<meta name="twitter:description" content="${escapeHtml(description)}">`);
 
+    if (pathname === '/social-studio' || pathname === '/admin/social-studio') {
+      html = html.replace(
+        /<link rel="icon"[^>]*>/,
+        '<link rel="icon" type="image/png" href="/studio-touch-icon.png?v=2">'
+      );
+      html = html.replace(
+        /<link rel="apple-touch-icon"[^>]*>/,
+        '<link rel="apple-touch-icon" sizes="180x180" href="/studio-touch-icon.png?v=2">'
+      );
+      html = html.replace(
+        /<link rel="manifest"[^>]*>/,
+        '<link rel="manifest" href="/studio.webmanifest">'
+      );
+      html = html.replace(
+        /<meta name="apple-mobile-web-app-title"[^>]*>/,
+        '<meta name="apple-mobile-web-app-title" content="OKC Studio">'
+      );
+    }
+
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
     res.status(200).send(html);

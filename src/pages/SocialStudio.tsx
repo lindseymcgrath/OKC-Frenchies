@@ -4257,6 +4257,30 @@ const SocialStudio: React.FC = () => {
   const previewDrawX = (geom.photoW - previewDrawW) / 2 + activeSlide.panX;
   const previewDrawY = (geom.photoH - previewDrawH) / 2 + activeSlide.panY;
 
+  // Point Home Screen / favicon / PWA manifest tags to the dedicated Studio icon on mount
+  useEffect(() => {
+    document.title = 'OKC Card Studio';
+    const updates: Array<[string, string, string]> = [
+      ['link[rel="icon"]', 'href', '/studio-touch-icon.png?v=2'],
+      ['link[rel="apple-touch-icon"]', 'href', '/studio-touch-icon.png?v=2'],
+      ['link[rel="manifest"]', 'href', '/studio.webmanifest'],
+      ['meta[name="apple-mobile-web-app-title"]', 'content', 'OKC Studio']
+    ];
+    const prev: Array<[Element, string, string | null]> = [];
+    updates.forEach(([sel, attr, val]) => {
+      const el = document.head.querySelector(sel);
+      if (el) {
+        prev.push([el, attr, el.getAttribute(attr)]);
+        el.setAttribute(attr, val);
+      }
+    });
+    return () => {
+      prev.forEach(([el, attr, oldVal]) => {
+        if (oldVal !== null) el.setAttribute(attr, oldVal);
+      });
+    };
+  }, []);
+
   return (
     <div className="h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col bg-[#EFECE3] text-[#1C2621] overscroll-none">
       <Helmet>

@@ -1,0 +1,24 @@
+{
+  "name": "OKC Frenchies Card Studio",
+  "short_name": "OKC Studio",
+  "description": "Create custom Instagram feed posts, stories, and carousels for OKC Frenchies.",
+  "start_url": "/social-studio",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F6F4EE",
+  "theme_color": "#2E5A44",
+  "icons": [
+    {
+      "src": "/studio-touch-icon.png?v=2",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/studio-icon-512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
