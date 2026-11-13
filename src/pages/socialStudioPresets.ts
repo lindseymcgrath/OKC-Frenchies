@@ -3,6 +3,13 @@ import blogData from '../data/blog.json';
 
 export type ContentMode = 'puppies' | 'studs' | 'glossary' | 'standards' | 'didyouknow';
 export type FramePreset = 'minimal' | 'arch' | 'cameo' | 'editorial' | 'sage' | 'no-photo';
+export type TextCardTheme =
+  | 'arch-crest'
+  | 'magazine-border'
+  | 'cameo-medallion'
+  | 'ribbon-banner'
+  | 'split-quote'
+  | 'minimal-luxe';
 export type CanvasRatio = 'feed' | 'story' | 'square';
 export type BgStyle =
   | 'pure-white'
@@ -46,6 +53,7 @@ export interface TextLayer {
   pillWidth: number;
   padY: number;
   pill: PillStyle;
+  pillOpacity?: number;
   textColor?: string;
   font: FontKind;
 }
@@ -67,6 +75,7 @@ export interface DogRecord {
 export interface SlideState {
   id: string;
   preset: FramePreset;
+  textCardTheme?: TextCardTheme;
   bgStyle: BgStyle;
   windowStyle?: BgStyle;
   dogId?: string;
@@ -86,6 +95,7 @@ export interface SavedLayoutPreset {
   id: string;
   name: string;
   preset: FramePreset;
+  textCardTheme?: TextCardTheme;
   bgStyle: BgStyle;
   windowStyle?: BgStyle;
   photoDim: number;
@@ -141,13 +151,13 @@ export const BG_STYLES: Record<
     darkText: true
   },
   'oat-latte': {
-    label: '🥛 Warm Oat Latte',
-    swatch: '#E8DEC8',
-    bg1: '#F5EFE2',
-    bg2: '#E6DBC6',
-    cardBg: '#FAF6EE',
-    matOuter: '#E0D3BA',
-    border: '#D5C7B0',
+    label: '🧸 Lilac Taupe',
+    swatch: '#B59E99',
+    bg1: '#C7B4AF',
+    bg2: '#A8918C',
+    cardBg: '#CEBDB8',
+    matOuter: '#9E8782',
+    border: '#967F7A',
     accent: '#3B2B23',
     darkText: true
   },
@@ -174,14 +184,14 @@ export const BG_STYLES: Record<
     darkText: false
   },
   'sage-mist': {
-    label: '🍃 Sage Mist',
-    swatch: '#CFE0D6',
-    bg1: '#E2EFE8',
-    bg2: '#CBE0D4',
-    cardBg: '#ECF5F0',
-    matOuter: '#CBE0D4',
-    border: '#B8D2C3',
-    accent: '#2E5A44',
+    label: '🌿 Olive Sage',
+    swatch: '#8B9D83',
+    bg1: '#9EAD97',
+    bg2: '#7F9177',
+    cardBg: '#ACBA9F',
+    matOuter: '#788A70',
+    border: '#6E8067',
+    accent: '#1C2621',
     darkText: true
   },
   'blush-botanical': {
@@ -196,15 +206,15 @@ export const BG_STYLES: Record<
     darkText: true
   },
   'warm-sand': {
-    label: '☀️ Sunlit Champagne',
-    swatch: '#EFE2C6',
-    bg1: '#FAF3E3',
-    bg2: '#EFE2C6',
-    cardBg: '#FAF3E3',
-    matOuter: '#E5D3AE',
-    border: '#E2CFA8',
-    accent: '#D46A4E',
-    darkText: true
+    label: '🌊 French Slate',
+    swatch: '#5A7385',
+    bg1: '#688295',
+    bg2: '#4B6273',
+    cardBg: '#5A7385',
+    matOuter: '#435868',
+    border: 'rgba(246,244,238,0.34)',
+    accent: '#F4D37E',
+    darkText: false
   },
   'terracotta-clay': {
     label: '🏺 Warm Terracotta',
@@ -434,11 +444,13 @@ export const buildTopicLayers = (
   item: TopicCardItem,
   canvasH: number,
   windowStyle?: BgStyle,
-  mode?: ContentMode
+  mode?: ContentMode,
+  textTheme: TextCardTheme = 'arch-crest'
 ): TextLayer[] => {
   const surfaceStyle = windowStyle || item.bgStyle;
   const isDarkSurface = !(BG_STYLES[surfaceStyle] || BG_STYLES['cream-editorial']).darkText;
   const centerY = Math.round(canvasH * 0.5);
+  const baseNone: PillStyle = isDarkSurface ? 'none-light' : 'none-dark';
 
   const badgePill: PillStyle = isDarkSurface
     ? 'gold'
@@ -453,7 +465,7 @@ export const buildTopicLayers = (
     : mode === 'didyouknow'
       ? 'white'
       : mode === 'glossary'
-        ? 'oat'
+        ? 'white'
         : 'cream';
 
   const footerPill: PillStyle = isDarkSurface
@@ -462,6 +474,228 @@ export const buildTopicLayers = (
       ? 'mocha'
       : 'terracotta';
 
+  // Pure Editorial / Un-Pilled Typography Styles for Magazine, Minimal Luxe & Split Quote
+  if (textTheme === 'magazine-border' || textTheme === 'minimal-luxe') {
+    const accentColor = isDarkSurface ? '#F4D37E' : '#2E5A44';
+    const subColor = isDarkSurface ? '#FAF7F0' : '#3B2B23';
+    const isMinimal = textTheme === 'minimal-luxe';
+    return [
+      {
+        id: 'handle',
+        label: '@okcfrenchies',
+        visible: true,
+        text: '@okcfrenchies',
+        x: 540,
+        y: isMinimal ? 110 : 146,
+        fontSize: 21,
+        pillWidth: 260,
+        padY: 8,
+        pill: baseNone,
+        textColor: accentColor,
+        font: 'sans'
+      },
+      {
+        id: 'badge',
+        label: 'Top Badge',
+        visible: true,
+        text: item.badge,
+        x: 540,
+        y: centerY - 265,
+        fontSize: 23,
+        pillWidth: 640,
+        padY: 10,
+        pill: isMinimal ? baseNone : badgePill,
+        textColor: isMinimal ? '#D46A4E' : undefined,
+        font: 'sans'
+      },
+      {
+        id: 'headline',
+        label: 'Headline',
+        visible: true,
+        text: item.title,
+        x: 540,
+        y: centerY - 95,
+        fontSize: 60,
+        pillWidth: 820,
+        padY: 12,
+        pill: baseNone,
+        font: 'serif'
+      },
+      {
+        id: 'body',
+        label: 'Explanation Box',
+        visible: true,
+        text: item.body,
+        x: 540,
+        y: centerY + 135,
+        fontSize: 31,
+        pillWidth: 790,
+        padY: 18,
+        pill: baseNone,
+        textColor: subColor,
+        font: isMinimal ? 'serif-italic' : 'sans'
+      },
+      {
+        id: 'footer',
+        label: 'Bottom Callout',
+        visible: true,
+        text: item.footer,
+        x: 540,
+        y: canvasH - (isMinimal ? 115 : 155),
+        fontSize: 21,
+        pillWidth: 720,
+        padY: 10,
+        pill: baseNone,
+        textColor: accentColor,
+        font: 'sans'
+      }
+    ];
+  }
+
+  if (textTheme === 'split-quote') {
+    return [
+      {
+        id: 'handle',
+        label: '@okcfrenchies',
+        visible: true,
+        text: '@okcfrenchies',
+        x: 540,
+        y: 112,
+        fontSize: 21,
+        pillWidth: 260,
+        padY: 8,
+        pill: 'none-light',
+        textColor: '#F4D37E',
+        font: 'sans'
+      },
+      {
+        id: 'badge',
+        label: 'Top Badge',
+        visible: true,
+        text: item.badge,
+        x: 540,
+        y: 205,
+        fontSize: 23,
+        pillWidth: 560,
+        padY: 12,
+        pill: 'gold',
+        font: 'sans'
+      },
+      {
+        id: 'headline',
+        label: 'Headline',
+        visible: true,
+        text: item.title,
+        x: 540,
+        y: Math.round(canvasH * 0.31),
+        fontSize: 54,
+        pillWidth: 840,
+        padY: 12,
+        pill: 'none-light',
+        textColor: '#FFFFFF',
+        font: 'serif'
+      },
+      {
+        id: 'body',
+        label: 'Explanation Box',
+        visible: true,
+        text: item.body,
+        x: 540,
+        y: Math.round(canvasH * 0.64),
+        fontSize: 30,
+        pillWidth: 800,
+        padY: 22,
+        pill: baseNone,
+        font: 'sans'
+      },
+      {
+        id: 'footer',
+        label: 'Bottom Callout',
+        visible: true,
+        text: item.footer,
+        x: 540,
+        y: canvasH - 135,
+        fontSize: 21,
+        pillWidth: 680,
+        padY: 12,
+        pill: footerPill,
+        font: 'sans'
+      }
+    ];
+  }
+
+  if (textTheme === 'ribbon-banner') {
+    return [
+      {
+        id: 'badge',
+        label: 'Top Badge',
+        visible: true,
+        text: item.badge,
+        x: 540,
+        y: 132,
+        fontSize: 24,
+        pillWidth: 620,
+        padY: 13,
+        pill: 'gold',
+        font: 'sans'
+      },
+      {
+        id: 'handle',
+        label: '@okcfrenchies',
+        visible: true,
+        text: '@okcfrenchies',
+        x: 540,
+        y: 235,
+        fontSize: 21,
+        pillWidth: 260,
+        padY: 8,
+        pill: baseNone,
+        font: 'sans'
+      },
+      {
+        id: 'headline',
+        label: 'Headline',
+        visible: true,
+        text: item.title,
+        x: 540,
+        y: centerY - 95,
+        fontSize: 56,
+        pillWidth: 820,
+        padY: 14,
+        pill: baseNone,
+        font: 'serif'
+      },
+      {
+        id: 'body',
+        label: 'Explanation Box',
+        visible: true,
+        text: item.body,
+        x: 540,
+        y: centerY + 135,
+        fontSize: 29,
+        pillWidth: 800,
+        padY: 26,
+        pill: bodyPill,
+        font: 'sans'
+      },
+      {
+        id: 'footer',
+        label: 'Bottom Callout',
+        visible: true,
+        text: item.footer,
+        x: 540,
+        y: canvasH - 135,
+        fontSize: 22,
+        pillWidth: 680,
+        padY: 13,
+        pill: footerPill,
+        font: 'sans'
+      }
+    ];
+  }
+
+  // 'arch-crest' & 'cameo-medallion'
+  const isCameo = textTheme === 'cameo-medallion';
   return [
     {
       id: 'badge',
@@ -469,10 +703,10 @@ export const buildTopicLayers = (
       visible: true,
       text: item.badge,
       x: 540,
-      y: centerY - 255,
-      fontSize: 24,
-      pillWidth: 540,
-      padY: 14,
+      y: centerY - (isCameo ? 235 : 255),
+      fontSize: 23,
+      pillWidth: isCameo ? 480 : 540,
+      padY: 13,
       pill: badgePill,
       font: 'sans'
     },
@@ -483,10 +717,10 @@ export const buildTopicLayers = (
       text: item.title,
       x: 540,
       y: centerY - 80,
-      fontSize: 56,
-      pillWidth: 820,
+      fontSize: isCameo ? 52 : 56,
+      pillWidth: isCameo ? 740 : 820,
       padY: 14,
-      pill: isDarkSurface ? 'none-light' : 'none-dark',
+      pill: baseNone,
       font: 'serif'
     },
     {
@@ -495,11 +729,11 @@ export const buildTopicLayers = (
       visible: true,
       text: item.body,
       x: 540,
-      y: centerY + 135,
-      fontSize: 30,
-      pillWidth: 810,
-      padY: 28,
-      pill: bodyPill,
+      y: centerY + 130,
+      fontSize: isCameo ? 28 : 30,
+      pillWidth: isCameo ? 730 : 810,
+      padY: isCameo ? 22 : 28,
+      pill: isCameo ? baseNone : bodyPill,
       font: 'sans'
     },
     {
@@ -508,10 +742,10 @@ export const buildTopicLayers = (
       visible: true,
       text: item.footer,
       x: 540,
-      y: canvasH - 135,
-      fontSize: 22,
-      pillWidth: 680,
-      padY: 14,
+      y: canvasH - (isCameo ? 185 : 135),
+      fontSize: 21,
+      pillWidth: isCameo ? 580 : 680,
+      padY: 13,
       pill: footerPill,
       font: 'sans'
     },
@@ -521,11 +755,11 @@ export const buildTopicLayers = (
       visible: true,
       text: '@okcfrenchies',
       x: 540,
-      y: 118,
-      fontSize: 22,
+      y: isCameo ? 185 : 118,
+      fontSize: 21,
       pillWidth: 250,
-      padY: 10,
-      pill: isDarkSurface ? 'none-light' : 'none-dark',
+      padY: 8,
+      pill: baseNone,
       font: 'sans'
     }
   ];

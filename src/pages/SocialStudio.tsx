@@ -17,6 +17,7 @@ import {
   STANDARDS_AND_BLOG_ITEMS,
   SavedLayoutPreset,
   SlideState,
+  TextCardTheme,
   TextLayer,
   TopicCardItem,
   buildTopicCaption,
@@ -46,10 +47,10 @@ const PILL_PALETTE: Record<
 > = {
   white: { label: 'Crisp White', shortLabel: 'White', swatch: '#FFFFFF', bg: '#FFFFFF', text: '#1C2621', border: '#EAE5D9', hasBg: true, shadow: true },
   cream: { label: 'Botanical Cream', shortLabel: 'Cream', swatch: '#F6F4EE', bg: '#F6F4EE', text: '#1C2621', border: '#E2DCCD', hasBg: true, shadow: true },
-  oat: { label: 'Warm Oat Latte', shortLabel: 'Oat Latte', swatch: '#E8DEC8', bg: '#E8DEC8', text: '#1C2621', border: '#D5C7B0', hasBg: true, shadow: true },
-  champagne: { label: 'Sunlit Champagne', shortLabel: 'Champagne', swatch: '#EFE2C6', bg: '#EFE2C6', text: '#1C2621', border: '#E2CFA8', hasBg: true, shadow: true },
+  oat: { label: 'Lilac Taupe', shortLabel: 'Lilac Taupe', swatch: '#B59E99', bg: '#B59E99', text: '#1C2621', border: '#967F7A', hasBg: true, shadow: true },
+  champagne: { label: 'French Slate', shortLabel: 'Slate Blue', swatch: '#5A7385', bg: '#5A7385', text: '#FFFFFF', border: '#465C6C', hasBg: true, shadow: true },
   gold: { label: 'Warm Gold', shortLabel: 'Gold', swatch: '#F4D37E', bg: '#F4D37E', text: '#1C2621', border: '#E5C165', hasBg: true, shadow: true },
-  'sage-mist': { label: 'Sage Mist', shortLabel: 'Sage Mist', swatch: '#CFE0D6', bg: '#CFE0D6', text: '#1C2621', border: '#B8D2C3', hasBg: true, shadow: true },
+  'sage-mist': { label: 'Olive Sage', shortLabel: 'Olive Sage', swatch: '#8B9D83', bg: '#8B9D83', text: '#1C2621', border: '#6E8067', hasBg: true, shadow: true },
   sage: { label: 'Deep Forest', shortLabel: 'Forest', swatch: '#2E5A44', bg: '#2E5A44', text: '#FFFFFF', border: '#2E5A44', hasBg: true, shadow: true },
   mocha: { label: 'Espresso Mocha', shortLabel: 'Mocha', swatch: '#3B2B23', bg: '#3B2B23', text: '#F4D37E', border: '#5A4337', hasBg: true, shadow: true },
   charcoal: { label: 'Charcoal Ink', shortLabel: 'Charcoal', swatch: '#1C2621', bg: '#1C2621', text: '#F6F4EE', border: '#34443C', hasBg: true, shadow: true },
@@ -74,11 +75,11 @@ const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
   { value: '', label: 'Auto', hex: 'linear-gradient(135deg,#1C2621 50%,#F4D37E 50%)' },
   { value: '#FFFFFF', label: 'White', hex: '#FFFFFF' },
   { value: '#F6F4EE', label: 'Cream', hex: '#F6F4EE' },
-  { value: '#E8DEC8', label: 'Oat Latte', hex: '#E8DEC8' },
-  { value: '#EFE2C6', label: 'Champagne', hex: '#EFE2C6' },
   { value: '#F4D37E', label: 'Gold', hex: '#F4D37E' },
-  { value: '#CFE0D6', label: 'Sage Mist', hex: '#CFE0D6' },
+  { value: '#B59E99', label: 'Lilac Taupe', hex: '#B59E99' },
+  { value: '#8B9D83', label: 'Olive Sage', hex: '#8B9D83' },
   { value: '#2E5A44', label: 'Forest', hex: '#2E5A44' },
+  { value: '#5A7385', label: 'Slate Blue', hex: '#5A7385' },
   { value: '#3B2B23', label: 'Mocha', hex: '#3B2B23' },
   { value: '#1C2621', label: 'Charcoal', hex: '#1C2621' },
   { value: '#D46A4E', label: 'Terracotta', hex: '#D46A4E' },
@@ -99,6 +100,40 @@ const FRAME_PRESET_OPTIONS: { key: FramePreset; label: string }[] = [
   { key: 'no-photo', label: '📝 Text Card' }
 ];
 
+const TEXT_CARD_THEME_OPTIONS: { key: TextCardTheme; label: string }[] = [
+  { key: 'arch-crest', label: '🏛️ Boutique Arch' },
+  { key: 'magazine-border', label: '📰 Vogue Double-Border' },
+  { key: 'cameo-medallion', label: '🪞 Oval Medallion' },
+  { key: 'ribbon-banner', label: '🏷️ Top Header Card' },
+  { key: 'split-quote', label: '🌗 Split Two-Tone' },
+  { key: 'minimal-luxe', label: '✨ Minimal Full-Bleed' }
+];
+
+const applyColorAlpha = (color: string, opacity?: number): string => {
+  if (opacity === undefined || opacity >= 0.999) return color;
+  if (!color || color === 'transparent') return 'transparent';
+  const alpha = Math.max(0, Math.min(1, opacity));
+  const rgbaMatch = color.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+  if (rgbaMatch) {
+    const baseA = rgbaMatch[4] !== undefined ? parseFloat(rgbaMatch[4]) : 1;
+    return `rgba(${rgbaMatch[1]}, ${rgbaMatch[2]}, ${rgbaMatch[3]}, ${(baseA * alpha).toFixed(3)})`;
+  }
+  const hex = color.replace('#', '').trim();
+  if (hex.length === 3) {
+    const r = parseInt(hex[0] + hex[0], 16);
+    const g = parseInt(hex[1] + hex[1], 16);
+    const b = parseInt(hex[2] + hex[2], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+  }
+  if (hex.length === 6) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+  }
+  return color;
+};
+
 interface BrandRemixRecipe {
   name: string;
   preset: FramePreset;
@@ -106,110 +141,532 @@ interface BrandRemixRecipe {
   windowStyle: BgStyle;
   photoDim?: number;
   pills: Partial<Record<string, PillStyle>>;
-  showQuote: boolean;
-  showNutrition: boolean;
+  textColors?: Partial<Record<string, string>>;
+  visibleIds: string[];
 }
 
+// 28 Designer Shuffle Looks: Mixes Zero-Pill Editorial Typography, 1-Badge Whisper Hybrids, Magazine Full-Bleeds & Curated Pill Cards!
 const BRAND_REMIX_RECIPES: BrandRemixRecipe[] = [
+  // --- ZERO-PILL PURE EDITORIAL TYPOGRAPHY (Colored Serif & Sans Text!) ---
   {
-    name: 'Botanical Arch',
+    name: 'Vogue Botanical Editorial',
     preset: 'arch',
     bgStyle: 'sage-mist',
     windowStyle: 'cream-editorial',
-    pills: { breedAge: 'cream', coat: 'sage', nutrition: 'mocha', status: 'cream' },
-    showQuote: false,
-    showNutrition: true
+    pills: {
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#2E5A44',
+      breedAge: '#D46A4E',
+      coat: '#1C2621',
+      quote: '#3B2B23',
+      contact: '#2E5A44'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'quote', 'contact']
   },
   {
-    name: 'Emerald Cameo',
-    preset: 'cameo',
-    bgStyle: 'forest-luxe',
-    windowStyle: 'cream-editorial',
-    pills: { breedAge: 'gold', coat: 'sage', nutrition: 'mocha', status: 'sage' },
-    showQuote: true,
-    showNutrition: true
-  },
-  {
-    name: 'Mocha Polaroid',
+    name: 'Parisian White Polaroid',
     preset: 'editorial',
-    bgStyle: 'espresso-mocha',
-    windowStyle: 'oat-latte',
-    pills: { breedAge: 'mocha', coat: 'gold', nutrition: 'sage', status: 'mocha' },
-    showQuote: false,
-    showNutrition: true
-  },
-  {
-    name: 'Blush & Berry Arch',
-    preset: 'arch',
-    bgStyle: 'blush-botanical',
+    bgStyle: 'oat-latte',
     windowStyle: 'pure-white',
-    pills: { breedAge: 'berry', coat: 'blush', nutrition: 'sage', status: 'charcoal' },
-    showQuote: true,
-    showNutrition: false
+    pills: {
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#3B2B23',
+      breedAge: '#D46A4E',
+      coat: '#2E5A44',
+      quote: '#1C2621',
+      contact: '#3B2B23'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'quote', 'contact']
   },
   {
-    name: 'Magazine Cover',
-    preset: 'minimal',
-    bgStyle: 'charcoal-ink',
-    windowStyle: 'pure-white',
-    photoDim: 0.14,
-    pills: { breedAge: 'frosted', coat: 'gold', nutrition: 'mocha', status: 'white' },
-    showQuote: false,
-    showNutrition: true
-  },
-  {
-    name: 'Champagne Gallery',
-    preset: 'sage',
-    bgStyle: 'warm-sand',
-    windowStyle: 'pure-white',
-    pills: { breedAge: 'champagne', coat: 'mocha', nutrition: 'sage', status: 'gold' },
-    showQuote: false,
-    showNutrition: true
-  },
-  {
-    name: 'Terracotta Cameo',
-    preset: 'cameo',
-    bgStyle: 'terracotta-clay',
-    windowStyle: 'warm-sand',
-    pills: { breedAge: 'mocha', coat: 'terracotta', nutrition: 'sage', status: 'white' },
-    showQuote: false,
-    showNutrition: true
-  },
-  {
-    name: 'Forest Luxe Arch',
+    name: 'Midnight Emerald Monograph',
     preset: 'arch',
     bgStyle: 'cream-editorial',
     windowStyle: 'forest-luxe',
-    pills: { breedAge: 'gold', coat: 'sage-mist', nutrition: 'gold', status: 'frosted' },
-    showQuote: true,
-    showNutrition: true
+    pills: {
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light',
+      quote: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      name: '#F4D37E',
+      breedAge: '#B59E99',
+      coat: '#FFFFFF',
+      quote: '#F6F4EE',
+      contact: '#F4D37E'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'quote', 'contact']
   },
   {
-    name: 'Oat & Espresso Mat',
+    name: 'Dogue Magazine Cover',
+    preset: 'minimal',
+    bgStyle: 'charcoal-ink',
+    windowStyle: 'pure-white',
+    photoDim: 0.28,
+    pills: {
+      handle: 'none-light',
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light'
+    },
+    textColors: {
+      handle: '#F4D37E',
+      name: '#FFFFFF',
+      breedAge: '#F4D37E',
+      coat: '#F6F4EE'
+    },
+    visibleIds: ['handle', 'name', 'breedAge', 'coat']
+  },
+  {
+    name: 'Berry & Rose Couture',
+    preset: 'cameo',
+    bgStyle: 'blush-botanical',
+    windowStyle: 'pure-white',
+    pills: {
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#8C2F2B',
+      breedAge: '#D46A4E',
+      coat: '#1C2621',
+      quote: '#3B2B23',
+      contact: '#8C2F2B'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'quote', 'contact']
+  },
+  {
+    name: 'Espresso Gold Gallery',
     preset: 'sage',
     bgStyle: 'oat-latte',
     windowStyle: 'espresso-mocha',
-    pills: { breedAge: 'oat', coat: 'gold', nutrition: 'sage', status: 'cream' },
-    showQuote: false,
-    showNutrition: true
+    pills: {
+      handle: 'none-light',
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      handle: '#F6F4EE',
+      name: '#F4D37E',
+      breedAge: '#B59E99',
+      coat: '#FFFFFF',
+      contact: '#F6F4EE'
+    },
+    visibleIds: ['handle', 'name', 'breedAge', 'coat', 'contact']
   },
   {
-    name: 'Berry Velvet Cameo',
+    name: 'Charcoal Silk Cameo',
     preset: 'cameo',
-    bgStyle: 'berry-wine',
-    windowStyle: 'cream-editorial',
-    pills: { breedAge: 'blush', coat: 'berry', nutrition: 'charcoal', status: 'oat' },
-    showQuote: false,
-    showNutrition: true
+    bgStyle: 'sage-mist',
+    windowStyle: 'charcoal-ink',
+    pills: {
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light',
+      quote: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      name: '#F6F4EE',
+      breedAge: '#F4D37E',
+      coat: '#FFFFFF',
+      quote: '#B59E99',
+      contact: '#F4D37E'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'quote', 'contact']
   },
   {
-    name: 'Crisp Sage Polaroid',
-    preset: 'editorial',
+    name: 'French Slate Luxe Arch',
+    preset: 'arch',
+    bgStyle: 'cream-editorial',
+    windowStyle: 'warm-sand',
+    pills: {
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      name: '#F4D37E',
+      breedAge: '#F6F4EE',
+      coat: '#FFFFFF',
+      contact: '#F4D37E'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Clean Gallery Monograph',
+    preset: 'sage',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'cream-editorial',
+    pills: {
+      handle: 'none-dark',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark'
+    },
+    textColors: {
+      handle: '#2E5A44',
+      name: '#2E5A44',
+      breedAge: '#D46A4E',
+      coat: '#3B2B23',
+      quote: '#1C2621'
+    },
+    visibleIds: ['handle', 'name', 'breedAge', 'coat', 'quote']
+  },
+  {
+    name: 'Golden Hour Full-Bleed',
+    preset: 'minimal',
+    bgStyle: 'espresso-mocha',
+    windowStyle: 'pure-white',
+    photoDim: 0.3,
+    pills: {
+      status: 'none-light',
+      name: 'none-light',
+      quote: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      status: '#F4D37E',
+      name: '#F4D37E',
+      quote: '#FFFFFF',
+      contact: '#F6F4EE'
+    },
+    visibleIds: ['status', 'name', 'quote', 'contact']
+  },
+
+  // --- WHISPER HYBRIDS (1 Single Accent Pill + Colored Typography!) ---
+  {
+    name: 'Botanical Whisper Arch',
+    preset: 'arch',
     bgStyle: 'sage-mist',
     windowStyle: 'pure-white',
-    pills: { breedAge: 'sage', coat: 'sage-mist', nutrition: 'mocha', status: 'sage' },
-    showQuote: true,
-    showNutrition: false
+    pills: {
+      status: 'sage',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#2E5A44',
+      breedAge: '#3B2B23',
+      coat: '#D46A4E',
+      contact: '#2E5A44'
+    },
+    visibleIds: ['status', 'name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Slate & Gold Polaroid',
+    preset: 'editorial',
+    bgStyle: 'cream-editorial',
+    windowStyle: 'warm-sand',
+    pills: {
+      sex: 'gold',
+      name: 'none-light',
+      breedAge: 'none-light',
+      coat: 'none-light',
+      quote: 'none-light'
+    },
+    textColors: {
+      name: '#FFFFFF',
+      breedAge: '#F4D37E',
+      coat: '#F6F4EE',
+      quote: '#F6F4EE'
+    },
+    visibleIds: ['sex', 'name', 'breedAge', 'coat', 'quote']
+  },
+  {
+    name: 'Blush Cameo Whisper',
+    preset: 'cameo',
+    bgStyle: 'blush-botanical',
+    windowStyle: 'cream-editorial',
+    pills: {
+      status: 'berry',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#8C2F2B',
+      breedAge: '#3B2B23',
+      coat: '#2E5A44',
+      contact: '#D46A4E'
+    },
+    visibleIds: ['status', 'name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Frosted Masthead Cover',
+    preset: 'minimal',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'pure-white',
+    photoDim: 0.22,
+    pills: {
+      coat: 'frosted',
+      name: 'none-light',
+      breedAge: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      name: '#FFFFFF',
+      breedAge: '#F4D37E',
+      contact: '#F6F4EE'
+    },
+    visibleIds: ['coat', 'name', 'breedAge', 'contact']
+  },
+  {
+    name: 'Lilac Taupe Monograph',
+    preset: 'arch',
+    bgStyle: 'oat-latte',
+    windowStyle: 'cream-editorial',
+    pills: {
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'sage',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#3B2B23',
+      breedAge: '#2E5A44',
+      contact: '#3B2B23'
+    },
+    visibleIds: ['name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Terracotta Polaroid',
+    preset: 'editorial',
+    bgStyle: 'terracotta-clay',
+    windowStyle: 'pure-white',
+    pills: {
+      status: 'terracotta',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      contact: 'none-dark'
+    },
+    textColors: {
+      name: '#1C2621',
+      breedAge: '#D46A4E',
+      coat: '#2E5A44',
+      contact: '#3B2B23'
+    },
+    visibleIds: ['status', 'name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Emerald & Gold Cameo',
+    preset: 'cameo',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'cream-editorial',
+    pills: {
+      status: 'gold',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      quote: 'none-dark'
+    },
+    textColors: {
+      name: '#2E5A44',
+      breedAge: '#3B2B23',
+      coat: '#D46A4E',
+      quote: '#1C2621'
+    },
+    visibleIds: ['status', 'name', 'breedAge', 'coat', 'quote']
+  },
+  {
+    name: 'Olive Sage Minimal Mat',
+    preset: 'sage',
+    bgStyle: 'sage-mist',
+    windowStyle: 'pure-white',
+    pills: {
+      handle: 'none-dark',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'sage-mist',
+      contact: 'none-dark'
+    },
+    textColors: {
+      handle: '#2E5A44',
+      name: '#1C2621',
+      breedAge: '#2E5A44',
+      contact: '#D46A4E'
+    },
+    visibleIds: ['handle', 'name', 'breedAge', 'coat', 'contact']
+  },
+  {
+    name: 'Berry Velvet Whisper',
+    preset: 'arch',
+    bgStyle: 'berry-wine',
+    windowStyle: 'pure-white',
+    pills: {
+      sex: 'blush',
+      name: 'none-dark',
+      breedAge: 'none-dark',
+      coat: 'none-dark',
+      nutrition: 'none-dark'
+    },
+    textColors: {
+      name: '#8C2F2B',
+      breedAge: '#3B2B23',
+      coat: '#1C2621',
+      nutrition: '#2E5A44'
+    },
+    visibleIds: ['sex', 'name', 'breedAge', 'coat', 'nutrition']
+  },
+  {
+    name: 'Gold Badge Cover',
+    preset: 'minimal',
+    bgStyle: 'charcoal-ink',
+    windowStyle: 'pure-white',
+    photoDim: 0.24,
+    pills: {
+      status: 'gold',
+      name: 'none-light',
+      coat: 'none-light',
+      contact: 'none-light'
+    },
+    textColors: {
+      name: '#FFFFFF',
+      coat: '#F6F4EE',
+      contact: '#F4D37E'
+    },
+    visibleIds: ['status', 'name', 'coat', 'contact']
+  },
+
+  // --- CURATED BOUTIQUE PILL STACKS (2-3 Balanced Accent Pills, Zero Overlap!) ---
+  {
+    name: 'OKC Signature Arch',
+    preset: 'arch',
+    bgStyle: 'sage-mist',
+    windowStyle: 'cream-editorial',
+    pills: {
+      status: 'gold',
+      sex: 'blush',
+      name: 'none-dark',
+      coat: 'sage',
+      nutrition: 'mocha'
+    },
+    textColors: { name: '#2E5A44' },
+    visibleIds: ['status', 'sex', 'name', 'coat', 'nutrition']
+  },
+  {
+    name: 'Sire Emerald Cameo',
+    preset: 'cameo',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'oat-latte',
+    pills: {
+      status: 'gold',
+      name: 'none-dark',
+      coat: 'sage',
+      contact: 'mocha'
+    },
+    textColors: { name: '#1C2621' },
+    visibleIds: ['status', 'name', 'coat', 'contact']
+  },
+  {
+    name: 'Espresso & Lilac Polaroid',
+    preset: 'editorial',
+    bgStyle: 'espresso-mocha',
+    windowStyle: 'oat-latte',
+    pills: {
+      sex: 'mocha',
+      name: 'none-dark',
+      coat: 'white',
+      nutrition: 'sage'
+    },
+    textColors: { name: '#3B2B23' },
+    visibleIds: ['sex', 'name', 'coat', 'nutrition']
+  },
+  {
+    name: 'Slate & Cream Gallery',
+    preset: 'sage',
+    bgStyle: 'warm-sand',
+    windowStyle: 'cream-editorial',
+    pills: {
+      status: 'champagne',
+      name: 'none-dark',
+      coat: 'white',
+      contact: 'charcoal'
+    },
+    textColors: { name: '#1C2621' },
+    visibleIds: ['status', 'name', 'coat', 'contact']
+  },
+  {
+    name: 'Full-Bleed Raw Spotlight',
+    preset: 'minimal',
+    bgStyle: 'forest-luxe',
+    windowStyle: 'pure-white',
+    photoDim: 0.2,
+    pills: {
+      status: 'frosted',
+      name: 'none-light',
+      breedAge: 'cream',
+      nutrition: 'gold'
+    },
+    textColors: { name: '#FFFFFF' },
+    visibleIds: ['status', 'name', 'breedAge', 'nutrition']
+  },
+  {
+    name: 'Inverted Forest Luxe',
+    preset: 'arch',
+    bgStyle: 'cream-editorial',
+    windowStyle: 'forest-luxe',
+    pills: {
+      status: 'gold',
+      name: 'none-light',
+      coat: 'sage-mist',
+      contact: 'frosted'
+    },
+    textColors: { name: '#F4D37E' },
+    visibleIds: ['status', 'name', 'coat', 'contact']
+  },
+  {
+    name: 'Soft Rose & Forest Arch',
+    preset: 'arch',
+    bgStyle: 'blush-botanical',
+    windowStyle: 'pure-white',
+    pills: {
+      sex: 'blush',
+      name: 'none-dark',
+      coat: 'berry',
+      contact: 'sage'
+    },
+    textColors: { name: '#1C2621' },
+    visibleIds: ['sex', 'name', 'coat', 'contact']
+  },
+  {
+    name: 'Warm Gold & Charcoal Polaroid',
+    preset: 'editorial',
+    bgStyle: 'gold-luxe',
+    windowStyle: 'charcoal-ink',
+    pills: {
+      status: 'gold',
+      name: 'none-light',
+      coat: 'champagne',
+      contact: 'frosted'
+    },
+    textColors: { name: '#F4D37E' },
+    visibleIds: ['status', 'name', 'coat', 'contact']
   }
 ];
 
@@ -297,24 +754,34 @@ const getFrameGeometry = (
   canvasH: number,
   archH: number,
   bgStyle: BgStyle = 'cream-editorial',
-  windowStyle: BgStyle = 'pure-white'
+  windowStyle: BgStyle = 'pure-white',
+  textCardTheme: TextCardTheme = 'arch-crest'
 ) => {
   const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
   const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
 
   if (preset === 'no-photo') {
+    const isMinimalLuxe = textCardTheme === 'minimal-luxe';
+    const isCameo = textCardTheme === 'cameo-medallion';
+    const isMagazine = textCardTheme === 'magazine-border';
+    const isRibbon = textCardTheme === 'ribbon-banner';
+    const isSplit = textCardTheme === 'split-quote';
+    const padX = isCameo ? 64 : isMagazine ? 46 : 50;
+    const padY = isCameo ? 74 : isMagazine ? 46 : 50;
     return {
       outerBg1: outerTheme.bg1,
       outerBg2: outerTheme.bg2,
-      hasCard: true,
+      hasCard: !isMinimalLuxe,
       hasPhoto: false,
-      cardX: 50,
-      cardY: 50,
-      cardW: 1080 - 100,
-      cardH: canvasH - 100,
+      textCardTheme,
+      cardX: padX,
+      cardY: padY,
+      cardW: 1080 - padX * 2,
+      cardH: canvasH - padY * 2,
       cardBg: winTheme.cardBg,
       cardBorder: winTheme.border,
-      cardTopR: 220,
+      cardTopR: isCameo ? 999 : isMagazine || isRibbon || isSplit ? 38 : 220,
+      cardBottomR: isCameo ? 999 : 40,
       photoX: 0,
       photoY: 0,
       photoW: 0,
@@ -330,6 +797,7 @@ const getFrameGeometry = (
       outerBg2: outerTheme.bg2,
       hasCard: false,
       hasPhoto: true,
+      textCardTheme,
       cardX: 0,
       cardY: 0,
       cardW: 1080,
@@ -337,6 +805,7 @@ const getFrameGeometry = (
       cardBg: 'transparent',
       cardBorder: 'transparent',
       cardTopR: 0,
+      cardBottomR: 0,
       photoX: 0,
       photoY: 0,
       photoW: 1080,
@@ -358,6 +827,7 @@ const getFrameGeometry = (
     outerBg2: outerTheme.bg2,
     hasCard: true,
     hasPhoto: true,
+    textCardTheme,
     cardX: pad,
     cardY: pad,
     cardW,
@@ -365,6 +835,7 @@ const getFrameGeometry = (
     cardBg: winTheme.cardBg,
     cardBorder: winTheme.border,
     cardTopR: preset === 'arch' ? 230 : 42,
+    cardBottomR: 40,
     photoX,
     photoY,
     photoW,
@@ -372,6 +843,198 @@ const getFrameGeometry = (
     photoTopR: preset === 'arch' ? 210 : preset === 'cameo' ? 999 : 28,
     photoBottomR: preset === 'cameo' ? 999 : 26
   };
+};
+
+// Estimate rendered height of a TextLayer (accounting for multi-line wrapping & pill padding)
+const estimateLayerHeight = (layer: TextLayer): number => {
+  const pal = PILL_PALETTE[layer.pill] || PILL_PALETTE.cream;
+  const padX = pal.hasBg ? 26 : 8;
+  const innerW = Math.max(80, layer.pillWidth - padX * 2);
+  const avgCharW = layer.fontSize * (layer.font === 'sans' ? 0.56 : 0.52);
+  const rawLines = (layer.text || '').split('\n');
+  let lineCount = 0;
+  for (const rl of rawLines) {
+    const estW = rl.length * avgCharW;
+    lineCount += Math.max(1, Math.ceil(estW / innerW));
+  }
+  lineCount = Math.max(1, lineCount);
+  const padY = pal.hasBg ? layer.padY : Math.min(layer.padY, 6);
+  return lineCount * (layer.fontSize * 1.26) + padY * 2;
+};
+
+// Guarantee zero vertical/horizontal overlap & stay strictly inside [minTop, maxBottom]
+const resolveLayerOverlaps = (
+  layers: TextLayer[],
+  minTop: number,
+  maxBottom: number,
+  centerSoloPair = true
+): TextLayer[] => {
+  let working = layers.map((l) => {
+    // Clamp horizontal edges inside the 1080px canvas with safe margins
+    const clampedWidth = Math.min(l.pillWidth, 980);
+    const halfW = clampedWidth / 2;
+    const clampedX = Math.max(44 + halfW, Math.min(1080 - 44 - halfW, l.x));
+    return { ...l, pillWidth: clampedWidth, x: clampedX };
+  });
+
+  if (centerSoloPair) {
+    const statusVis = working.find((l) => l.id === 'status' && l.visible);
+    const sexVis = working.find((l) => l.id === 'sex' && l.visible);
+    if (statusVis && !sexVis) {
+      working = working.map((l) =>
+        l.id === 'status'
+          ? { ...l, x: 540, pillWidth: Math.max(l.pillWidth, Math.min(620, l.text.length * 14 + 70)) }
+          : l
+      );
+    } else if (sexVis && !statusVis) {
+      working = working.map((l) => (l.id === 'sex' ? { ...l, x: 540 } : l));
+    } else if (statusVis && sexVis && Math.abs(statusVis.y - sexVis.y) <= 18) {
+      // Ensure side-by-side status + sex pills never touch horizontally
+      working = working.map((l) => {
+        if (l.id === 'status') return { ...l, x: 350, pillWidth: Math.min(l.pillWidth, 400) };
+        if (l.id === 'sex') return { ...l, x: 730, pillWidth: Math.min(l.pillWidth, 240) };
+        return l;
+      });
+    }
+  }
+
+  const inZone = working.filter((l) => {
+    if (!l.visible) return false;
+    const h = estimateLayerHeight(l);
+    return l.y + h / 2 >= minTop - 24 && l.y - h / 2 <= maxBottom + 24;
+  });
+
+  if (inZone.length <= 1) {
+    if (inZone.length === 1) {
+      const only = inZone[0];
+      const h = estimateLayerHeight(only);
+      const cy = Math.max(minTop + h / 2, Math.min(maxBottom - h / 2, only.y));
+      return working.map((l) => (l.id === only.id ? { ...l, y: Math.round(cy) } : l));
+    }
+    return working;
+  }
+
+  type RowGroup = { ids: string[]; y: number; h: number; hasPill: boolean };
+  const sorted = [...inZone].sort((a, b) => a.y - b.y);
+  const buildRows = (src: TextLayer[]): RowGroup[] => {
+    const map = new Map(src.map((l) => [l.id, l]));
+    const rows: RowGroup[] = [];
+    for (const base of sorted) {
+      const item = map.get(base.id) || base;
+      const itemH = estimateLayerHeight(item);
+      const itemHasPill = Boolean(PILL_PALETTE[item.pill]?.hasBg);
+      const last = rows[rows.length - 1];
+      if (last && Math.abs(item.y - last.y) <= 18) {
+        const collidesX = last.ids.some((rid) => {
+          const other = map.get(rid)!;
+          const aL = item.x - item.pillWidth / 2;
+          const aR = item.x + item.pillWidth / 2;
+          const bL = other.x - other.pillWidth / 2;
+          const bR = other.x + other.pillWidth / 2;
+          return Math.min(aR, bR) - Math.max(aL, bL) > -16;
+        });
+        if (!collidesX) {
+          last.ids.push(item.id);
+          last.h = Math.max(last.h, itemH);
+          last.hasPill = last.hasPill || itemHasPill;
+          continue;
+        }
+      }
+      rows.push({ ids: [item.id], y: item.y, h: itemH, hasPill: itemHasPill });
+    }
+    return rows;
+  };
+
+  let rows = buildRows(working);
+  const availH = maxBottom - minTop;
+  const calcMinNeeded = (rs: RowGroup[], gapScale = 1) => {
+    let sum = 0;
+    for (let i = 0; i < rs.length; i++) {
+      sum += rs[i].h;
+      if (i > 0) {
+        const baseGap = rs[i].hasPill || rs[i - 1].hasPill ? 12 : 7;
+        sum += Math.max(4, Math.round(baseGap * gapScale));
+      }
+    }
+    return sum;
+  };
+
+  // If the stack is taller than the available zone, gently compact fontSize & padY so nothing clips or collides
+  let gapScale = 1;
+  if (calcMinNeeded(rows, 1) > availH) {
+    gapScale = 0.65;
+    const needed = calcMinNeeded(rows, gapScale);
+    if (needed > availH) {
+      const shrink = Math.max(0.76, availH / needed);
+      const zoneIds = new Set(inZone.map((z) => z.id));
+      working = working.map((l) => {
+        if (!zoneIds.has(l.id)) return l;
+        return {
+          ...l,
+          fontSize: Math.max(17, Math.round(l.fontSize * shrink)),
+          padY: Math.max(5, Math.round(l.padY * shrink))
+        };
+      });
+      rows = buildRows(working);
+    }
+  }
+
+  // Forward pass: push down any row whose top collides with minTop or previous row's bottom + gap
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (i === 0) {
+      if (row.y - row.h / 2 < minTop) {
+        row.y = minTop + row.h / 2;
+      }
+    } else {
+      const prev = rows[i - 1];
+      const minGap = Math.max(
+        4,
+        Math.round((row.hasPill || prev.hasPill ? 12 : 7) * gapScale)
+      );
+      const minCenterY = prev.y + prev.h / 2 + minGap + row.h / 2;
+      if (row.y < minCenterY) {
+        row.y = minCenterY;
+      }
+    }
+  }
+
+  // Backward pass: if bottom-most row exceeds maxBottom, pull rows upward while preserving gaps
+  const lastIdx = rows.length - 1;
+  if (rows[lastIdx].y + rows[lastIdx].h / 2 > maxBottom) {
+    rows[lastIdx].y = maxBottom - rows[lastIdx].h / 2;
+    for (let i = lastIdx - 1; i >= 0; i--) {
+      const next = rows[i + 1];
+      const row = rows[i];
+      const minGap = Math.max(
+        4,
+        Math.round((row.hasPill || next.hasPill ? 12 : 7) * gapScale)
+      );
+      const maxCenterY = next.y - next.h / 2 - minGap - row.h / 2;
+      if (row.y > maxCenterY) {
+        row.y = maxCenterY;
+      }
+    }
+    // Final top clamp if space was extremely tight
+    if (rows[0].y - rows[0].h / 2 < minTop) {
+      rows[0].y = minTop + rows[0].h / 2;
+      for (let i = 1; i < rows.length; i++) {
+        const prev = rows[i - 1];
+        const row = rows[i];
+        const minCenterY = prev.y + prev.h / 2 + 4 + row.h / 2;
+        if (row.y < minCenterY) row.y = minCenterY;
+      }
+    }
+  }
+
+  const rowYById = new Map<string, number>();
+  for (const r of rows) {
+    for (const id of r.ids) {
+      rowYById.set(id, Math.round(r.y));
+    }
+  }
+
+  return working.map((l) => (rowYById.has(l.id) ? { ...l, y: rowYById.get(l.id)! } : l));
 };
 
 const buildLayersForDog = (
@@ -384,7 +1047,7 @@ const buildLayersForDog = (
 ): TextLayer[] => {
   const outerTheme = BG_STYLES[bgStyle] || BG_STYLES['cream-editorial'];
   const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
-  const surfaceTheme = preset === 'no-photo' ? outerTheme : winTheme;
+  const surfaceTheme = winTheme;
   const baseTextPill: PillStyle = surfaceTheme.darkText ? 'none-dark' : 'none-light';
   const slug = dog.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const age = extractAge(dog);
@@ -421,53 +1084,14 @@ const buildLayersForDog = (
   if (preset === 'minimal' || preset === 'no-photo') {
     const topTextPill: PillStyle =
       preset === 'no-photo' ? baseTextPill : 'none-light';
-    return [
-      {
-        id: 'breedAge',
-        label: isStud ? 'Sire Banner' : 'Breed & Age Banner',
-        visible: true,
-        text: breedAgeStr,
-        x: 540,
-        y: canvasH - 190,
-        fontSize: 34,
-        pillWidth: 700,
-        padY: 18,
-        pill: 'cream',
-        font: 'sans'
-      },
-      {
-        id: 'sex',
-        label: isStud ? 'Sire Badge' : 'Sex Pill',
-        visible: true,
-        text: sexLabel,
-        x: 540,
-        y: canvasH - 102,
-        fontSize: 25,
-        pillWidth: isStud ? 290 : 230,
-        padY: 12,
-        pill: sexPillStyle,
-        font: 'sans'
-      },
-      {
-        id: 'coat',
-        label: 'Coat / DNA',
-        visible: isStud || preset === 'no-photo',
-        text: coatStr,
-        x: 540,
-        y: preset === 'no-photo' ? Math.round(canvasH * 0.48) : 95,
-        fontSize: 26,
-        pillWidth: 680,
-        padY: 13,
-        pill: 'frosted',
-        font: 'sans'
-      },
+    const rawMinimalLayers: TextLayer[] = [
       {
         id: 'handle',
         label: '@okcfrenchies',
         visible: preset === 'no-photo',
         text: '@okcfrenchies',
         x: 540,
-        y: 80,
+        y: 78,
         fontSize: 22,
         pillWidth: 260,
         padY: 10,
@@ -480,7 +1104,7 @@ const buildLayersForDog = (
         visible: preset === 'no-photo',
         text: statusStr,
         x: 540,
-        y: 165,
+        y: 152,
         fontSize: 24,
         pillWidth: 460,
         padY: 12,
@@ -488,17 +1112,17 @@ const buildLayersForDog = (
         font: 'sans'
       },
       {
-        id: 'name',
-        label: 'Meet Name',
-        visible: preset === 'no-photo',
-        text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
+        id: 'coat',
+        label: 'Coat / DNA',
+        visible: isStud || preset === 'no-photo',
+        text: coatStr,
         x: 540,
-        y: preset === 'no-photo' ? Math.round(canvasH * 0.34) : canvasH - 285,
-        fontSize: 64,
-        pillWidth: 720,
-        padY: 10,
-        pill: topTextPill,
-        font: 'serif'
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.48) : 230,
+        fontSize: 25,
+        pillWidth: 680,
+        padY: 12,
+        pill: 'frosted',
+        font: 'sans'
       },
       {
         id: 'dna',
@@ -506,7 +1130,7 @@ const buildLayersForDog = (
         visible: false,
         text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr || '6-Panel Cleared'}`,
         x: 540,
-        y: 235,
+        y: 305,
         fontSize: 22,
         pillWidth: 780,
         padY: 12,
@@ -519,12 +1143,51 @@ const buildLayersForDog = (
         visible: preset === 'no-photo',
         text: quoteStr,
         x: 540,
-        y: preset === 'no-photo' ? Math.round(canvasH * 0.62) : 325,
-        fontSize: 27,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.62) : 390,
+        fontSize: 26,
         pillWidth: 820,
-        padY: 16,
+        padY: 14,
         pill: 'cream',
         font: 'serif-italic'
+      },
+      {
+        id: 'name',
+        label: 'Meet Name',
+        visible: preset === 'no-photo',
+        text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
+        x: 540,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.34) : canvasH - 305,
+        fontSize: 64,
+        pillWidth: 740,
+        padY: 10,
+        pill: topTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: isStud ? 'Sire Banner' : 'Breed & Age Banner',
+        visible: true,
+        text: breedAgeStr,
+        x: 540,
+        y: canvasH - 210,
+        fontSize: 32,
+        pillWidth: 700,
+        padY: 16,
+        pill: 'cream',
+        font: 'sans'
+      },
+      {
+        id: 'sex',
+        label: isStud ? 'Sire Badge' : 'Sex Pill',
+        visible: true,
+        text: sexLabel,
+        x: 540,
+        y: canvasH - 128,
+        fontSize: 24,
+        pillWidth: isStud ? 290 : 230,
+        padY: 11,
+        pill: sexPillStyle,
+        font: 'sans'
       },
       {
         id: 'nutrition',
@@ -532,7 +1195,7 @@ const buildLayersForDog = (
         visible: false,
         text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
         x: 540,
-        y: canvasH - 95,
+        y: canvasH - 115,
         fontSize: 20,
         pillWidth: 660,
         padY: 11,
@@ -545,30 +1208,42 @@ const buildLayersForDog = (
         visible: false,
         text: 'Text 405.300.8482 • info@okcfrenchies.com',
         x: 540,
-        y: canvasH - 42,
-        fontSize: 22,
+        y: canvasH - 52,
+        fontSize: 21,
         pillWidth: 660,
-        padY: 12,
+        padY: 11,
         pill: 'sage',
         font: 'sans'
       }
     ];
+
+    if (preset === 'no-photo') {
+      return resolveLayerOverlaps(rawMinimalLayers, 68, canvasH - 68, false);
+    }
+    const topPass = resolveLayerOverlaps(
+      rawMinimalLayers,
+      46,
+      Math.round(canvasH * 0.44),
+      false
+    );
+    return resolveLayerOverlaps(topPass, Math.round(canvasH * 0.54), canvasH - 36, false);
   }
 
   const geom = getFrameGeometry(preset, canvasH, archH, bgStyle, windowStyle);
   const photoBottom = geom.photoY + geom.photoH;
+  const cardBottom = geom.cardY + geom.cardH;
 
-  return [
+  const framedLayers: TextLayer[] = [
     {
       id: 'status',
       label: 'Status Pill',
       visible: true,
       text: statusStr,
-      x: preset === 'sage' ? geom.photoX + 200 : 395,
-      y: preset === 'sage' ? geom.cardY + 46 : photoBottom,
-      fontSize: 21,
-      pillWidth: 380,
-      padY: 11,
+      x: preset === 'sage' ? geom.photoX + 195 : 350,
+      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
+      fontSize: 20,
+      pillWidth: preset === 'sage' ? 360 : 395,
+      padY: 10,
       pill: 'gold',
       font: 'sans'
     },
@@ -577,11 +1252,11 @@ const buildLayersForDog = (
       label: isStud ? 'Sire Badge' : 'Sex Pill',
       visible: true,
       text: sexLabel,
-      x: preset === 'sage' ? geom.photoX + 510 : 715,
-      y: preset === 'sage' ? geom.cardY + 46 : photoBottom,
-      fontSize: 21,
+      x: preset === 'sage' ? geom.photoX + 510 : 730,
+      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
+      fontSize: 20,
       pillWidth: 235,
-      padY: 11,
+      padY: 10,
       pill: sexPillStyle,
       font: 'sans'
     },
@@ -591,8 +1266,8 @@ const buildLayersForDog = (
       visible: preset === 'sage',
       text: '@okcfrenchies',
       x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
-      y: preset === 'sage' ? geom.cardY + 46 : 90,
-      fontSize: 22,
+      y: preset === 'sage' ? geom.cardY + 46 : 86,
+      fontSize: 21,
       pillWidth: 230,
       padY: 8,
       pill: baseTextPill,
@@ -604,8 +1279,8 @@ const buildLayersForDog = (
       visible: true,
       text: isStud ? `Sire: ${dog.name}` : `Meet ${dog.name}`,
       x: 540,
-      y: photoBottom + 70,
-      fontSize: 58,
+      y: preset === 'sage' ? photoBottom + 54 : photoBottom + 68,
+      fontSize: 56,
       pillWidth: 780,
       padY: 8,
       pill: baseTextPill,
@@ -617,7 +1292,7 @@ const buildLayersForDog = (
       visible: true,
       text: breedAgeStr.toUpperCase(),
       x: 540,
-      y: photoBottom + 126,
+      y: preset === 'sage' ? photoBottom + 114 : photoBottom + 128,
       fontSize: 22,
       pillWidth: 800,
       padY: 6,
@@ -630,8 +1305,8 @@ const buildLayersForDog = (
       visible: true,
       text: coatStr,
       x: 540,
-      y: photoBottom + 168,
-      fontSize: 25,
+      y: preset === 'sage' ? photoBottom + 162 : photoBottom + 174,
+      fontSize: 24,
       pillWidth: 840,
       padY: 8,
       pill: baseTextPill,
@@ -643,10 +1318,10 @@ const buildLayersForDog = (
       visible: Boolean(dnaStr),
       text: dnaStr ? `DNA: ${dnaStr}` : `DNA: ${coatStr}`,
       x: 540,
-      y: photoBottom + 218,
+      y: preset === 'sage' ? photoBottom + 212 : photoBottom + 224,
       fontSize: 20,
       pillWidth: 780,
-      padY: 10,
+      padY: 9,
       pill: 'cream',
       font: 'sans'
     },
@@ -656,8 +1331,8 @@ const buildLayersForDog = (
       visible: true,
       text: quoteStr,
       x: 540,
-      y: photoBottom + (dnaStr ? 276 : 230),
-      fontSize: 25,
+      y: photoBottom + (dnaStr ? 278 : 232),
+      fontSize: 24,
       pillWidth: 840,
       padY: 10,
       pill: baseTextPill,
@@ -669,10 +1344,10 @@ const buildLayersForDog = (
       visible: false,
       text: '🥩 Fed Raw + Bovine Plasma • RawAndPawCo.com',
       x: 540,
-      y: canvasH - geom.cardY - 102,
+      y: cardBottom - 104,
       fontSize: 20,
       pillWidth: 660,
-      padY: 11,
+      padY: 10,
       pill: 'mocha',
       font: 'sans'
     },
@@ -682,14 +1357,22 @@ const buildLayersForDog = (
       visible: true,
       text: 'Text 405.300.8482 • info@okcfrenchies.com',
       x: 540,
-      y: canvasH - geom.cardY - 46,
+      y: cardBottom - 46,
       fontSize: 21,
       pillWidth: 650,
-      padY: 12,
+      padY: 11,
       pill: surfaceTheme.darkText ? 'sage' : 'gold',
       font: 'sans'
     }
   ];
+
+  const footerTop = preset === 'sage' ? photoBottom + 14 : photoBottom - 22;
+  return resolveLayerOverlaps(
+    framedLayers,
+    footerTop,
+    cardBottom - 20,
+    preset !== 'sage'
+  );
 };
 
 const buildDefaultDogCaption = (dog: DogRecord | undefined) => {
@@ -923,6 +1606,7 @@ const SocialStudio: React.FC = () => {
 
   // Selection, Snap Guides & UI Tabs
   const [remixIdx, setRemixIdx] = useState<number>(0);
+  const remixDeckRef = useRef<number[]>([]);
   const [photoLocked, setPhotoLocked] = useState<boolean>(false);
   const [imgNat, setImgNat] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
@@ -1051,22 +1735,27 @@ const SocialStudio: React.FC = () => {
         (!useDefaultEntity && selectedDog?.category === 'Stud' ? selectedDog : allStuds[0]) ||
         defaultStudioDog;
       const archH = targetRatio === 'story' ? 1180 : targetRatio === 'square' ? 580 : 800;
-      const baseLayers = buildLayersForDog(stud, 'cameo', ch, archH, 'forest-luxe', 'oat-latte').map(
-        (l) => {
-          if (l.id === 'breedAge') return { ...l, pill: 'gold' as PillStyle };
-          if (l.id === 'coat') return { ...l, pill: 'sage' as PillStyle };
-          if (l.id === 'nutrition') return { ...l, pill: 'mocha' as PillStyle };
-          if (l.id === 'status') return { ...l, pill: 'mocha' as PillStyle };
-          return l;
-        }
-      );
+      const baseLayers = buildLayersForDog(
+        stud,
+        'cameo',
+        ch,
+        archH,
+        'forest-luxe',
+        'cream-editorial'
+      ).map((l) => {
+        if (l.id === 'breedAge') return { ...l, pill: 'gold' as PillStyle };
+        if (l.id === 'coat') return { ...l, pill: 'sage' as PillStyle };
+        if (l.id === 'nutrition') return { ...l, pill: 'mocha' as PillStyle };
+        if (l.id === 'status') return { ...l, pill: 'mocha' as PillStyle };
+        return l;
+      });
       return {
         dog: stud,
         slide: {
           id: slideId,
           preset: 'cameo',
           bgStyle: 'forest-luxe',
-          windowStyle: 'oat-latte',
+          windowStyle: 'cream-editorial',
           dogId: stud.id,
           slideMode: 'studs',
           photoSrc: stud.image || '',
@@ -1089,6 +1778,7 @@ const SocialStudio: React.FC = () => {
         slide: {
           id: slideId,
           preset: 'no-photo',
+          textCardTheme: 'arch-crest',
           bgStyle: 'forest-luxe',
           windowStyle: 'cream-editorial',
           slideMode: 'glossary',
@@ -1099,7 +1789,7 @@ const SocialStudio: React.FC = () => {
           panY: 0,
           zoom: 1,
           archHeight: 800,
-          layers: buildTopicLayers(item, ch, 'cream-editorial', 'glossary')
+          layers: buildTopicLayers(item, ch, 'cream-editorial', 'glossary', 'arch-crest')
         }
       };
     }
@@ -1114,6 +1804,7 @@ const SocialStudio: React.FC = () => {
         slide: {
           id: slideId,
           preset: hasImg ? 'minimal' : 'no-photo',
+          textCardTheme: 'magazine-border',
           bgStyle: hasImg ? 'forest-luxe' : 'sage-mist',
           windowStyle: 'pure-white',
           slideMode: 'standards',
@@ -1128,13 +1819,14 @@ const SocialStudio: React.FC = () => {
             item,
             ch,
             hasImg ? 'forest-luxe' : 'pure-white',
-            'standards'
+            'standards',
+            hasImg ? 'arch-crest' : 'magazine-border'
           )
         }
       };
     }
 
-    // 'didyouknow' Default Template: Espresso Mocha + Warm Oat Latte Boutique Arch
+    // 'didyouknow' Default Template: Espresso Mocha + Botanical Cream Top Header Card
     const dykItem =
       DID_YOU_KNOW_ITEMS[(useDefaultEntity ? 0 : selectedDykIndex) % DID_YOU_KNOW_ITEMS.length] ||
       DID_YOU_KNOW_ITEMS[0];
@@ -1143,8 +1835,9 @@ const SocialStudio: React.FC = () => {
       slide: {
         id: slideId,
         preset: 'no-photo',
+        textCardTheme: 'ribbon-banner',
         bgStyle: 'espresso-mocha',
-        windowStyle: 'oat-latte',
+        windowStyle: 'cream-editorial',
         slideMode: 'didyouknow',
         topicId: dykItem.id,
         photoSrc: '',
@@ -1153,7 +1846,7 @@ const SocialStudio: React.FC = () => {
         panY: 0,
         zoom: 1,
         archHeight: 800,
-        layers: buildTopicLayers(dykItem, ch, 'oat-latte', 'didyouknow')
+        layers: buildTopicLayers(dykItem, ch, 'cream-editorial', 'didyouknow', 'ribbon-banner')
       }
     };
   };
@@ -1348,19 +2041,43 @@ const SocialStudio: React.FC = () => {
       (l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex'
     );
 
-    // If active slide already has a puppy layout and resetLayout is false, preserve 100% of positions, sizes, colors & visibility!
-    const nextLayers: TextLayer[] =
+    // If active slide already has a puppy layout and resetLayout is false, preserve 100% of colors & visibility while re-checking overlap if text wrapped differently!
+    const rawNextLayers: TextLayer[] =
       hasExistingDogLayers && !resetLayout
         ? activeSlide.layers.map((existingLayer) => {
             const freshMatch = freshDogLayers.find((fl) => fl.id === existingLayer.id);
             if (!freshMatch) return existingLayer; // Keep custom stickers/pills untouched!
+            const wasUnpilledSex =
+              existingLayer.id === 'sex' &&
+              (existingLayer.pill === 'none-dark' || existingLayer.pill === 'none-light');
             return {
               ...existingLayer,
               text: freshMatch.text,
-              pill: existingLayer.id === 'sex' ? freshMatch.pill : existingLayer.pill
+              pill:
+                existingLayer.id === 'sex' && !wasUnpilledSex
+                  ? freshMatch.pill
+                  : existingLayer.pill
             };
           })
         : freshDogLayers;
+
+    let nextLayers = rawNextLayers;
+    if (hasExistingDogLayers && !resetLayout) {
+      if (pr === 'minimal') {
+        const topPass = resolveLayerOverlaps(rawNextLayers, 46, Math.round(ch * 0.44), false);
+        nextLayers = resolveLayerOverlaps(topPass, Math.round(ch * 0.54), ch - 36, false);
+      } else if (pr !== 'no-photo') {
+        const g = getFrameGeometry(pr, ch, currentArch, currentBg, currentWin);
+        const pBottom = g.photoY + g.photoH;
+        const cBottom = g.cardY + g.cardH;
+        nextLayers = resolveLayerOverlaps(
+          rawNextLayers,
+          pr === 'sage' ? pBottom + 14 : pBottom - 20,
+          cBottom - 20,
+          pr !== 'sage'
+        );
+      }
+    }
 
     updateActiveSlide(
       {
@@ -1401,7 +2118,7 @@ const SocialStudio: React.FC = () => {
           : 'sage-mist';
     const defaultWinForMode: BgStyle =
       contentMode === 'didyouknow'
-        ? 'oat-latte'
+        ? 'cream-editorial'
         : contentMode === 'glossary'
           ? 'cream-editorial'
           : 'pure-white';
@@ -1421,9 +2138,20 @@ const SocialStudio: React.FC = () => {
       ? activeSlide.windowStyle || defaultWinForMode
       : defaultWinForMode;
 
+    const defaultTextThemeForMode: TextCardTheme =
+      contentMode === 'didyouknow'
+        ? 'ribbon-banner'
+        : contentMode === 'standards'
+          ? 'magazine-border'
+          : 'arch-crest';
+    const chosenTextTheme: TextCardTheme = keepExistingTopicColors
+      ? activeSlide.textCardTheme || defaultTextThemeForMode
+      : defaultTextThemeForMode;
+
     updateActiveSlide(
       {
         preset: hasImg ? 'minimal' : 'no-photo',
+        textCardTheme: chosenTextTheme,
         bgStyle: chosenBg,
         windowStyle: chosenWin,
         slideMode: contentMode,
@@ -1437,8 +2165,9 @@ const SocialStudio: React.FC = () => {
         layers: buildTopicLayers(
           item,
           ch,
-          hasImg ? chosenBg : chosenWin,
-          contentMode
+          hasImg ? chosenBg : chosenTextTheme === 'minimal-luxe' ? chosenBg : chosenWin,
+          contentMode,
+          hasImg ? 'arch-crest' : chosenTextTheme
         )
       },
       true
@@ -1558,12 +2287,96 @@ const SocialStudio: React.FC = () => {
     updateActiveSlide(
       {
         preset: nextPreset,
+        textCardTheme: activeSlide.textCardTheme || 'arch-crest',
         bgStyle: currentBg,
         windowStyle: currentWin,
         photoSrc: nextPreset === 'no-photo' ? activeSlide.photoSrc : fallbackPhoto,
         photoDim: nextPhotoDim,
         archHeight: defaultArch,
         layers: adjustedTopicLayers
+      },
+      true
+    );
+  };
+
+  // Switch Text Card Architecture Theme (Arch, Vogue Double-Border, Oval Medallion, Top Header, Split Two-Tone, Minimal Full-Bleed) WITHOUT losing text!
+  const handleSwitchTextCardTheme = (nextTextTheme: TextCardTheme) => {
+    const currentBg: BgStyle =
+      activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
+        ? activeSlide.bgStyle
+        : 'forest-luxe';
+    const currentWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'cream-editorial';
+    const effectiveSurface: BgStyle =
+      nextTextTheme === 'minimal-luxe' ? currentBg : currentWin;
+
+    const syntheticItem: TopicCardItem = {
+      id: activeSlide.topicId || 'custom',
+      badge: activeSlide.layers.find((l) => l.id === 'badge')?.text || '✨ OKC FRENCHIES',
+      title: activeSlide.layers.find((l) => l.id === 'headline' || l.id === 'title')?.text || '',
+      body: activeSlide.layers.find((l) => l.id === 'body')?.text || '',
+      footer: activeSlide.layers.find((l) => l.id === 'footer')?.text || '',
+      bgStyle: currentBg,
+      shareUrl: 'https://okcfrenchies.com'
+    };
+
+    const hasTopicStructure = activeSlide.layers.some(
+      (l) => l.id === 'headline' || l.id === 'body' || l.id === 'badge'
+    );
+
+    if (hasTopicStructure) {
+      const themedTemplate = buildTopicLayers(
+        syntheticItem,
+        canvasH,
+        effectiveSurface,
+        activeSlide.slideMode || contentMode,
+        nextTextTheme
+      );
+      const customExtras = activeSlide.layers.filter(
+        (el) => !themedTemplate.some((tl) => tl.id === el.id)
+      );
+      const merged = [
+        ...themedTemplate.map((tl) => {
+          const prev = activeSlide.layers.find((el) => el.id === tl.id);
+          if (!prev) return tl;
+          return {
+            ...tl,
+            visible: prev.visible,
+            text: prev.text,
+            pillOpacity: prev.pillOpacity
+          };
+        }),
+        ...customExtras
+      ];
+      const resolved = resolveLayerOverlaps(merged, 86, canvasH - 76, false);
+      updateActiveSlide(
+        {
+          preset: 'no-photo',
+          textCardTheme: nextTextTheme,
+          bgStyle: currentBg,
+          windowStyle: currentWin,
+          photoDim: 0,
+          layers: resolved
+        },
+        true
+      );
+      return;
+    }
+
+    // If used on a puppy text-only card, simply switch the decorative card shape & contrast
+    const dark = BG_STYLES[effectiveSurface].darkText;
+    const adjusted = activeSlide.layers.map((l) => {
+      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
+      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      return l;
+    });
+    updateActiveSlide(
+      {
+        preset: 'no-photo',
+        textCardTheme: nextTextTheme,
+        layers: adjusted
       },
       true
     );
@@ -1590,12 +2403,29 @@ const SocialStudio: React.FC = () => {
       activeSlide.bgStyle && BG_STYLES[activeSlide.bgStyle]
         ? activeSlide.bgStyle
         : 'cream-editorial';
+    const prevWin: BgStyle =
+      activeSlide.windowStyle && BG_STYLES[activeSlide.windowStyle]
+        ? activeSlide.windowStyle
+        : 'pure-white';
+    const prevDark = BG_STYLES[prevWin].darkText;
     const dark = BG_STYLES[nextWin].darkText;
     const adjustUnpilledContrast = activeSlide.preset !== 'minimal';
     const updatedLayers = adjustUnpilledContrast
       ? activeSlide.layers.map((l) => {
-          if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
-          if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+          if (l.pill === 'none-dark' && !dark) {
+            return {
+              ...l,
+              pill: 'none-light' as PillStyle,
+              textColor: prevDark !== dark ? undefined : l.textColor
+            };
+          }
+          if (l.pill === 'none-light' && dark) {
+            return {
+              ...l,
+              pill: 'none-dark' as PillStyle,
+              textColor: prevDark !== dark ? undefined : l.textColor
+            };
+          }
           return l;
         })
       : activeSlide.layers;
@@ -1621,18 +2451,40 @@ const SocialStudio: React.FC = () => {
         : 'pure-white';
     const nextWin = currentBg;
     const nextBg = currentWin;
+    const prevDark = BG_STYLES[currentWin].darkText;
     const dark = BG_STYLES[nextWin].darkText;
     const updatedLayers = activeSlide.layers.map((l) => {
-      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
-      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+      if (l.pill === 'none-dark' && !dark) {
+        return {
+          ...l,
+          pill: 'none-light' as PillStyle,
+          textColor: prevDark !== dark ? undefined : l.textColor
+        };
+      }
+      if (l.pill === 'none-light' && dark) {
+        return {
+          ...l,
+          pill: 'none-dark' as PillStyle,
+          textColor: prevDark !== dark ? undefined : l.textColor
+        };
+      }
       return l;
     });
     updateActiveSlide({ bgStyle: nextBg, windowStyle: nextWin, layers: updatedLayers }, true);
   };
 
-  // Canva-Style 1-Tap Brand Kit Shuffle (Mix & Match Frame, Outer/Inner Colors, Pills & Optional Photo!)
+  // Canva-Style 1-Tap Brand Kit Shuffle (Mix & Match Frame, Outer/Inner Colors, Zero-Pill Colored Text & Pills!)
   const handleShuffleBrandLook = (alsoRotatePhoto = false) => {
-    const nextIdx = (remixIdx + 1) % BRAND_REMIX_RECIPES.length;
+    // Draw from a shuffled non-repeating deck so every tap mixes Zero-Pill Editorial, Whisper Hybrid & Pill looks!
+    if (remixDeckRef.current.length === 0) {
+      const indices = BRAND_REMIX_RECIPES.map((_, idx) => idx).filter((idx) => idx !== remixIdx);
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      remixDeckRef.current = indices;
+    }
+    const nextIdx = remixDeckRef.current.pop() ?? (remixIdx + 1) % BRAND_REMIX_RECIPES.length;
     setRemixIdx(nextIdx);
     const recipe = BRAND_REMIX_RECIPES[nextIdx];
 
@@ -1656,14 +2508,20 @@ const SocialStudio: React.FC = () => {
       activeSlide.layers.some((l) => l.id === 'breedAge' || l.id === 'name' || l.id === 'sex');
 
     if (isDogSlide && selectedDog) {
-      const defaultArch =
+      const visibleCount = recipe.visibleIds.length;
+      const baseArch =
         ratio === 'story'
-          ? 1180
+          ? 1160
           : ratio === 'square'
-            ? 580
+            ? 540
             : recipe.preset === 'sage'
-              ? 740
-              : 800;
+              ? 710
+              : 760;
+      // Give taller footer breathing room when 6+ fields are shown on framed cards
+      const defaultArch =
+        recipe.preset === 'minimal'
+          ? baseArch
+          : Math.max(430, baseArch - Math.max(0, visibleCount - 5) * 38);
 
       const freshLayers = buildLayersForDog(
         selectedDog,
@@ -1678,23 +2536,61 @@ const SocialStudio: React.FC = () => {
         (el) => !freshLayers.some((fl) => fl.id === el.id)
       );
 
-      const remixedLayers: TextLayer[] = [
-        ...freshLayers.map((fl) => {
-          const prev = activeSlide.layers.find((el) => el.id === fl.id);
-          const pillOverride = recipe.pills[fl.id];
-          let visible = fl.visible;
-          if (fl.id === 'quote') visible = recipe.showQuote && Boolean(fl.text.trim());
-          if (fl.id === 'nutrition') visible = recipe.showNutrition;
-          return {
-            ...fl,
-            visible,
-            text: prev?.text || fl.text,
-            pill: pillOverride || fl.pill,
-            textColor: undefined
-          };
-        }),
-        ...customLayers
-      ];
+      const isStud = selectedDog.category === 'Stud';
+      const isFemale = (selectedDog.gender || '').toLowerCase() === 'female';
+
+      const mappedStandardLayers: TextLayer[] = freshLayers.map((fl) => {
+        const prev = activeSlide.layers.find((el) => el.id === fl.id);
+        const textVal = prev?.text || fl.text;
+        let pillChoice: PillStyle = recipe.pills[fl.id] || fl.pill;
+        // Keep sex badge gender-smart when a recipe picks blush on a male puppy or stud
+        if (fl.id === 'sex' && pillChoice === 'blush' && !isFemale) {
+          pillChoice = isStud ? 'gold' : 'sage';
+        }
+        const visible = recipe.visibleIds.includes(fl.id) && Boolean(textVal.trim());
+        return {
+          ...fl,
+          visible,
+          text: textVal,
+          pill: pillChoice,
+          textColor: recipe.textColors?.[fl.id]
+        };
+      });
+
+      const combinedLayers = [...mappedStandardLayers, ...customLayers];
+      let resolvedLayers: TextLayer[];
+
+      if (recipe.preset === 'minimal') {
+        const topResolved = resolveLayerOverlaps(
+          combinedLayers,
+          46,
+          Math.round(canvasH * 0.44),
+          false
+        );
+        resolvedLayers = resolveLayerOverlaps(
+          topResolved,
+          Math.round(canvasH * 0.54),
+          canvasH - 36,
+          false
+        );
+      } else {
+        const geom = getFrameGeometry(
+          recipe.preset,
+          canvasH,
+          defaultArch,
+          recipe.bgStyle,
+          recipe.windowStyle
+        );
+        const photoBottom = geom.photoY + geom.photoH;
+        const cardBottom = geom.cardY + geom.cardH;
+        const footerTop = recipe.preset === 'sage' ? photoBottom + 14 : photoBottom - 20;
+        resolvedLayers = resolveLayerOverlaps(
+          combinedLayers,
+          footerTop,
+          cardBottom - 20,
+          recipe.preset !== 'sage'
+        );
+      }
 
       updateActiveSlide(
         {
@@ -1706,7 +2602,7 @@ const SocialStudio: React.FC = () => {
           photoSrc: nextPhotoSrc,
           photoDim: recipe.photoDim ?? 0,
           archHeight: defaultArch,
-          layers: remixedLayers
+          layers: resolvedLayers
         },
         true
       );
@@ -1715,34 +2611,225 @@ const SocialStudio: React.FC = () => {
       return;
     }
 
-    // Topic / AI card shuffle (cycles outer bgStyle + inner windowStyle + pill contrast while keeping 100% of text!)
+    // Topic / AI card shuffle: mixes Text Card Architectures + Zero-Pill Editorial, 1-Badge Whisper & Boutique Pill styles!
     const overPhoto = activeSlide.preset !== 'no-photo';
-    const dark = overPhoto ? false : BG_STYLES[recipe.windowStyle].darkText;
-    const topicLayers = activeSlide.layers.map((l) => {
-      if (l.pill === 'none-dark' && !dark) return { ...l, pill: 'none-light' as PillStyle };
-      if (l.pill === 'none-light' && dark) return { ...l, pill: 'none-dark' as PillStyle };
+    const textThemePool: TextCardTheme[] = [
+      'arch-crest',
+      'magazine-border',
+      'cameo-medallion',
+      'ribbon-banner',
+      'split-quote',
+      'minimal-luxe'
+    ];
+    const nextTextTheme: TextCardTheme = overPhoto
+      ? activeSlide.textCardTheme || 'arch-crest'
+      : textThemePool[nextIdx % textThemePool.length];
+
+    const surfaceStyle: BgStyle =
+      !overPhoto && nextTextTheme === 'minimal-luxe' ? recipe.bgStyle : recipe.windowStyle;
+    const dark = overPhoto ? false : BG_STYLES[surfaceStyle].darkText;
+    const baseNone: PillStyle = dark ? 'none-dark' : 'none-light';
+
+    // If this is a 'no-photo' Topic/AI card with standard topic layers, rebuild clean geometry for the chosen TextCardTheme while keeping 100% of text!
+    const hasTopicStructure =
+      !overPhoto &&
+      activeSlide.layers.some(
+        (l) => l.id === 'headline' || l.id === 'body' || l.id === 'badge'
+      );
+
+    if (hasTopicStructure) {
+      const syntheticItem: TopicCardItem = {
+        id: activeSlide.topicId || 'custom',
+        badge: activeSlide.layers.find((l) => l.id === 'badge')?.text || '✨ OKC FRENCHIES',
+        title: activeSlide.layers.find((l) => l.id === 'headline' || l.id === 'title')?.text || '',
+        body: activeSlide.layers.find((l) => l.id === 'body')?.text || '',
+        footer: activeSlide.layers.find((l) => l.id === 'footer')?.text || '',
+        bgStyle: recipe.bgStyle,
+        shareUrl: 'https://okcfrenchies.com'
+      };
+      const themedBase = buildTopicLayers(
+        syntheticItem,
+        canvasH,
+        surfaceStyle,
+        activeSlide.slideMode || contentMode,
+        nextTextTheme
+      );
+      const customExtras = activeSlide.layers.filter(
+        (el) => !themedBase.some((tl) => tl.id === el.id)
+      );
+
+      // Determine whether this recipe is a zero-pill editorial look, a 1-badge whisper look, or a pill look
+      const recipePillCount = Object.values(recipe.pills).filter(
+        (p) => p && PILL_PALETTE[p]?.hasBg
+      ).length;
+      const isZeroPillTopic =
+        recipePillCount === 0 ||
+        nextTextTheme === 'minimal-luxe' ||
+        nextTextTheme === 'magazine-border';
+      const isWhisperTopic = recipePillCount === 1 || nextTextTheme === 'cameo-medallion';
+
+      const primaryTextColor =
+        nextTextTheme === 'split-quote'
+          ? '#FFFFFF'
+          : recipe.textColors?.name || (dark ? '#1C2621' : '#FFFFFF');
+      const accentTextColor =
+        recipe.textColors?.status ||
+        recipe.textColors?.breedAge ||
+        (dark ? '#2E5A44' : '#F4D37E');
+      const secondaryTextColor =
+        recipe.textColors?.coat ||
+        recipe.textColors?.contact ||
+        (dark ? '#3B2B23' : '#FAF7F0');
+
+      const remixedTopic = [
+        ...themedBase.map((tl) => {
+          const prev = activeSlide.layers.find((el) => el.id === tl.id);
+          const visible = prev ? prev.visible : tl.visible;
+          const text = prev ? prev.text : tl.text;
+          if (tl.id === 'badge') {
+            if (nextTextTheme === 'ribbon-banner' || nextTextTheme === 'split-quote') {
+              return { ...tl, visible, text, pill: 'gold' as PillStyle, textColor: undefined };
+            }
+            if (isZeroPillTopic) {
+              return { ...tl, visible, text, pill: baseNone, textColor: accentTextColor };
+            }
+            return {
+              ...tl,
+              visible,
+              text,
+              pill: (recipe.pills.status || recipe.pills.breedAge || (dark ? 'sage' : 'gold')) as PillStyle,
+              textColor: undefined
+            };
+          }
+          if (tl.id === 'headline') {
+            if (nextTextTheme === 'split-quote') {
+              return { ...tl, visible, text, pill: 'none-light' as PillStyle, textColor: '#FFFFFF' };
+            }
+            return { ...tl, visible, text, pill: baseNone, textColor: primaryTextColor };
+          }
+          if (tl.id === 'body') {
+            if (isZeroPillTopic || isWhisperTopic || nextTextTheme === 'split-quote') {
+              return { ...tl, visible, text, pill: baseNone, textColor: secondaryTextColor };
+            }
+            return {
+              ...tl,
+              visible,
+              text,
+              pill: (dark ? 'cream' : 'frosted') as PillStyle,
+              textColor: undefined
+            };
+          }
+          if (tl.id === 'footer') {
+            if (isZeroPillTopic) {
+              return { ...tl, visible, text, pill: baseNone, textColor: accentTextColor };
+            }
+            return {
+              ...tl,
+              visible,
+              text,
+              pill: (recipe.pills.contact || recipe.pills.coat || (dark ? 'terracotta' : 'gold')) as PillStyle,
+              textColor: undefined
+            };
+          }
+          return { ...tl, visible, text };
+        }),
+        ...customExtras
+      ];
+
+      const resolvedTopicLayers = resolveLayerOverlaps(remixedTopic, 86, canvasH - 76, false);
+      updateActiveSlide(
+        {
+          textCardTheme: nextTextTheme,
+          bgStyle: recipe.bgStyle,
+          windowStyle: recipe.windowStyle,
+          layers: resolvedTopicLayers
+        },
+        true
+      );
+      return;
+    }
+
+    // Over-photo Topic / AI card shuffle
+    const recipePillCount = Object.values(recipe.pills).filter(
+      (p) => p && PILL_PALETTE[p]?.hasBg
+    ).length;
+    const isZeroPillTopic = recipePillCount === 0;
+    const isWhisperTopic = recipePillCount === 1;
+
+    const primaryTextColor = '#FFFFFF';
+    const accentTextColor = '#F4D37E';
+    const secondaryTextColor = '#FAF7F0';
+
+    const rawTopicLayers: TextLayer[] = activeSlide.layers.map((l) => {
       if (l.id.includes('badge') || l.id === 'tag') {
+        if (isZeroPillTopic) {
+          return {
+            ...l,
+            pill: 'none-light' as PillStyle,
+            textColor: accentTextColor
+          };
+        }
         return {
           ...l,
-          pill: (recipe.pills.breedAge || (dark ? 'sage' : 'gold')) as PillStyle
+          pill: (recipe.pills.status || recipe.pills.breedAge || 'gold') as PillStyle,
+          textColor: undefined
+        };
+      }
+      if (l.id === 'title' || l.id === 'headline') {
+        return {
+          ...l,
+          pill: 'none-light' as PillStyle,
+          textColor: primaryTextColor
         };
       }
       if (l.id === 'body') {
-        return { ...l, pill: (dark ? 'cream' : 'frosted') as PillStyle };
-      }
-      if (l.id === 'footer') {
+        if (isZeroPillTopic || isWhisperTopic) {
+          return {
+            ...l,
+            pill: 'none-light' as PillStyle,
+            textColor: secondaryTextColor
+          };
+        }
         return {
           ...l,
-          pill: (recipe.pills.coat || (dark ? 'terracotta' : 'gold')) as PillStyle
+          pill: 'frosted' as PillStyle,
+          pillOpacity: 0.78,
+          textColor: undefined
         };
+      }
+      if (l.id === 'footer') {
+        if (isZeroPillTopic || isWhisperTopic) {
+          return {
+            ...l,
+            pill: 'none-light' as PillStyle,
+            textColor: accentTextColor
+          };
+        }
+        return {
+          ...l,
+          pill: (recipe.pills.contact || recipe.pills.coat || 'gold') as PillStyle,
+          textColor: undefined
+        };
+      }
+      if (l.pill === 'none-dark' || l.pill === 'none-light') {
+        return { ...l, pill: 'none-light' as PillStyle, textColor: primaryTextColor };
       }
       return l;
     });
+
+    const resolvedTopicLayers = resolveLayerOverlaps(
+      rawTopicLayers,
+      88,
+      canvasH - 76,
+      false
+    );
+
     updateActiveSlide(
       {
         bgStyle: recipe.bgStyle,
         windowStyle: recipe.windowStyle,
-        layers: topicLayers
+        photoDim: Math.max(activeSlide.photoDim || 0.42, 0.38),
+        layers: resolvedTopicLayers
       },
       true
     );
@@ -2164,6 +3251,7 @@ const SocialStudio: React.FC = () => {
       id: `layout-${Date.now()}`,
       name,
       preset: activeSlide.preset,
+      textCardTheme: activeSlide.textCardTheme || 'arch-crest',
       bgStyle: activeSlide.bgStyle,
       windowStyle: activeSlide.windowStyle || 'pure-white',
       photoDim: activeSlide.photoDim,
@@ -2209,6 +3297,7 @@ const SocialStudio: React.FC = () => {
             ? 'blush'
             : 'sage'
           : sl.pill,
+      pillOpacity: sl.pillOpacity,
       font: sl.font,
       textColor: sl.textColor,
       text: freshTextMap.get(sl.id) || sl.sampleText || sl.label
@@ -2226,6 +3315,7 @@ const SocialStudio: React.FC = () => {
     updateActiveSlide(
       {
         preset: saved.preset,
+        textCardTheme: saved.textCardTheme || 'arch-crest',
         bgStyle: saved.bgStyle,
         windowStyle: saved.windowStyle || 'pure-white',
         photoDim: saved.photoDim,
@@ -2482,8 +3572,15 @@ const SocialStudio: React.FC = () => {
       const keepPhotoOverlay =
         activeSlide.slideMode === 'didyouknow' && activeSlide.preset !== 'no-photo' && Boolean(activeSlide.photoSrc);
       const targetPreset: FramePreset = keepPhotoOverlay ? activeSlide.preset : 'no-photo';
-      const targetWin: BgStyle = activeSlide.windowStyle || 'oat-latte';
-      const baseAiLayers = buildTopicLayers(generatedItem, canvasH, targetWin, 'didyouknow').map((l) => {
+      const targetTextTheme: TextCardTheme = activeSlide.textCardTheme || 'ribbon-banner';
+      const targetWin: BgStyle = activeSlide.windowStyle || 'cream-editorial';
+      const baseAiLayers = buildTopicLayers(
+        generatedItem,
+        canvasH,
+        targetTextTheme === 'minimal-luxe' ? chosenBg : targetWin,
+        'didyouknow',
+        keepPhotoOverlay ? 'arch-crest' : targetTextTheme
+      ).map((l) => {
         if (!keepPhotoOverlay) return l;
         if (l.pill === 'none-dark') return { ...l, pill: 'none-light' as PillStyle };
         if (l.id === 'body') return { ...l, pill: 'frosted' as PillStyle };
@@ -2493,6 +3590,7 @@ const SocialStudio: React.FC = () => {
       updateActiveSlide(
         {
           preset: targetPreset,
+          textCardTheme: targetTextTheme,
           bgStyle: chosenBg,
           windowStyle: targetWin,
           slideMode: 'didyouknow',
@@ -2538,12 +3636,14 @@ const SocialStudio: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
+    const tTheme: TextCardTheme = slide.textCardTheme || 'arch-crest';
     const geom = getFrameGeometry(
       slide.preset,
       canvasH,
       slide.archHeight,
       slide.bgStyle,
-      slide.windowStyle || 'pure-white'
+      slide.windowStyle || 'pure-white',
+      tTheme
     );
     const outerGrad = ctx.createLinearGradient(0, 0, 1080, canvasH);
     outerGrad.addColorStop(0, geom.outerBg1);
@@ -2564,8 +3664,8 @@ const SocialStudio: React.FC = () => {
         geom.cardH,
         geom.cardTopR,
         geom.cardTopR,
-        40,
-        40
+        geom.cardBottomR,
+        geom.cardBottomR
       );
       ctx.fillStyle = geom.cardBg;
       ctx.fill();
@@ -2579,8 +3679,8 @@ const SocialStudio: React.FC = () => {
         geom.cardH,
         geom.cardTopR,
         geom.cardTopR,
-        40,
-        40
+        geom.cardBottomR,
+        geom.cardBottomR
       );
       ctx.strokeStyle = geom.cardBorder;
       ctx.lineWidth = 2;
@@ -2589,11 +3689,64 @@ const SocialStudio: React.FC = () => {
 
     if (!geom.hasPhoto) {
       const winTheme = BG_STYLES[slide.windowStyle || 'cream-editorial'] || BG_STYLES['cream-editorial'];
+      const outerTheme = BG_STYLES[slide.bgStyle || 'forest-luxe'] || BG_STYLES['forest-luxe'];
+      const accentStroke = winTheme.darkText ? 'rgba(46,90,68,0.22)' : 'rgba(244,211,126,0.32)';
       ctx.save();
-      roundRectPath(ctx, 76, 76, 1080 - 152, canvasH - 152, 196, 196, 28, 28);
-      ctx.strokeStyle = winTheme.darkText ? 'rgba(46,90,68,0.18)' : 'rgba(244,211,126,0.28)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
+      if (tTheme === 'arch-crest') {
+        roundRectPath(ctx, 76, 76, 1080 - 152, canvasH - 152, 196, 196, 28, 28);
+        ctx.strokeStyle = accentStroke;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (tTheme === 'magazine-border') {
+        roundRectPath(ctx, 72, 72, 1080 - 144, canvasH - 144, 24, 24, 24, 24);
+        ctx.strokeStyle = accentStroke;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        roundRectPath(ctx, 88, 88, 1080 - 176, canvasH - 176, 18, 18, 18, 18);
+        ctx.strokeStyle = accentStroke;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      } else if (tTheme === 'cameo-medallion') {
+        roundRectPath(ctx, 90, 100, 1080 - 180, canvasH - 200, 999, 999, 999, 999);
+        ctx.strokeStyle = accentStroke;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (tTheme === 'ribbon-banner') {
+        ctx.save();
+        roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, 148, 38, 38, 0, 0);
+        ctx.fillStyle = outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(geom.cardX, geom.cardY + 148);
+        ctx.lineTo(geom.cardX + geom.cardW, geom.cardY + 148);
+        ctx.strokeStyle = '#F4D37E';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+      } else if (tTheme === 'split-quote') {
+        const splitH = Math.round(canvasH * 0.44) - geom.cardY;
+        ctx.save();
+        roundRectPath(ctx, geom.cardX, geom.cardY, geom.cardW, splitH, 38, 38, 0, 0);
+        ctx.fillStyle = outerTheme.darkText ? '#2E5A44' : outerTheme.bg1;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(geom.cardX + 90, geom.cardY + splitH);
+        ctx.lineTo(geom.cardX + geom.cardW - 90, geom.cardY + splitH);
+        ctx.strokeStyle = '#F4D37E';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+      } else if (tTheme === 'minimal-luxe') {
+        const lineStroke = outerTheme.darkText ? 'rgba(46,90,68,0.28)' : 'rgba(244,211,126,0.38)';
+        ctx.beginPath();
+        ctx.moveTo(160, 165);
+        ctx.lineTo(1080 - 160, 165);
+        ctx.moveTo(160, canvasH - 175);
+        ctx.lineTo(1080 - 160, canvasH - 175);
+        ctx.strokeStyle = lineStroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
       ctx.restore();
     } else {
       ctx.save();
@@ -2684,24 +3837,26 @@ const SocialStudio: React.FC = () => {
       const by = layer.y - boxH / 2;
       const r = textLines.length > 1 || layer.padY > 28 ? 32 : 999;
 
-      if (pal.hasBg) {
+      const pillOpacity = layer.pillOpacity !== undefined ? layer.pillOpacity : 1;
+      if (pal.hasBg && pillOpacity > 0.01) {
         ctx.save();
-        if (pal.shadow) {
-          ctx.shadowColor = 'rgba(0,0,0,0.16)';
+        if (pal.shadow && pillOpacity > 0.15) {
+          ctx.shadowColor = `rgba(0,0,0,${(0.16 * pillOpacity).toFixed(3)})`;
           ctx.shadowBlur = 22;
           ctx.shadowOffsetY = 8;
         }
         roundRectPath(ctx, bx, by, boxW, boxH, r, r, r, r);
-        ctx.fillStyle = pal.bg;
+        ctx.fillStyle = applyColorAlpha(pal.bg, pillOpacity);
         ctx.fill();
         ctx.restore();
 
         roundRectPath(ctx, bx, by, boxW, boxH, r, r, r, r);
-        ctx.strokeStyle = pal.border;
+        ctx.strokeStyle = applyColorAlpha(pal.border, Math.min(1, pillOpacity * 1.15));
         ctx.lineWidth = 2;
         ctx.stroke();
       } else if (
         layer.pill === 'none-light' ||
+        pillOpacity < 0.35 ||
         (!pal.hasBg && (layer.textColor === '#FFFFFF' || layer.textColor === '#F4D37E' || layer.textColor === '#F6F4EE'))
       ) {
         ctx.shadowColor = 'rgba(0,0,0,0.48)';
@@ -2775,7 +3930,8 @@ const SocialStudio: React.FC = () => {
     canvasH,
     activeSlide.archHeight,
     activeSlide.bgStyle,
-    activeSlide.windowStyle || 'pure-white'
+    activeSlide.windowStyle || 'pure-white',
+    activeSlide.textCardTheme || 'arch-crest'
   );
   const previewScale =
     geom.hasPhoto && imgNat.w > 0 && imgNat.h > 0
@@ -3123,79 +4279,101 @@ const SocialStudio: React.FC = () => {
                 </button>
               </div>
 
-              {/* Pill Background Swatches (Matches all 12 Background & Text Colors!) */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
-                <span className="text-[11px] font-extrabold text-[#3E4D45] shrink-0">
-                  Pill Color:
-                </span>
-                {(Object.entries(PILL_PALETTE) as [PillStyle, (typeof PILL_PALETTE)[PillStyle]][]).map(
-                  ([pKey, pMeta]) => {
-                    const isActive = selectedLayer.pill === pKey;
+              {/* Pill Background Swatches — Wrapped Grid (Zero Horizontal Scrollbar Blocking Taps!) */}
+              <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1">
+                <div className="text-[11px] font-extrabold text-[#3E4D45]">Pill Color:</div>
+                <div className="flex flex-wrap gap-1">
+                  {(Object.entries(PILL_PALETTE) as [PillStyle, (typeof PILL_PALETTE)[PillStyle]][]).map(
+                    ([pKey, pMeta]) => {
+                      const isActive = selectedLayer.pill === pKey;
+                      return (
+                        <button
+                          key={pKey}
+                          type="button"
+                          onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
+                          title={`Pill Color: ${pMeta.label}`}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
+                            isActive
+                              ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                              : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                            style={{
+                              background: pMeta.hasBg
+                                ? pMeta.swatch
+                                : pKey === 'none-dark'
+                                  ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
+                                  : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
+                            }}
+                          />
+                          <span>{pMeta.shortLabel}</span>
+                        </button>
+                      );
+                    }
+                  )}
+                </div>
+              </div>
+
+              {/* Text Color Swatches — Wrapped Grid (Works WITH or WITHOUT a Pill!) */}
+              <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1">
+                <div className="text-[11px] font-extrabold text-[#3E4D45]">Text Color:</div>
+                <div className="flex flex-wrap gap-1">
+                  {TEXT_COLOR_SWATCHES.map((sw) => {
+                    const isActive = (selectedLayer.textColor || '') === sw.value;
                     return (
                       <button
-                        key={pKey}
+                        key={sw.label}
                         type="button"
-                        onClick={() => updateLayer(selectedLayer.id, { pill: pKey }, true)}
-                        title={`Pill Color: ${pMeta.label}`}
-                        className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
+                        onClick={() =>
+                          updateLayer(
+                            selectedLayer.id,
+                            { textColor: sw.value || undefined },
+                            true
+                          )
+                        }
+                        title={`Text Color: ${sw.label}`}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] font-bold touch-manipulation cursor-pointer transition ${
                           isActive
                             ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45]'
+                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45] hover:bg-[#EFECE4]'
                         }`}
                       >
                         <span
                           className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                          style={{
-                            background: pMeta.hasBg
-                              ? pMeta.swatch
-                              : pKey === 'none-dark'
-                                ? 'repeating-linear-gradient(45deg,#fff,#fff 3px,#1C2621 3px,#1C2621 5px)'
-                                : 'repeating-linear-gradient(45deg,#1C2621,#1C2621 3px,#fff 3px,#fff 5px)'
-                          }}
+                          style={{ background: sw.hex }}
                         />
-                        <span>{pMeta.shortLabel}</span>
+                        <span>{sw.label}</span>
                       </button>
                     );
-                  }
-                )}
+                  })}
+                </div>
               </div>
 
-              {/* Text Color Swatches (Works WITH or WITHOUT a Pill!) */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
-                <span className="text-[11px] font-extrabold text-[#3E4D45] shrink-0">
-                  Text Color:
-                </span>
-                {TEXT_COLOR_SWATCHES.map((sw) => {
-                  const isActive = (selectedLayer.textColor || '') === sw.value;
-                  return (
-                    <button
-                      key={sw.label}
-                      type="button"
-                      onClick={() =>
-                        updateLayer(
-                          selectedLayer.id,
-                          { textColor: sw.value || undefined },
-                          true
-                        )
-                      }
-                      title={`Text Color: ${sw.label}`}
-                      className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold transition ${
-                        isActive
-                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#3E4D45]'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                        style={{ background: sw.hex }}
-                      />
-                      <span>{sw.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-[#F0ECE1]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1.5 border-t border-[#F0ECE1]">
+                <label className="block text-[11px] font-bold text-[#3E4D45]">
+                  <div className="flex justify-between">
+                    <span>Pill Opacity</span>
+                    <span className="text-[#D46A4E]">
+                      {PILL_PALETTE[selectedLayer.pill]?.hasBg
+                        ? `${Math.round((selectedLayer.pillOpacity ?? 1) * 100)}%`
+                        : 'No Pill'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    disabled={!PILL_PALETTE[selectedLayer.pill]?.hasBg}
+                    value={selectedLayer.pillOpacity ?? 1}
+                    onChange={(e) =>
+                      updateLayer(selectedLayer.id, { pillOpacity: Number(e.target.value) })
+                    }
+                    className="w-full accent-[#2E5A44] disabled:opacity-40"
+                  />
+                </label>
                 <label className="block text-[11px] font-bold text-[#3E4D45]">
                   <div className="flex justify-between">
                     <span>Text Size</span>
@@ -3362,36 +4540,146 @@ const SocialStudio: React.FC = () => {
                     height: geom.cardH,
                     background: geom.cardBg,
                     border: `2px solid ${geom.cardBorder}`,
-                    borderRadius: `${geom.cardTopR}px ${geom.cardTopR}px 40px 40px`,
-                    boxShadow: '0 24px 60px rgba(28,38,33,0.12)'
+                    borderRadius: `${geom.cardTopR}px ${geom.cardTopR}px ${geom.cardBottomR}px ${geom.cardBottomR}px`,
+                    boxShadow: '0 24px 60px rgba(28,38,33,0.12)',
+                    overflow: 'hidden'
                   }}
                 />
               )}
 
-              {/* Photo Window or No-Photo Decorative Arch Outline */}
+              {/* Photo Window or No-Photo Decorative Text Card Architecture */}
               {!geom.hasPhoto ? (
-                <div
-                  onPointerDown={() => {
+                (() => {
+                  const tTheme = activeSlide.textCardTheme || 'arch-crest';
+                  const winTheme =
+                    BG_STYLES[activeSlide.windowStyle || 'cream-editorial'] ||
+                    BG_STYLES['cream-editorial'];
+                  const outerTheme =
+                    BG_STYLES[activeSlide.bgStyle || 'forest-luxe'] || BG_STYLES['forest-luxe'];
+                  const accentStroke = winTheme.darkText
+                    ? 'rgba(46,90,68,0.22)'
+                    : 'rgba(244,211,126,0.32)';
+                  const deselect = () => {
                     setSelectedLayerId(null);
                     setEditingLayerId(null);
-                  }}
-                  style={{
-                    position: 'absolute',
-                    left: 76,
-                    top: 76,
-                    right: 76,
-                    bottom: 76,
-                    borderRadius: '196px 196px 28px 28px',
-                    border: `3px solid ${
-                      (
-                        BG_STYLES[activeSlide.windowStyle || 'cream-editorial'] ||
-                        BG_STYLES['cream-editorial']
-                      ).darkText
-                        ? 'rgba(46,90,68,0.18)'
-                        : 'rgba(244,211,126,0.28)'
-                    }`
-                  }}
-                />
+                  };
+
+                  if (tTheme === 'magazine-border') {
+                    return (
+                      <>
+                        <div
+                          onPointerDown={deselect}
+                          style={{
+                            position: 'absolute',
+                            left: 72,
+                            top: 72,
+                            right: 72,
+                            bottom: 72,
+                            borderRadius: 24,
+                            border: `3px solid ${accentStroke}`
+                          }}
+                        />
+                        <div
+                          onPointerDown={deselect}
+                          style={{
+                            position: 'absolute',
+                            left: 88,
+                            top: 88,
+                            right: 88,
+                            bottom: 88,
+                            borderRadius: 18,
+                            border: `1.5px solid ${accentStroke}`
+                          }}
+                        />
+                      </>
+                    );
+                  }
+                  if (tTheme === 'cameo-medallion') {
+                    return (
+                      <div
+                        onPointerDown={deselect}
+                        style={{
+                          position: 'absolute',
+                          left: 90,
+                          top: 100,
+                          right: 90,
+                          bottom: 100,
+                          borderRadius: 999,
+                          border: `3px solid ${accentStroke}`
+                        }}
+                      />
+                    );
+                  }
+                  if (tTheme === 'ribbon-banner') {
+                    return (
+                      <div
+                        onPointerDown={deselect}
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX,
+                          top: geom.cardY,
+                          width: geom.cardW,
+                          height: 148,
+                          borderRadius: '38px 38px 0 0',
+                          background:
+                            outerTheme.swatch === winTheme.swatch ? '#2E5A44' : outerTheme.bg1,
+                          borderBottom: '4px solid #F4D37E'
+                        }}
+                      />
+                    );
+                  }
+                  if (tTheme === 'split-quote') {
+                    const splitH = Math.round(canvasH * 0.44) - geom.cardY;
+                    return (
+                      <div
+                        onPointerDown={deselect}
+                        style={{
+                          position: 'absolute',
+                          left: geom.cardX,
+                          top: geom.cardY,
+                          width: geom.cardW,
+                          height: splitH,
+                          borderRadius: '38px 38px 0 0',
+                          background: outerTheme.darkText ? '#2E5A44' : outerTheme.bg1,
+                          borderBottom: '3px solid #F4D37E'
+                        }}
+                      />
+                    );
+                  }
+                  if (tTheme === 'minimal-luxe') {
+                    const lineStroke = outerTheme.darkText
+                      ? 'rgba(46,90,68,0.28)'
+                      : 'rgba(244,211,126,0.38)';
+                    return (
+                      <div
+                        onPointerDown={deselect}
+                        style={{
+                          position: 'absolute',
+                          left: 160,
+                          right: 160,
+                          top: 165,
+                          bottom: 175,
+                          borderTop: `2px solid ${lineStroke}`,
+                          borderBottom: `2px solid ${lineStroke}`
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <div
+                      onPointerDown={deselect}
+                      style={{
+                        position: 'absolute',
+                        left: 76,
+                        top: 76,
+                        right: 76,
+                        bottom: 76,
+                        borderRadius: '196px 196px 28px 28px',
+                        border: `3px solid ${accentStroke}`
+                      }}
+                    />
+                  );
+                })()
               ) : (
                 <div
                   onPointerDown={(e) => {
@@ -3565,14 +4853,27 @@ const SocialStudio: React.FC = () => {
                         paddingBottom: layer.padY,
                         paddingLeft: padX,
                         paddingRight: padX,
-                        background: pal.bg,
+                        background:
+                          pal.hasBg && (layer.pillOpacity ?? 1) > 0.01
+                            ? applyColorAlpha(pal.bg, layer.pillOpacity)
+                            : 'transparent',
                         color: layer.textColor || pal.text,
-                        border: pal.hasBg ? `2px solid ${pal.border}` : 'none',
+                        border:
+                          pal.hasBg && (layer.pillOpacity ?? 1) > 0.01
+                            ? `2px solid ${applyColorAlpha(
+                                pal.border,
+                                Math.min(1, (layer.pillOpacity ?? 1) * 1.15)
+                              )}`
+                            : 'none',
                         borderRadius:
                           layer.padY > 28 || layer.text.includes('\n') ? 32 : 999,
-                        boxShadow: pal.shadow ? '0 10px 26px rgba(0,0,0,0.18)' : 'none',
+                        boxShadow:
+                          pal.shadow && pal.hasBg && (layer.pillOpacity ?? 1) > 0.15
+                            ? `0 10px 26px rgba(0,0,0,${(0.18 * (layer.pillOpacity ?? 1)).toFixed(3)})`
+                            : 'none',
                         textShadow:
                           layer.pill === 'none-light' ||
+                          (pal.hasBg && (layer.pillOpacity ?? 1) < 0.35) ||
                           (!pal.hasBg &&
                             (layer.textColor === '#FFFFFF' ||
                               layer.textColor === '#F4D37E' ||
@@ -3832,90 +5133,131 @@ const SocialStudio: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
-                Frame:
-              </span>
-              {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => handleSwitchPreset(key)}
-                  className={`shrink-0 px-2.5 py-1.5 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
-                    activeSlide.preset === key
-                      ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
-                      : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
-              <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
-                Outer:
-              </span>
-              {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                ([bgKey, bgMeta]) => (
+            {/* Frame Preset Picker — Wrapped Grid (Zero Scrollbar Blocking!) */}
+            <div className="space-y-1">
+              <div className="text-[11px] font-extrabold text-[#2E5A44] px-0.5">Frame:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {FRAME_PRESET_OPTIONS.map(({ key, label }) => (
                   <button
-                    key={bgKey}
+                    key={key}
                     type="button"
-                    onClick={() => handleSwitchBgTheme(bgKey)}
-                    className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
-                      activeSlide.bgStyle === bgKey
-                        ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                        : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                    onClick={() => handleSwitchPreset(key)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                      activeSlide.preset === key
+                        ? 'bg-[#2E5A44] text-white border-[#2E5A44]'
+                        : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
                     }`}
                   >
-                    <span
-                      className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                      style={{ background: bgMeta.swatch }}
-                    />
-                    <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                    {label}
                   </button>
-                )
-              )}
+                ))}
+              </div>
             </div>
 
-            {activeSlide.preset !== 'minimal' && (
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-[#F0ECE1]">
-                <span className="text-[11px] font-extrabold text-[#2E5A44] shrink-0 px-1">
-                  Window:
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSwapBgAndWindow}
-                  className="shrink-0 px-2 py-1 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer"
-                  title="Swap Outer Background and Inner Window colors"
-                >
-                  ⇄ Swap
-                </button>
-                {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
-                  ([winKey, winMeta]) => {
-                    const activeWin = activeSlide.windowStyle || 'pure-white';
+            {/* Text Card Theme Picker (Shown whenever Text Card is active — Blogs, Coat & DNA, Did You Know / AI!) */}
+            {activeSlide.preset === 'no-photo' && (
+              <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
+                <div className="text-[11px] font-extrabold text-[#D46A4E] px-0.5">
+                  Text Card Style:
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {TEXT_CARD_THEME_OPTIONS.map(({ key, label }) => {
+                    const activeTheme = activeSlide.textCardTheme || 'arch-crest';
                     return (
                       <button
-                        key={winKey}
+                        key={key}
                         type="button"
-                        onClick={() => handleSwitchWindowTheme(winKey)}
-                        className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
-                          activeWin === winKey
-                            ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
-                            : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                        onClick={() => handleSwitchTextCardTheme(key)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-extrabold border touch-manipulation cursor-pointer transition ${
+                          activeTheme === key
+                            ? 'bg-[#D46A4E] text-white border-[#D46A4E]'
+                            : 'bg-[#F6F4EE] text-[#1C2621] border-[#DDD6C7] hover:bg-[#EFECE4]'
                         }`}
                       >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
-                          style={{ background: winMeta.swatch }}
-                        />
-                        <span>{winMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                        {label}
                       </button>
                     );
-                  }
-                )}
+                  })}
+                </div>
               </div>
             )}
+
+            {/* Outer Background Color Swatches — Wrapped Grid (Zero Scrollbar!) */}
+            <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
+              <div className="text-[11px] font-extrabold text-[#2E5A44] px-0.5">
+                Outer Background:
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                  ([bgKey, bgMeta]) => (
+                    <button
+                      key={bgKey}
+                      type="button"
+                      onClick={() => handleSwitchBgTheme(bgKey)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                        activeSlide.bgStyle === bgKey
+                          ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                          : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
+                      }`}
+                    >
+                      <span
+                        className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                        style={{ background: bgMeta.swatch }}
+                      />
+                      <span>{bgMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+
+            {/* Inner Window Color Swatches — Wrapped Grid (Zero Scrollbar!) */}
+            {activeSlide.preset !== 'minimal' &&
+              !(
+                activeSlide.preset === 'no-photo' &&
+                activeSlide.textCardTheme === 'minimal-luxe'
+              ) && (
+                <div className="space-y-1 pt-1.5 border-t border-[#F0ECE1]">
+                  <div className="flex items-center justify-between px-0.5">
+                    <span className="text-[11px] font-extrabold text-[#2E5A44]">
+                      Inner Window:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleSwapBgAndWindow}
+                      className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-[#F6F4EE] border border-[#E2DCCD] text-[#D46A4E] touch-manipulation cursor-pointer hover:bg-[#EFECE4]"
+                      title="Swap Outer Background and Inner Window colors"
+                    >
+                      ⇄ Swap Outer &amp; Window
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {(Object.entries(BG_STYLES) as [BgStyle, (typeof BG_STYLES)[BgStyle]][]).map(
+                      ([winKey, winMeta]) => {
+                        const activeWin = activeSlide.windowStyle || 'pure-white';
+                        return (
+                          <button
+                            key={winKey}
+                            type="button"
+                            onClick={() => handleSwitchWindowTheme(winKey)}
+                            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-extrabold border touch-manipulation cursor-pointer transition ${
+                              activeWin === winKey
+                                ? 'bg-[#E4EFE8] border-[#2E5A44] text-[#2E5A44] ring-1 ring-[#2E5A44]'
+                                : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621] hover:bg-[#EFECE4]'
+                            }`}
+                          >
+                            <span
+                              className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                              style={{ background: winMeta.swatch }}
+                            />
+                            <span>{winMeta.label.replace(/^[^\s]+\s/, '')}</span>
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </main>
 
@@ -4547,6 +5889,33 @@ const SocialStudio: React.FC = () => {
                       </button>
                     ))}
                   </div>
+
+                  {activeSlide.preset === 'no-photo' && (
+                    <div className="pt-2.5">
+                      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#D46A4E] mb-1.5">
+                        Text Card Architecture (Blogs, DNA &amp; AI)
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {TEXT_CARD_THEME_OPTIONS.map(({ key, label }) => {
+                          const activeTheme = activeSlide.textCardTheme || 'arch-crest';
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              onClick={() => handleSwitchTextCardTheme(key)}
+                              className={`py-2 px-2.5 rounded-xl text-xs font-extrabold border text-left transition ${
+                                activeTheme === key
+                                  ? 'bg-[#FDEEE9] border-[#D46A4E] text-[#99361E]'
+                                  : 'bg-[#F6F4EE] border-[#DDD6C7] text-[#1C2621]'
+                              }`}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {activeSlide.preset !== 'minimal' && activeSlide.preset !== 'no-photo' && (
                     <label className="block text-xs font-bold text-[#3E4D45] pt-2.5">
