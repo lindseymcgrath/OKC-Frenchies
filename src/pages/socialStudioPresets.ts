@@ -89,6 +89,8 @@ export interface DogRecord {
   dna?: string;
   dna_technical?: string;
   description?: string;
+  customQuote?: string;
+  isCustom?: boolean;
   breed?: string;
   gender?: string;
   image?: string;

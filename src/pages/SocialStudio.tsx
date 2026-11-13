@@ -93,6 +93,8 @@ const TEXT_COLOR_SWATCHES: { value: string; label: string; hex: string }[] = [
 const SAVED_PRESETS_KEY = 'okcfrenchies_studio_saved_layouts_v1';
 const DRAFT_STORAGE_KEY = 'okcfrenchies_studio_draft_v3';
 const SAVED_AI_CARDS_KEY = 'okcfrenchies_studio_ai_history_v1';
+const CUSTOM_DOGS_KEY = 'okcfrenchies_studio_custom_dogs_v1';
+const CUSTOM_PHOTOS_KEY = 'okcfrenchies_studio_custom_photos_v1';
 
 const FRAME_PRESET_OPTIONS: { key: FramePreset; label: string }[] = [
   { key: 'arch', label: '🌿 Botanical Arch' },
@@ -816,6 +818,42 @@ const loadVideoElement = (src: string, muted = true): Promise<HTMLVideoElement |
     setTimeout(() => finish(vid.videoWidth > 0 ? vid : null), 8000);
   });
 
+const compressImageFileToDataUrl = (file: File, maxDim = 1280, quality = 0.84): Promise<string> =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onerror = () => resolve('');
+    reader.onload = (ev) => {
+      const raw = typeof ev.target?.result === 'string' ? ev.target.result : '';
+      if (!raw) {
+        resolve('');
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxDim / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+          const w = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+          const h = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(raw);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch {
+          resolve(raw);
+        }
+      };
+      img.onerror = () => resolve(raw);
+      img.src = raw;
+    };
+    reader.readAsDataURL(file);
+  });
+
 const getFrameGeometry = (
   preset: FramePreset,
   canvasH: number,
@@ -1146,7 +1184,9 @@ const buildLayersForDog = (
   const coatStr = dog.dna || dog.description || '';
   const dnaStr = (dog.dna_technical || '').trim();
   const quoteStr =
-    DEFAULT_QUOTES[slug] || '"Raised in our OKC home with love, structure & health first."';
+    dog.customQuote ||
+    DEFAULT_QUOTES[slug] ||
+    '"Raised in our OKC home with love, structure & health first."';
 
   if (preset === 'minimal' || preset === 'no-photo') {
     const topTextPill: PillStyle =
@@ -1514,6 +1554,9 @@ const makeInitialSlide = (dog: DogRecord, ratio: CanvasRatio): SlideState => {
 
 const inferDogFromSlide = (slide: SlideState | undefined, allDogs: DogRecord[]): DogRecord | undefined => {
   if (!slide) return undefined;
+  if (slide.dogId === '__custom__' || slide.customPhotoDogId === '__custom__') {
+    return undefined;
+  }
   if (slide.slideMode && slide.slideMode !== 'puppies' && slide.slideMode !== 'studs') {
     return undefined;
   }
@@ -1549,14 +1592,238 @@ const inferDogFromSlide = (slide: SlideState | undefined, allDogs: DogRecord[]):
   return undefined;
 };
 
+const buildGeneralCustomPhotoLayers = (
+  canvasH: number,
+  preset: FramePreset,
+  archH: number,
+  bgStyle: BgStyle = 'cream-editorial',
+  windowStyle: BgStyle = 'pure-white'
+): TextLayer[] => {
+  const winTheme = BG_STYLES[windowStyle] || BG_STYLES['pure-white'];
+  const baseTextPill: PillStyle = winTheme.darkText ? 'none-dark' : 'none-light';
+
+  if (preset === 'minimal' || preset === 'no-photo') {
+    const topTextPill: PillStyle = preset === 'no-photo' ? baseTextPill : 'none-light';
+    const rawMin: TextLayer[] = [
+      {
+        id: 'handle',
+        label: '@okcfrenchies',
+        visible: true,
+        text: '@okcfrenchies',
+        x: 540,
+        y: 82,
+        fontSize: 22,
+        pillWidth: 260,
+        padY: 10,
+        pill: 'frosted',
+        font: 'sans'
+      },
+      {
+        id: 'status',
+        label: 'Header Pill',
+        visible: true,
+        text: '✨ OKC Frenchies • Oklahoma City',
+        x: 540,
+        y: 162,
+        fontSize: 23,
+        pillWidth: 480,
+        padY: 11,
+        pill: 'gold',
+        font: 'sans'
+      },
+      {
+        id: 'name',
+        label: 'Headline',
+        visible: true,
+        text: 'Raised Underfoot',
+        x: 540,
+        y: preset === 'no-photo' ? Math.round(canvasH * 0.36) : canvasH - 295,
+        fontSize: 60,
+        pillWidth: 820,
+        padY: 10,
+        pill: topTextPill,
+        font: 'serif'
+      },
+      {
+        id: 'breedAge',
+        label: 'Subtitle Pill',
+        visible: true,
+        text: 'French & Mini English Bulldogs',
+        x: 540,
+        y: canvasH - 205,
+        fontSize: 30,
+        pillWidth: 740,
+        padY: 14,
+        pill: 'cream',
+        font: 'sans'
+      },
+      {
+        id: 'quote',
+        label: 'Caption Note',
+        visible: preset === 'no-photo',
+        text: '"Health, structure & temperament first—raised right inside our family home."',
+        x: 540,
+        y: Math.round(canvasH * 0.56),
+        fontSize: 25,
+        pillWidth: 820,
+        padY: 14,
+        pill: 'cream',
+        font: 'serif-italic'
+      },
+      {
+        id: 'contact',
+        label: 'Contact Pill',
+        visible: true,
+        text: 'Text 405.300.8482 • OKCFrenchies.com',
+        x: 540,
+        y: canvasH - 118,
+        fontSize: 22,
+        pillWidth: 660,
+        padY: 11,
+        pill: 'sage',
+        font: 'sans'
+      }
+    ];
+    if (preset === 'no-photo') {
+      return resolveLayerOverlaps(rawMin, 68, canvasH - 68, false);
+    }
+    const topPass = resolveLayerOverlaps(rawMin, 46, Math.round(canvasH * 0.38), false);
+    return resolveLayerOverlaps(topPass, Math.round(canvasH * 0.56), canvasH - 36, false);
+  }
+
+  const geom = getFrameGeometry(preset, canvasH, archH, bgStyle, windowStyle);
+  const photoBottom = geom.photoY + geom.photoH;
+  const cardBottom = geom.cardY + geom.cardH;
+
+  const framed: TextLayer[] = [
+    {
+      id: 'status',
+      label: 'Header Pill',
+      visible: true,
+      text: '✨ OKC Frenchies • Oklahoma City',
+      x: preset === 'sage' ? geom.photoX + 230 : 540,
+      y: preset === 'sage' ? geom.cardY + 46 : photoBottom + 6,
+      fontSize: 21,
+      pillWidth: 460,
+      padY: 10,
+      pill: 'gold',
+      font: 'sans'
+    },
+    {
+      id: 'handle',
+      label: '@okcfrenchies',
+      visible: preset === 'sage',
+      text: '@okcfrenchies',
+      x: preset === 'sage' ? geom.photoX + geom.photoW - 115 : 540,
+      y: preset === 'sage' ? geom.cardY + 46 : 86,
+      fontSize: 21,
+      pillWidth: 230,
+      padY: 8,
+      pill: baseTextPill,
+      font: 'sans'
+    },
+    {
+      id: 'name',
+      label: 'Headline',
+      visible: true,
+      text: 'Raised Underfoot',
+      x: 540,
+      y: preset === 'sage' ? photoBottom + 56 : photoBottom + 72,
+      fontSize: 54,
+      pillWidth: 800,
+      padY: 8,
+      pill: baseTextPill,
+      font: 'serif'
+    },
+    {
+      id: 'breedAge',
+      label: 'Subtitle',
+      visible: true,
+      text: 'FRENCH & MINI ENGLISH BULLDOGS',
+      x: 540,
+      y: preset === 'sage' ? photoBottom + 116 : photoBottom + 132,
+      fontSize: 22,
+      pillWidth: 800,
+      padY: 6,
+      pill: baseTextPill,
+      font: 'sans'
+    },
+    {
+      id: 'quote',
+      label: 'Sweet Quote',
+      visible: true,
+      text: '"Health, structure & temperament first—raised right in our home."',
+      x: 540,
+      y: photoBottom + 205,
+      fontSize: 24,
+      pillWidth: 840,
+      padY: 10,
+      pill: baseTextPill,
+      font: 'serif-italic'
+    },
+    {
+      id: 'contact',
+      label: 'Contact Pill',
+      visible: true,
+      text: 'Text 405.300.8482 • OKCFrenchies.com',
+      x: 540,
+      y: cardBottom - 46,
+      fontSize: 21,
+      pillWidth: 660,
+      padY: 11,
+      pill: 'cream',
+      font: 'sans'
+    }
+  ];
+
+  return resolveLayerOverlaps(
+    framed,
+    preset === 'sage' ? photoBottom + 14 : photoBottom - 20,
+    cardBottom - 20,
+    false
+  );
+};
+
 const SocialStudio: React.FC = () => {
+  const [customDogs, setCustomDogs] = useState<DogRecord[]>(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_DOGS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customLibraryPhotos, setCustomLibraryPhotos] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_PHOTOS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showNewDogForm, setShowNewDogForm] = useState<boolean>(false);
+  const [newDogName, setNewDogName] = useState<string>('');
+  const [newDogCategory, setNewDogCategory] = useState<'Puppy' | 'Stud'>('Puppy');
+  const [newDogGender, setNewDogGender] = useState<'Female' | 'Male'>('Female');
+  const [newDogStatus, setNewDogStatus] = useState<string>('Available');
+  const [newDogBreed, setNewDogBreed] = useState<string>('French Bulldog');
+  const [newDogCoat, setNewDogCoat] = useState<string>('');
+  const [newDogQuote, setNewDogQuote] = useState<string>('');
+  const [newDogPhotos, setNewDogPhotos] = useState<string[]>([]);
+
   const allPuppies: DogRecord[] = useMemo(
-    () => (puppiesData as any[]).map((d) => ({ ...d, category: 'Puppy' as const })),
-    []
+    () => [
+      ...customDogs.filter((d) => d.category === 'Puppy'),
+      ...(puppiesData as any[]).map((d) => ({ ...d, category: 'Puppy' as const }))
+    ],
+    [customDogs]
   );
   const allStuds: DogRecord[] = useMemo(
-    () => (studsData as any[]).map((d) => ({ ...d, category: 'Stud' as const })),
-    []
+    () => [
+      ...customDogs.filter((d) => d.category === 'Stud'),
+      ...(studsData as any[]).map((d) => ({ ...d, category: 'Stud' as const }))
+    ],
+    [customDogs]
   );
 
   const allDogs: DogRecord[] = useMemo(
@@ -1783,6 +2050,140 @@ const SocialStudio: React.FC = () => {
           : s
       );
     });
+  };
+
+  // Custom Off-Site Dogs & Standalone Photo Library Helpers
+  const saveCustomDogsList = (next: DogRecord[]) => {
+    setCustomDogs(next);
+    try {
+      localStorage.setItem(CUSTOM_DOGS_KEY, JSON.stringify(next));
+    } catch {
+      // ignore storage quota errors
+    }
+  };
+
+  const addPhotoToCustomLibrary = (dataUrl: string) => {
+    if (!dataUrl) return;
+    setCustomLibraryPhotos((prev) => {
+      const next = [dataUrl, ...prev.filter((u) => u !== dataUrl)].slice(0, 14);
+      try {
+        localStorage.setItem(CUSTOM_PHOTOS_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage quota errors
+      }
+      return next;
+    });
+  };
+
+  const removePhotoFromCustomLibrary = (dataUrl: string) => {
+    setCustomLibraryPhotos((prev) => {
+      const next = prev.filter((u) => u !== dataUrl);
+      try {
+        localStorage.setItem(CUSTOM_PHOTOS_KEY, JSON.stringify(next));
+      } catch {
+        // ignore storage quota errors
+      }
+      return next;
+    });
+  };
+
+  const handleCreateCustomDog = () => {
+    const cleanName = newDogName.trim() || 'New Frenchie';
+    const dogId = `custom-dog-${Date.now()}`;
+    const photos = newDogPhotos.filter(Boolean);
+    const createdDog: DogRecord = {
+      id: dogId,
+      name: cleanName,
+      category: newDogCategory,
+      gender: newDogGender,
+      status: newDogStatus.trim() || 'Available',
+      breed: newDogBreed.trim() || 'French Bulldog',
+      dna: newDogCoat.trim() || undefined,
+      customQuote: newDogQuote.trim() || undefined,
+      isCustom: true,
+      image: photos[0] || defaultStudioDog?.image || '',
+      media: photos.map((url) => ({ type: 'image', url }))
+    };
+    saveCustomDogsList([createdDog, ...customDogs]);
+    photos.forEach((p) => addPhotoToCustomLibrary(p));
+    setContentMode(createdDog.category === 'Stud' ? 'studs' : 'puppies');
+    setSelectedDogId(createdDog.id);
+    setFilterMode('all');
+    loadDogIntoCard(createdDog, undefined, undefined, true);
+    setShowNewDogForm(false);
+    setNewDogName('');
+    setNewDogCoat('');
+    setNewDogQuote('');
+    setNewDogPhotos([]);
+  };
+
+  const handleDeleteCustomDog = (dogId: string) => {
+    const next = customDogs.filter((d) => d.id !== dogId);
+    saveCustomDogsList(next);
+    const fallback = next[0] || defaultStudioDog;
+    if (fallback) {
+      setSelectedDogId(fallback.id);
+      setContentMode(fallback.category === 'Stud' ? 'studs' : 'puppies');
+      loadDogIntoCard(fallback, undefined, undefined, false);
+    }
+  };
+
+  const handleAddPhotosToCustomDog = (dogId: string, urls: string[]) => {
+    if (urls.length === 0) return;
+    const next = customDogs.map((d) => {
+      if (d.id !== dogId) return d;
+      const existingMedia = d.media || [];
+      const mergedUrls = Array.from(
+        new Set([...existingMedia.map((m) => m.url), ...(d.image ? [d.image] : []), ...urls])
+      );
+      return {
+        ...d,
+        image: d.image || mergedUrls[0] || '',
+        media: mergedUrls.map((url) => ({ type: 'image', url }))
+      };
+    });
+    saveCustomDogsList(next);
+    urls.forEach((u) => addPhotoToCustomLibrary(u));
+    updateActiveSlide(
+      {
+        dogId,
+        customPhotoDogId: undefined,
+        photoSrc: urls[0],
+        videoSrc: undefined,
+        panX: 0,
+        panY: 0
+      },
+      true
+    );
+  };
+
+  const handleApplyGeneralCustomCard = (photoUrl?: string) => {
+    const targetPreset: FramePreset =
+      activeSlide.preset === 'no-photo' ? (photoUrl || activeSlide.photoSrc || activeSlide.videoSrc ? 'arch' : 'no-photo') : activeSlide.preset;
+    const bg = activeSlide.bgStyle || 'cream-editorial';
+    const win = activeSlide.windowStyle || 'pure-white';
+    const archH =
+      activeSlide.archHeight ||
+      (ratio === 'story' ? 1180 : ratio === 'square' ? 580 : targetPreset === 'sage' ? 740 : 800);
+
+    updateActiveSlide(
+      {
+        preset: targetPreset,
+        dogId: '__custom__',
+        customPhotoDogId: '__custom__',
+        slideMode: contentMode === 'studs' || contentMode === 'puppies' ? contentMode : undefined,
+        topicId: undefined,
+        ...(photoUrl ? { photoSrc: photoUrl, videoSrc: undefined, panX: 0, panY: 0 } : {}),
+        archHeight: archH,
+        layers: buildGeneralCustomPhotoLayers(canvasH, targetPreset, archH, bg, win)
+      },
+      true
+    );
+    setCaptionText(
+      `Health-tested French Bulldogs & Mini English Bulldogs raised underfoot inside our Oklahoma City home.\n\n🐾 Raw-fed & clinical bovine plasma from weaning\n✈️ Flight nanny delivery available nationwide\n📲 Text 405.300.8482 | OKCFrenchies.com\n\n#okcfrenchies #frenchbulldog #oklahomacity #fluffyfrenchie #minienglishbulldog`
+    );
+    setSelectedLayerId(null);
+    setEditingLayerId(null);
   };
 
   const updatePhotoOverlay = (
@@ -2155,13 +2556,20 @@ const SocialStudio: React.FC = () => {
               sanitizedSlide.slideMode !== 'studs';
             if (isTopicSlide) return sanitizedSlide;
 
+            // Keep custom/non-dog & data-URL slides intact; sync website puppy/stud photos to their dog
+            if (
+              sanitizedSlide.dogId === '__custom__' ||
+              sanitizedSlide.customPhotoDogId === '__custom__'
+            ) {
+              return sanitizedSlide;
+            }
+
             const dog = inferDogFromSlide(sanitizedSlide, allDogs) || defaultStudioDog;
             if (!dog) return sanitizedSlide;
             const belongsToDog =
               sanitizedSlide.photoSrc === dog.image ||
               (dog.media || []).some((m) => m.url === sanitizedSlide.photoSrc) ||
-              (Boolean(sanitizedSlide.photoSrc?.startsWith('data:')) &&
-                sanitizedSlide.customPhotoDogId === dog.id);
+              sanitizedSlide.photoSrc?.startsWith('data:');
 
             return {
               ...sanitizedSlide,
@@ -2338,6 +2746,7 @@ const SocialStudio: React.FC = () => {
         slideMode: dog.category === 'Stud' ? 'studs' : 'puppies',
         topicId: undefined,
         photoSrc: dog.image || '',
+        videoSrc: undefined,
         panX: 0,
         panY: 0,
         archHeight: currentArch,
@@ -7690,22 +8099,180 @@ const SocialStudio: React.FC = () => {
 
                 {(contentMode === 'puppies' || contentMode === 'studs') && (
                   <div className="space-y-3 pt-2 border-t border-[#F0ECE1]">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
                       <span className="text-xs font-extrabold uppercase tracking-wider text-[#2E5A44]">
                         {contentMode === 'studs' ? 'Select Sire / Stud' : 'Select Puppy'}
                       </span>
-                      {contentMode === 'puppies' && (
+                      <div className="flex items-center gap-2">
+                        {contentMode === 'puppies' && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFilterMode(filterMode === 'available' ? 'all' : 'available')
+                            }
+                            className="text-xs font-bold text-[#D46A4E] underline touch-manipulation cursor-pointer"
+                          >
+                            {filterMode === 'available' ? 'Show Past Litters Too' : 'Available Only'}
+                          </button>
+                        )}
                         <button
                           type="button"
-                          onClick={() =>
-                            setFilterMode(filterMode === 'available' ? 'all' : 'available')
-                          }
-                          className="text-xs font-bold text-[#D46A4E] underline touch-manipulation cursor-pointer"
+                          onClick={() => {
+                            setNewDogCategory(contentMode === 'studs' ? 'Stud' : 'Puppy');
+                            setNewDogStatus(contentMode === 'studs' ? 'Stud Service' : 'Available');
+                            setShowNewDogForm((v) => !v);
+                          }}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold touch-manipulation cursor-pointer transition ${
+                            showNewDogForm
+                              ? 'bg-[#1C2621] text-white'
+                              : 'bg-[#D46A4E] text-white shadow-xs'
+                          }`}
                         >
-                          {filterMode === 'available' ? 'Show Past Litters Too' : 'Available Only'}
+                          {showNewDogForm ? '✕ Close Form' : '+ New Dog (Not on Site)'}
                         </button>
-                      )}
+                      </div>
                     </div>
+
+                    {showNewDogForm && (
+                      <div className="rounded-2xl bg-[#FAF8F4] border border-[#DDD6C7] p-3 space-y-2.5">
+                        <div className="text-xs font-extrabold text-[#2E5A44]">
+                          🐾 Add Off-Site Puppy or Stud (Saved on This Device)
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={newDogName}
+                            onChange={(e) => setNewDogName(e.target.value)}
+                            placeholder="Dog's Name (e.g. Biscuit)"
+                            className="col-span-2 w-full rounded-xl border border-[#DDD6C7] bg-white px-3 py-2 text-base sm:text-xs font-bold"
+                          />
+                          <div className="flex rounded-xl border border-[#DDD6C7] bg-white p-0.5 text-[11px] font-extrabold">
+                            {(['Puppy', 'Stud'] as const).map((cat) => (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setNewDogCategory(cat)}
+                                className={`flex-1 py-1.5 rounded-lg touch-manipulation cursor-pointer ${
+                                  newDogCategory === cat
+                                    ? 'bg-[#2E5A44] text-white'
+                                    : 'text-[#5C6B63]'
+                                }`}
+                              >
+                                {cat === 'Puppy' ? '🐾 Puppy' : '👑 Stud'}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex rounded-xl border border-[#DDD6C7] bg-white p-0.5 text-[11px] font-extrabold">
+                            {(['Female', 'Male'] as const).map((sex) => (
+                              <button
+                                key={sex}
+                                type="button"
+                                onClick={() => setNewDogGender(sex)}
+                                className={`flex-1 py-1.5 rounded-lg touch-manipulation cursor-pointer ${
+                                  newDogGender === sex
+                                    ? 'bg-[#D46A4E] text-white'
+                                    : 'text-[#5C6B63]'
+                                }`}
+                              >
+                                {sex === 'Female' ? '♀ Female' : '♂ Male'}
+                              </button>
+                            ))}
+                          </div>
+                          <select
+                            value={newDogStatus}
+                            onChange={(e) => setNewDogStatus(e.target.value)}
+                            className="w-full rounded-xl border border-[#DDD6C7] bg-white px-2.5 py-2 text-base sm:text-xs font-bold"
+                          >
+                            <option value="Available">Available</option>
+                            <option value="Keeper">Keeper</option>
+                            <option value="Retained / Co-Own">Retained / Co-Own</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Stud Service">Stud Service</option>
+                            <option value="SOLD">Placed / Past</option>
+                          </select>
+                          <input
+                            type="text"
+                            value={newDogBreed}
+                            onChange={(e) => setNewDogBreed(e.target.value)}
+                            placeholder="Breed & Age (e.g. French Bulldog • 8 Wks)"
+                            className="w-full rounded-xl border border-[#DDD6C7] bg-white px-2.5 py-2 text-base sm:text-xs font-bold"
+                          />
+                          <input
+                            type="text"
+                            value={newDogCoat}
+                            onChange={(e) => setNewDogCoat(e.target.value)}
+                            placeholder="Coat / DNA (e.g. Lilac & Tan Fluffy)"
+                            className="col-span-2 w-full rounded-xl border border-[#DDD6C7] bg-white px-3 py-2 text-base sm:text-xs font-bold"
+                          />
+                          <input
+                            type="text"
+                            value={newDogQuote}
+                            onChange={(e) => setNewDogQuote(e.target.value)}
+                            placeholder="Optional sweet quote for the card..."
+                            className="col-span-2 w-full rounded-xl border border-[#DDD6C7] bg-white px-3 py-2 text-base sm:text-xs font-medium"
+                          />
+                        </div>
+
+                        <label className="w-full flex items-center justify-center gap-1.5 bg-white border-2 border-dashed border-[#2E5A44]/40 text-[#2E5A44] px-3 py-2 rounded-xl text-xs font-extrabold cursor-pointer hover:bg-[#E4EFE8]/50">
+                          📷 Upload Photo(s) for {newDogName.trim() || 'This Dog'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              const urls = await Promise.all(
+                                files.map((f) => compressImageFileToDataUrl(f))
+                              );
+                              setNewDogPhotos((prev) => [...prev, ...urls.filter(Boolean)]);
+                              e.target.value = '';
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+
+                        {newDogPhotos.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {newDogPhotos.map((u, idx) => (
+                              <div key={idx} className="relative">
+                                <img
+                                  src={u}
+                                  alt={`Preview ${idx + 1}`}
+                                  className="w-12 h-12 rounded-xl object-cover border border-[#DDD6C7]"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setNewDogPhotos((prev) => prev.filter((_, i) => i !== idx))
+                                  }
+                                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#991B1B] text-white text-[10px] font-black flex items-center justify-center cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleCreateCustomDog}
+                            className="flex-1 py-2 rounded-xl bg-[#2E5A44] text-white text-xs font-extrabold touch-manipulation cursor-pointer"
+                          >
+                            ✓ Save &amp; Load Dog onto Slide
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowNewDogForm(false)}
+                            className="px-3 py-2 rounded-xl bg-[#EFECE3] text-[#5C6B63] text-xs font-bold touch-manipulation cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     <select
                       value={selectedDog?.id || ''}
@@ -7718,10 +8285,40 @@ const SocialStudio: React.FC = () => {
                     >
                       {visibleDogs.map((d) => (
                         <option key={d.id} value={d.id}>
-                          {d.name} ({d.status || d.category})
+                          {d.isCustom ? `★ ${d.name} (${d.status || d.category} • Custom)` : `${d.name} (${d.status || d.category})`}
                         </option>
                       ))}
                     </select>
+
+                    {selectedDog?.isCustom && (
+                      <div className="flex items-center gap-1.5">
+                        <label className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2.5 rounded-xl bg-[#FAF8F4] border border-dashed border-[#2E5A44]/50 text-[#2E5A44] text-[11px] font-extrabold cursor-pointer hover:bg-[#E4EFE8]">
+                          + Add Photos to {selectedDog.name}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              const urls = (
+                                await Promise.all(files.map((f) => compressImageFileToDataUrl(f)))
+                              ).filter(Boolean);
+                              handleAddPhotosToCustomDog(selectedDog.id, urls);
+                              e.target.value = '';
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCustomDog(selectedDog.id)}
+                          className="py-1.5 px-2.5 rounded-xl bg-[#FEE2E2] text-[#991B1B] text-[11px] font-extrabold touch-manipulation cursor-pointer"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-1.5">
                       <button
@@ -7764,6 +8361,7 @@ const SocialStudio: React.FC = () => {
                                     dogId: selectedDog?.id,
                                     customPhotoDogId: undefined,
                                     photoSrc: url,
+                                    videoSrc: undefined,
                                     panX: 0,
                                     panY: 0
                                   },
@@ -8192,8 +8790,14 @@ const SocialStudio: React.FC = () => {
                   </label>
                 </div>
 
-                {/* Camera Roll Photo/Video Upload, Export Reel & Direct Link */}
+                {/* General / Non-Dog Photos, Videos & Custom Uploads */}
                 <div className="border-t border-[#F0ECE1] pt-3 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2E5A44]">
+                      📷 General / Non-Dog Photos, Videos &amp; Uploads
+                    </span>
+                  </div>
+
                   <label className="w-full flex items-center justify-center gap-2 bg-[#FDF2EC] border-2 border-dashed border-[#D46A4E]/60 text-[#B84D33] px-4 py-2.5 rounded-2xl text-xs font-extrabold cursor-pointer hover:bg-[#FAE7DC]">
                     🎬 Upload Video from Camera Roll (Themed Reel!)
                     <input
@@ -8249,42 +8853,125 @@ const SocialStudio: React.FC = () => {
                     </div>
                   )}
 
-                  <label className="w-full flex items-center justify-center gap-2 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-4 py-2.5 rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3]">
-                    📷 Upload Custom Photo from Camera Roll
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          if (typeof ev.target?.result === 'string') {
-                            const isDogMode =
-                              contentMode === 'puppies' || contentMode === 'studs';
-                            updateActiveSlide(
-                              {
-                                preset:
-                                  activeSlide.preset === 'no-photo'
-                                    ? 'minimal'
-                                    : activeSlide.preset,
-                                ...(isDogMode && selectedDog
-                                  ? { dogId: selectedDog.id, customPhotoDogId: selectedDog.id }
-                                  : {}),
-                                photoSrc: ev.target.result,
-                                videoSrc: undefined,
-                                panX: 0,
-                                panY: 0
-                              },
-                              true
-                            );
-                          }
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                      className="hidden"
-                    />
-                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    <label className="w-full flex items-center justify-center gap-1.5 bg-[#F6F4EE] border-2 border-dashed border-[#BDB5A4] px-3 py-2.5 rounded-2xl text-xs font-bold cursor-pointer hover:bg-[#EFECE3] text-center">
+                      📷 Swap Photo Only (Camera Roll)
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await compressImageFileToDataUrl(file);
+                          if (!url) return;
+                          addPhotoToCustomLibrary(url);
+                          updateActiveSlide(
+                            {
+                              preset:
+                                activeSlide.preset === 'no-photo'
+                                  ? 'minimal'
+                                  : activeSlide.preset,
+                              customPhotoDogId: '__custom__',
+                              photoSrc: url,
+                              videoSrc: undefined,
+                              panX: 0,
+                              panY: 0
+                            },
+                            true
+                          );
+                          e.target.value = '';
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <label className="w-full flex items-center justify-center gap-1.5 bg-[#E4EFE8] border-2 border-dashed border-[#2E5A44]/50 text-[#2E5A44] px-3 py-2.5 rounded-2xl text-xs font-extrabold cursor-pointer hover:bg-[#D5E7DC] text-center">
+                      ✨ Upload as Non-Dog Card
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const url = await compressImageFileToDataUrl(file);
+                          if (!url) return;
+                          addPhotoToCustomLibrary(url);
+                          handleApplyGeneralCustomCard(url);
+                          e.target.value = '';
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleApplyGeneralCustomCard()}
+                    className="w-full py-2 px-3 rounded-xl bg-[#F6F4EE] border border-[#DDD6C7] text-[#1C2621] text-xs font-extrabold touch-manipulation cursor-pointer hover:bg-[#EFECE3]"
+                  >
+                    🏷️ Switch This Slide&apos;s Pills to Non-Dog / General Headline
+                  </button>
+
+                  {customLibraryPhotos.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <div className="text-[11px] font-bold text-[#3E4D45]">
+                        📂 My Uploaded Photos (Tap to use • <span className="text-[#2E5A44]">+</span> to layer on top):
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {customLibraryPhotos.map((url, idx) => (
+                          <div key={idx} className="relative">
+                            <img
+                              src={url}
+                              alt={`Uploaded ${idx + 1}`}
+                              onClick={() =>
+                                updateActiveSlide(
+                                  {
+                                    preset:
+                                      activeSlide.preset === 'no-photo'
+                                        ? 'arch'
+                                        : activeSlide.preset,
+                                    customPhotoDogId: '__custom__',
+                                    photoSrc: url,
+                                    videoSrc: undefined,
+                                    panX: 0,
+                                    panY: 0
+                                  },
+                                  true
+                                )
+                              }
+                              className={`w-14 h-14 rounded-xl object-cover cursor-pointer border-2 ${
+                                activeSlide.photoSrc === url && !activeSlide.videoSrc
+                                  ? 'border-[#2E5A44] ring-2 ring-[#CFE2D7]'
+                                  : 'border-[#DDD6C7]'
+                              }`}
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addPhotoOverlay(url, `Upload #${idx + 1}`);
+                              }}
+                              title="Layer as secondary photo overlay"
+                              className="absolute bottom-0.5 right-0.5 w-5 h-5 rounded-full bg-[#2E5A44] text-white text-[11px] font-black flex items-center justify-center shadow cursor-pointer"
+                            >
+                              +
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removePhotoFromCustomLibrary(url);
+                              }}
+                              title="Remove from saved uploads"
+                              className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#991B1B] text-white text-[9px] font-black flex items-center justify-center shadow cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <button
                     type="button"
